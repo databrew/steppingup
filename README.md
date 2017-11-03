@@ -12,7 +12,7 @@ Youth Compass Stepping Up Web Application
 
 ### Census data  
 
-Customized Canadian census data for 2001, 2006, and 2011 has been purchased by YouthREX and is stored in the 'databrew/Canada census data' google drive folder. The files are saved in .ivt format and can be opened by downloading the Statistics Canada's Beyond 20/20 Professional Browser Software on a Windows machine. The Beyond 20/20 Browser can be downloaded here: https://www.statcan.gc.ca/eng/public/beyond20-20
+Customized Canadian census data for 2001 and 2006, and 2011 National Household Survey data have been purchased by YouthREX and is stored in the 'databrew/Canada census data' google drive folder. The files are saved in .ivt format and can be opened by downloading the Statistics Canada's Beyond 20/20 Professional Browser Software on a Windows machine. The Beyond 20/20 Browser can be downloaded here: https://www.statcan.gc.ca/eng/public/beyond20-20
 
 A summary of the census data that was purchased from StatCan can be viewed here: https://drive.google.com/open?id=1y04s9gVvCPZtGmy4MoWToW5_ap61vOrL
 
