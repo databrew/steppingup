@@ -36,6 +36,9 @@ if('map_data.RData' %in% dir('data/geo') & !fetch_new){
 if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
   load('data/drive/all_drive_data.RData')
 } else {
+  g_files <- drive_find(pattern = 'databrew_youth_compass',
+                        n_max = 100)
+  1 # use .httr-oauth
   # Download each file
   for (i in 1:nrow(g_files)){
     file_name <- g_files$name[i]

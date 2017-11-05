@@ -6,3 +6,4 @@ rsconnect/*
 *.xls
 *.xlsx
 data/*
+.httr-oauth
