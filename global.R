@@ -7,6 +7,8 @@ library(yaml)
 library(stringr)
 library(readr)
 library(readxl)
+library(dplyr)
+library(tidyr)
 
 # Define whether we want to fetch new data or not
 # (useful after a data update, but slow, so generally set to false)
@@ -74,10 +76,14 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
       }
       
       # Get the column names only
-      if(grepl('special', this_path)){
+      if(grepl('special|birth', this_path)){
         skipper <- 3
       } else {
         skipper <- 2
+      }
+      if(grepl('birth', this_path) &
+         grepl('2011', this_path)){
+         skipper <- 2
       }
       column_names <- read_csv(this_path,
                                col_names = FALSE, 
@@ -90,6 +96,9 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
         new_column_name <- paste0(unlisted, collapse = ' ')
         new_column_names[j] <- new_column_name
       }
+      new_column_names <- gsub(' - Place of birth',
+                               '_total', 
+                               new_column_names)
       # Read in the full data
       full_data <- read_csv(this_path,
                             col_names = TRUE,
@@ -111,7 +120,82 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
        file = 'data/drive/all_drive_data.RData')
 } 
 
+# Combine into more meaningful datafames
+clean_columns_age_sex <- function(x){
+  x <- tolower(x)
+  x <- gsub(' ', '_', x)
+  x <- gsub('-', '', x)
+  x <- gsub('__', '_', x)
+  x <- gsub('_to_', '_', x)
+  x <- gsub('_sex_', '_', x)
+  sex <- ifelse(grepl('female', x), 'female', 
+                   ifelse(grepl('male', x), 'male',
+                          ifelse(grepl('total', x), 'total',
+                              NA)))
+  age <- ifelse(grepl('15_19', x), '15_19',
+                ifelse(grepl('15_24', x), '15_24',
+                       ifelse(grepl('20_24', x), '20_24',
+                              ifelse(grepl('25_29', x), '25_29',
+                                     ifelse(grepl('15_years_and_over', x), '15_up',
+                                                  NA)))))
+  new_name <- paste0(sex, '_', age)
+  new_name <- ifelse(is.na(age), x, new_name)
+  return(new_name)
+}
 
+# Clean up column names and combine
+names(age_sex_2001) <- clean_columns_age_sex(names(age_sex_2001))
+names(age_sex_2006) <- clean_columns_age_sex(names(age_sex_2006))
+names(age_sex_2011) <- clean_columns_age_sex(names(age_sex_2011))
+
+age_sex <-
+  bind_rows(
+    age_sex_2001 %>% mutate(year = 2011),
+    age_sex_2006 %>% mutate(year = 2006),
+    age_sex_2011 %>% mutate(year = 2011)
+  )
+# Make long
+age_sex <-
+  age_sex %>%
+  gather(age_group, value, total_15_up:female_25_29)
+
+# Separate age and sex
+age_sex$sex <- unlist(lapply(strsplit(sort(unique(age_sex$age_group)), split = '_'), function(x){x[1]}))
+age_sex$age_group <- unlist(lapply(strsplit(sort(unique(age_sex$age_group)), split = '_'), function(x){paste0(x[2], '_', x[3])}))
+
+# Get rid of the no longer necessary files
+rm(age_sex_2001, age_sex_2006, age_sex_2011)
+
+# Clean up the birthplace data
+
+# (have to define special function for birthplace 2011, different format)
+clean_columns_birthplace <- function(x){
+  sex <- ifelse(grepl('Female', x), 'female',
+                ifelse(grepl('Male', x), 'male',
+                       ifelse(grepl('Total', x), 'total',
+                              ifelse(grepl('Geography', x), NA,
+                                     'total'))))
+  age <- ifelse(grepl('15 to 24', x), '15_24',
+                ifelse(grepl('15 to 19', x), '15_19',
+                       ifelse(grepl('20 to 24', x), '20_24',
+                              ifelse(grepl('25 to 29', x), '25_29',
+                                     ifelse(grepl('15 years and', x), '15_up',
+                                            NA)))))
+  place <- ifelse(grepl('in', x), 'Canada',
+                  ifelse(grepl('out', x), 'Abroad', NA))
+  new_name <- paste0(sex, '_', age)
+  x <- tolower(x)
+  new_name <- ifelse(is.na(age), x, new_name)
+  return(new_name)
+}
+names(birthplace_2001) <- clean_columns_age_sex(names(birthplace_2001))
+names(birthplace_2006) <- clean_columns_age_sex(names(birthplace_2006))
+names(birthplace_2011) <- clean_columns_age_sex(names(birthplace_2011))
+
+# NEED TO COMBINE AND REFORMAT
+
+
+# Define a function for creating a crazy looking map
 crazy_map <- function(){
   # Add some colors
   lots_of_colors <- c(rainbow(100), grey(seq(0.001, 0.999, length = 100)))
