@@ -81,10 +81,10 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
       } else {
         skipper <- 2
       }
-      if(grepl('birth', this_path) &
-         grepl('2011', this_path)){
-         skipper <- 2
-      }
+      # if(grepl('birth', this_path) &
+      #    grepl('2011', this_path)){
+      #    skipper <- 2
+      # }
       column_names <- read_csv(this_path,
                                col_names = FALSE, 
                                n_max = skipper)
@@ -183,17 +183,43 @@ clean_columns_birthplace <- function(x){
                                             NA)))))
   place <- ifelse(grepl('in', x), 'Canada',
                   ifelse(grepl('out', x), 'Abroad', NA))
-  new_name <- paste0(sex, '_', age)
+  place <- ifelse(is.na(place) & x != 'Geography', 'Anywhere', place)
+  new_name <- paste0(sex, '_', age, ifelse(!is.na(place), '_', ''), ifelse(!is.na(place), place, ''))
   x <- tolower(x)
   new_name <- ifelse(is.na(age), x, new_name)
   return(new_name)
 }
-names(birthplace_2001) <- clean_columns_age_sex(names(birthplace_2001))
-names(birthplace_2006) <- clean_columns_age_sex(names(birthplace_2006))
-names(birthplace_2011) <- clean_columns_age_sex(names(birthplace_2011))
+names(birthplace_2001) <- clean_columns_birthplace(names(birthplace_2001))
+names(birthplace_2006) <- clean_columns_birthplace(names(birthplace_2006))
+names(birthplace_2011) <- clean_columns_birthplace(names(birthplace_2011))
 
-# NEED TO COMBINE AND REFORMAT
+# Combine
+birthplace_2011$total_15_up_anywhere <- as.numeric(birthplace_2011$total_15_up_anywhere)
+birthplace <- 
+  bind_rows(birthplace_2001 %>% mutate(year = 2001),
+            birthplace_2006 %>% mutate(year = 2006),
+            birthplace_2011 %>% mutate(year = 2011))
 
+# Make long
+birthplace <- birthplace %>%
+  gather(key, value, total_15_up_anywhere:female_25_29_Abroad)
+
+# Create variables for sex, age_group, place
+birthplace$sex <- unlist(lapply(strsplit(sort(unique(birthplace$key)), split = '_'), function(x){x[1]}))
+birthplace$age_group <- unlist(lapply(strsplit(sort(unique(birthplace$key)), split = '_'), function(x){paste0(x[2], '_', x[3])}))
+birthplace$place <-  unlist(lapply(strsplit(sort(unique(birthplace$key)), split = '_'), function(x){x[4]}))
+
+# remove the other birthplace stuff
+rm(birthplace_2001, birthplace_2006, birthplace_2011)
+
+# Read and clean special indicators = still needs some work
+
+# Clean up and combine the special indicators
+clean_up_special_indicators <- function(df){
+  out <- df
+  out <- out %>%
+    gather(key, value, -Geography)
+}
 
 # Define a function for creating a crazy looking map
 crazy_map <- function(){
