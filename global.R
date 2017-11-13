@@ -399,3 +399,30 @@ crazy_map <- function(){
   ont_crazy_colors <- sample(lots_of_colors, nrow(ont_crazy))
   plot(ont_crazy, col = ont_crazy_colors)
 }
+
+# Function for a time chart
+time_chart <- function(x,y,
+                       ylab = '',
+                       fill = TRUE){
+  require(ggplot2)
+  require(databrew) # devtools::install_github('databrew/databrew')
+  df <- data.frame(x,y)
+  g <- 
+    ggplot(data = df,
+         aes(x = x,
+             y = y)) +
+    geom_line(alpha = 0.6,
+              color = '#0d63c4') +
+    geom_point(alpha = 0.6,
+               color = '#0d63c4') +
+    theme_databrew() +
+    labs(x = 'Date',
+         y = ylab)
+  if(fill){
+    g <- 
+      g +
+      geom_area(fill = '#0d63c4',
+                alpha = 0.3)
+  }
+  return(g)
+}
