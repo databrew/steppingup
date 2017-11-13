@@ -13,7 +13,7 @@ library(tidyr)
 # Define whether we want to fetch new data or not
 # (useful after a data update, but slow, so generally set to false)
 # (set to TRUE only for the first run)
-fetch_new <- T
+fetch_new <- FALSE
 
 # new data just added by xing
 # 2011_special_indicators_by_vismin
