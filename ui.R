@@ -2,63 +2,69 @@ dashboardPage(skin = 'blue',
               dashboardHeader(title = "Stepping Up",
                               titleWidth = 300),
               dashboardSidebar(width = 300,
-                
+
                 sidebarMenu(
-                  menuItem('Health and wellness', 
-                           icon = icon('stethoscope'), 
+                  menuItem('Demo',
+                           icon = icon('pencil'),
+                           tabName = 'demo'),
+                  menuItem('Health and wellness',
+                           icon = icon('stethoscope'),
                            tabName = 'haw'),
-                  menuItem('Strong, Supportive Friends and Families', 
+                  menuItem('Strong, Supportive Friends and Families',
                            icon = icon('address-book-o'),
                            tabName = 'ssfaf'),
-                  menuItem('Education, Training & Apprenticeships', 
+                  menuItem('Education, Training & Apprenticeships',
                            icon = icon('pencil'),
                            tabName = 'etaa'),
-                  menuItem('Employment & Entrepreneurship', 
+                  menuItem('Employment & Entrepreneurship',
                            icon = icon('suitcase'),
                            tabName = 'eae'),
-                  menuItem('Diversity, Social Inclusion & Safety', 
+                  menuItem('Diversity, Social Inclusion & Safety',
                            icon = icon('users'),
                            tabName = 'dsias'),
-                  menuItem('Civic Engagement & Youth Leadership', 
+                  menuItem('Civic Engagement & Youth Leadership',
                            icon = icon('globe'),
                            tabName = 'ceayl'),
-                  menuItem('Coordinated & Youth-Friendly Communities', 
+                  menuItem('Coordinated & Youth-Friendly Communities',
                            icon = icon('handshake-o'),
                            tabName = 'cayfc'),
-                  menuItem("About", 
+                  menuItem("About",
                            icon = icon('folder-open'),
                            tabName = "about"),
-                  menuItem("Download", 
-                           tabName = "download", 
+                  menuItem("Download",
+                           tabName = "download",
                            icon = icon("dashboard")),
-                  menuItem("Widgets", 
-                           icon = icon("th"), 
+                  menuItem("Widgets",
+                           icon = icon("th"),
                            tabName = "widgets",
-                           badgeLabel = "placeholder", 
+                           badgeLabel = "placeholder",
                            badgeColor = "green"))),
               dashboardBody(
                 tabItems(
+                  tabItem(tabName = "demo",
+                          h2("Demo"),
+                          plotOutput('crazy_plot1')),
                   tabItem(tabName = "haw",
                           h2("Health and wellness"),
-                          plotOutput('crazy_plot1')),
+                          plotOutput('crazy_plot2')),
                   tabItem(tabName = 'ssfaf',
                           h2('Strong, Supportive Friends and Families'),
-                          plotOutput('crazy_plot2')),
+                          plotOutput('crazy_plot3')),
                   tabItem(tabName = 'etaa',
                           h2('Education, Training & Apprenticeships'),
-                          plotOutput('crazy_plot3')),
+                          plotOutput('crazy_plot4')),
                   tabItem(tabName = 'eae',
                           h2('Employment & Entrepreneurship'),
-                          plotOutput('crazy_plot4')),
+                          plotOutput('crazy_plot5')),
                   tabItem(tabName = 'dsias',
                           h2('Diversity, Social Inclusion & Safety'),
-                          plotOutput('crazy_plot5')),
+                          plotOutput('crazy_plot6')),
                   tabItem(tabName = 'ceayl',
                           h2('Civic Engagement & Youth Leadership'),
-                          plotOutput('crazy_plot6')),
+                          plotOutput('crazy_plot7')),
                   tabItem(tabName = 'cayfc',
                           h2('Coordinated & Youth-Friendly Communities'),
-                          plotOutput('crazy_plot7')),
+                          plotOutput('crazy_plot8')),
                   tabItem(tabName = "about",
                           h2("About"),
                           h4('A collaboration with www.databrew.cc')),
@@ -80,7 +86,7 @@ dashboardPage(skin = 'blue',
                             infoBoxOutput("progressBox2"),
                             infoBoxOutput("approvalBox2")
                           ),
-                          
+
                           fluidRow(
                             # Clicking this will increment the progress amount
                             box(width = 4, actionButton("count", "Increment progress"))
@@ -89,7 +95,7 @@ dashboardPage(skin = 'blue',
                             box(title = "Box title", "Box content"),
                             box(status = "warning", "Box content")
                           ),
-                          
+
                           fluidRow(
                             box(
                               title = "Title 1", width = 4, solidHeader = TRUE, status = "primary",
@@ -104,7 +110,7 @@ dashboardPage(skin = 'blue',
                               "Box content"
                             )
                           ),
-                          
+
                           fluidRow(
                             box(
                               width = 4, background = "black",
@@ -119,7 +125,7 @@ dashboardPage(skin = 'blue',
                               "A box with a solid maroon background"
                             )
                           ),
-                          
+
                           fluidRow(
                             column(width = 4,
                                    box(
@@ -131,7 +137,7 @@ dashboardPage(skin = 'blue',
                                      "A box with a solid black background"
                                    )
                             ),
-                            
+
                             column(width = 4,
                                    box(
                                      title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
@@ -142,7 +148,7 @@ dashboardPage(skin = 'blue',
                                      "A box with a solid light-blue background"
                                    )
                             ),
-                            
+
                             column(width = 4,
                                    box(
                                      title = "Title 2", width = NULL, solidHeader = TRUE,
@@ -156,7 +162,7 @@ dashboardPage(skin = 'blue',
                           ),
                           fluidRow(
                             box(plotOutput("plot1")),
-                            
+
                             box(
                               "Box content here", br(), "More box content",
                               sliderInput("slider", "Slider input:", 1, 100, 50),
@@ -164,8 +170,8 @@ dashboardPage(skin = 'blue',
                             )
                           )
                   ))
-                
-                
+
+
               )
 )
 
