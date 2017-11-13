@@ -9,6 +9,7 @@ library(readr)
 library(readxl)
 library(dplyr)
 library(tidyr)
+library(broom)
 
 # Define whether we want to fetch new data or not
 # (useful after a data update, but slow, so generally set to false)
@@ -38,6 +39,14 @@ if('map_data.RData' %in% dir('data/geo') & !fetch_new){
        file = 'data/geo/map_data.RData')
 }
 
+# Get a fortified version of ont
+ont_fortified <- broom::tidy(ont2)
+ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
+                                               mutate(OBJECTID = as.character(OBJECTID)) %>%
+                                               dplyr::select(OBJECTID, CCA_2) %>%
+                                               dplyr::rename(id = OBJECTID,
+                                                             geography = CCA_2)) %>%
+  mutate(geography = as.character(geography))
 
 # Download each file
 if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
@@ -79,7 +88,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
       if(has_year){
         this_name <- paste0(this_name, '_', year)
       }
-
+      
       # Get the column names only
       if(grepl('special|birth|by_vismin', this_path)){
         skipper <- 3
@@ -106,7 +115,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
                                new_column_names)
       # Read in the full data
       if(grepl('by_vismin', this_path)) {
-
+        
         full_data <- read_csv(this_path,
                               col_names = TRUE,
                               skip = 0)
@@ -115,7 +124,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
                               col_names = TRUE,
                               skip = skipper -1)
       }
-
+      
       # Replace the column names
       names(full_data) <- new_column_names
       # Assign to the global environment
@@ -123,7 +132,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
               this_file,
               ' as ',
               this_name)
-
+      
       assign(this_name, full_data)
       object_names[i] <- this_name
     }
@@ -169,7 +178,7 @@ clean_columns_age_sex_vismin <- function(x) {
   x <- gsub('-', '_', x)
   x <- gsub('f', 'female', x)
   x <- gsub('m', 'male', x)
-
+  
   return(x)
 }
 # apply to column names
@@ -262,7 +271,7 @@ clean_columns_age_sex_vismin <- function(x) {
   x <- gsub('-', '_', x)
   x <- gsub('f', 'female', x)
   x <- gsub('m', 'male', x)
-
+  
   return(x)
 }
 
@@ -291,7 +300,7 @@ create_age_gender_birthplace <- function(x, has_sex) {
     x$sex <- ifelse(grepl('female', x$key), 'female',
                     ifelse(grepl('male', x$key), 'male', 'total'))
   }
-
+  
   x$age_group <- unlist(lapply(strsplit(x$key, split = '_'), function(x){paste0(x[2], '_', x[3])}))
   x$place <-   ifelse(grepl('canada', x$key), 'canada',
                       ifelse(grepl('abroad', x$key), 'abroad', 'anywhere'))
@@ -399,3 +408,73 @@ crazy_map <- function(){
   ont_crazy_colors <- sample(lots_of_colors, nrow(ont_crazy))
   plot(ont_crazy, col = ont_crazy_colors)
 }
+
+# Function for a time chart
+time_chart <- function(x,y,
+                       ylab = '',
+                       fill = TRUE){
+  require(ggplot2)
+  require(databrew) # devtools::install_github('databrew/databrew')
+  df <- data.frame(x,y)
+  g <- 
+    ggplot(data = df,
+           aes(x = x,
+               y = y)) +
+    geom_line(alpha = 0.6,
+              color = '#0d63c4') +
+    geom_point(alpha = 0.6,
+               color = '#0d63c4') +
+    theme_databrew() +
+    labs(x = 'Date',
+         y = ylab)
+  if(fill){
+    g <- 
+      g +
+      geom_area(fill = '#0d63c4',
+                alpha = 0.3)
+  }
+  return(g)
+}
+
+# Function for map
+ontario_map <- function(x){
+  require(dplyr)
+  require(ggplot2)
+  require(databrew)
+  # This function expects "x" to be a dataframe with a column named "geography" 
+  # and another named "value"
+  # Keep only the numbered values
+  right <- x %>% 
+    filter(!is.na(as.numeric(geography))) %>%
+    mutate(geography = substr(geography, 3,4))
+  # join to ont fortified
+  shp <- ont_fortified
+  shp <- shp %>%
+    left_join(right,
+              by = 'geography')
+  # Make a plot
+  g <- 
+    ggplot(data = shp,
+           aes(x = long,
+               y = lat,
+               group = group,
+               fill = value)) +
+    geom_polygon() +
+    coord_map() +
+    theme_databrew() +
+    scale_fill_continuous(low = 'lightblue', high = 'darkorange', name = '', na.value = 'white') +
+    theme(legend.text = element_text(size = 7),
+          legend.position = 'right') +
+    labs(x = '',
+         y = '') 
+  return(g)
+}
+
+# # Example
+# df <- age_sex %>%
+#   filter(year == 2011,
+#          age_sex == 'total_15_up') %>%
+#   group_by(geography) %>%
+#   summarise(value = sum(value))
+# ontario_map(x = df)
+  
