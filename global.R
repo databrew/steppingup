@@ -477,4 +477,57 @@ ontario_map <- function(x){
 #   group_by(geography) %>%
 #   summarise(value = sum(value))
 # ontario_map(x = df)
+
+# Define function for generating a leaflet plot
+leaf <- function(x){
+  require(dplyr)
+  require(databrew)
+  require(leaflet)
+  require(RColorBrewer)
+  # This function expects "x" to be a dataframe with a column named "geography" 
+  # and another named "value"
+  # Keep only the numbered values
+  right <- x %>% 
+    filter(!is.na(as.numeric(geography))) %>%
+    mutate(geography = substr(geography, 3,4))
+  # join to ont shapefile
+  shp <- ont2
+  shp@data <- shp@data %>%
+    mutate(geography = CCA_2) %>%
+    left_join(right,
+              by = 'geography')
+  
+  # Create a color palette
+  # pal <- colorQuantile("Blues", NULL, n = 9)
+  bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
+  pal <- colorBin("YlOrRd", domain = shp@data$value, bins = bins)
+  
+  # Create a popup
+  popper <- paste0(shp@data$NAME_2, ': ',
+                   shp@data$value)
+  
+  # Create map
+  l <- leaflet(data = shp) %>%
+    addProviderTiles('Stamen.Toner') %>%
+    addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
+              position = "topright") %>%
+    addPolygons(fillColor = ~pal(value), 
+                fillOpacity = 0.8, 
+                color = "#BDBDC3", 
+                weight = 1, 
+                # popup = popper,
+                highlight = highlightOptions(
+                  weight = 5,
+                  color = "#666",
+                  dashArray = "",
+                  fillOpacity = 0.7,
+                  bringToFront = TRUE),
+                label = popper,
+                labelOptions = labelOptions(
+                  style = list("font-weight" = "normal", padding = "3px 8px"),
+                  textsize = "15px",
+                  direction = "auto")) 
+  return(l)
+}
+
   

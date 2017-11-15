@@ -59,4 +59,16 @@ function(input, output) {
       color = "yellow", fill = TRUE
     )
   })
+  
+  # Leaflet
+  output$demo_leaflet <- renderLeaflet({
+    df <- age_sex %>%
+      filter(year == input$demo_year,
+             age_group == input$demo_age,
+             sex == input$demo_sex) %>%
+      group_by(geography) %>%
+      summarise(value = sum(value, na.rm = TRUE))
+    leaf(x = df)
+  })
+  
 }
