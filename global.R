@@ -11,6 +11,12 @@ library(dplyr)
 library(tidyr)
 library(broom)
 
+# Source databrew package files
+db_files <- dir('R')
+for (i in 1:length(db_files)){
+  source(paste0('R/', db_files[i]))
+}
+
 # Define whether we want to fetch new data or not
 # (useful after a data update, but slow, so generally set to false)
 # (set to TRUE only for the first run)
@@ -414,7 +420,6 @@ time_chart <- function(x,y,
                        ylab = '',
                        fill = TRUE){
   require(ggplot2)
-  require(databrew) # devtools::install_github('databrew/databrew')
   df <- data.frame(x,y)
   g <- 
     ggplot(data = df,
@@ -440,7 +445,6 @@ time_chart <- function(x,y,
 ontario_map <- function(x){
   require(dplyr)
   require(ggplot2)
-  require(databrew)
   # This function expects "x" to be a dataframe with a column named "geography" 
   # and another named "value"
   # Keep only the numbered values
@@ -479,9 +483,9 @@ ontario_map <- function(x){
 # ontario_map(x = df)
 
 # Define function for generating a leaflet plot
-leaf <- function(x){
+leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
+                 show_legend = TRUE){
   require(dplyr)
-  require(databrew)
   require(leaflet)
   require(RColorBrewer)
   # This function expects "x" to be a dataframe with a column named "geography" 
@@ -499,8 +503,9 @@ leaf <- function(x){
   
   # Create a color palette
   # pal <- colorQuantile("Blues", NULL, n = 9)
-  bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
-  pal <- colorBin("YlOrRd", domain = shp@data$value, bins = bins)
+  # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
+  bins <- round(c(quantile(shp@data$value, na.rm = TRUE)))
+  pal <- colorBin(palette, domain = shp@data$value, bins = bins)
   
   # Create a popup
   popper <- paste0(shp@data$NAME_2, ': ',
@@ -508,9 +513,13 @@ leaf <- function(x){
   
   # Create map
   l <- leaflet(data = shp) %>%
-    addProviderTiles('Stamen.Toner') %>%
-    addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
-              position = "topright") %>%
+    addProviderTiles(tile) 
+  if(show_legend){
+    l <- l %>%
+      addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
+                position = "bottomleft") 
+  }
+  l <- l %>%
     addPolygons(fillColor = ~pal(value), 
                 fillOpacity = 0.8, 
                 color = "#BDBDC3", 
@@ -531,3 +540,6 @@ leaf <- function(x){
 }
 
   
+# Clean up special indicators
+si <- special_indicators_by_vismin_2006
+names(si)[2:ncol(si)] <- unlist(lapply(strsplit(names(si)[2:ncol(si)], ' '), function(x){paste0(x[1:(length(x) - 1)], collapse = ' ')}))
