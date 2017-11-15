@@ -479,7 +479,8 @@ ontario_map <- function(x){
 # ontario_map(x = df)
 
 # Define function for generating a leaflet plot
-leaf <- function(x){
+leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
+                 show_legend = TRUE){
   require(dplyr)
   require(databrew)
   require(leaflet)
@@ -499,8 +500,9 @@ leaf <- function(x){
   
   # Create a color palette
   # pal <- colorQuantile("Blues", NULL, n = 9)
-  bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
-  pal <- colorBin("YlOrRd", domain = shp@data$value, bins = bins)
+  # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
+  bins <- round(c(quantile(shp@data$value, na.rm = TRUE)))
+  pal <- colorBin(palette, domain = shp@data$value, bins = bins)
   
   # Create a popup
   popper <- paste0(shp@data$NAME_2, ': ',
@@ -508,9 +510,13 @@ leaf <- function(x){
   
   # Create map
   l <- leaflet(data = shp) %>%
-    addProviderTiles('Stamen.Toner') %>%
-    addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
-              position = "topright") %>%
+    addProviderTiles(tile) 
+  if(show_legend){
+    l <- l %>%
+      addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
+                position = "bottomleft") 
+  }
+  l <- l %>%
     addPolygons(fillColor = ~pal(value), 
                 fillOpacity = 0.8, 
                 color = "#BDBDC3", 
@@ -531,3 +537,6 @@ leaf <- function(x){
 }
 
   
+# Clean up special indicators
+si <- special_indicators_by_vismin_2006
+names(si)[2:ncol(si)] <- unlist(lapply(strsplit(names(si)[2:ncol(si)], ' '), function(x){paste0(x[1:(length(x) - 1)], collapse = ' ')}))
