@@ -1,7 +1,7 @@
 library(shiny)
 library(leaflet)
 dashboardPage(skin = 'blue',
-              dashboardHeader(title = "Stepping Up",
+              dashboardHeader(title = "Ontario Youth Compass",
                               titleWidth = 300),
               dashboardSidebar(width = 300,
 
@@ -44,7 +44,7 @@ dashboardPage(skin = 'blue',
               dashboardBody(
                 tabItems(
                   tabItem(tabName = "demo",
-                          tabsetPanel(tabPanel('By geography', 
+                          tabsetPanel(tabPanel('By geography',
                                                helpText('Select a sex, age group, and year to visualize an interactive population map.'),
                                                fluidRow(column(2,
                                                                selectInput('demo_sex', 'Sex',
@@ -84,8 +84,8 @@ dashboardPage(skin = 'blue',
                                                                checkboxInput('by_birthplace',
                                                                               'Show percent foreign born?'))),
                                                plotOutput('crazy_plot1')),
-                                      tabPanel('By origin',
-                                               helpText('Explore an indicator by place of origin'),
+                                      tabPanel('Visible Minority',
+                                               helpText('Explore an indicator by visible minorities'),
                                                # uiOutput('demo_selector'),
                                                selectInput('demo_selection',
                                                            'Indicator',

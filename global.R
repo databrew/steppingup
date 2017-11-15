@@ -94,7 +94,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
       if(has_year){
         this_name <- paste0(this_name, '_', year)
       }
-      
+
       # Get the column names only
       if(grepl('special|birth|by_vismin', this_path)){
         skipper <- 3
@@ -121,7 +121,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
                                new_column_names)
       # Read in the full data
       if(grepl('by_vismin', this_path)) {
-        
+
         full_data <- read_csv(this_path,
                               col_names = TRUE,
                               skip = 0)
@@ -130,7 +130,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
                               col_names = TRUE,
                               skip = skipper -1)
       }
-      
+
       # Replace the column names
       names(full_data) <- new_column_names
       # Assign to the global environment
@@ -138,7 +138,7 @@ if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
               this_file,
               ' as ',
               this_name)
-      
+
       assign(this_name, full_data)
       object_names[i] <- this_name
     }
@@ -184,7 +184,7 @@ clean_columns_age_sex_vismin <- function(x) {
   x <- gsub('-', '_', x)
   x <- gsub('f', 'female', x)
   x <- gsub('m', 'male', x)
-  
+
   return(x)
 }
 # apply to column names
@@ -193,7 +193,7 @@ names(age_sex_by_vismin_2011) <- clean_columns_age_sex_vismin(names(age_sex_by_v
 #bind other age_sex data
 age_sex <-
   bind_rows(
-    age_sex_2001 %>% mutate(year = 2011),
+    age_sex_2001 %>% mutate(year = 2001),
     age_sex_2006 %>% mutate(year = 2006),
     age_sex_2011 %>% mutate(year = 2011)
   )
@@ -277,7 +277,7 @@ clean_columns_age_sex_vismin <- function(x) {
   x <- gsub('-', '_', x)
   x <- gsub('f', 'female', x)
   x <- gsub('m', 'male', x)
-  
+
   return(x)
 }
 
@@ -306,7 +306,7 @@ create_age_gender_birthplace <- function(x, has_sex) {
     x$sex <- ifelse(grepl('female', x$key), 'female',
                     ifelse(grepl('male', x$key), 'male', 'total'))
   }
-  
+
   x$age_group <- unlist(lapply(strsplit(x$key, split = '_'), function(x){paste0(x[2], '_', x[3])}))
   x$place <-   ifelse(grepl('canada', x$key), 'canada',
                       ifelse(grepl('abroad', x$key), 'abroad', 'anywhere'))
@@ -327,6 +327,23 @@ rm(birthplace_2001, birthplace_2006, birthplace_2011)
 birthplace$key <- NULL
 birthplace_by_vismin_2011$key <- NULL
 
+# remove Total from all data sets
+remove_column_string <- function(x, string){
+ string_index <- grepl(string, colnames(x))
+ string_index[1] <- FALSE
+ x <- x[,!string_index]
+return(x)
+}
+# remove 'Total' from all by vismin data
+age_sex_by_vismin_2006 <- remove_column_string(age_sex_by_vismin_2006, 'Total')
+age_sex_by_vismin_2011 <- remove_column_string(age_sex_by_vismin_2011, 'Total')
+
+birthplace_by_vismin_2006 <- remove_column_string(birthplace_by_vismin_2006, 'Total')
+birthplace_by_vismin_2011 <- remove_column_string(birthplace_by_vismin_2011, 'Total')
+
+special_indicators_by_vismin_2006 <- remove_column_string(special_indicators_by_vismin_2006, 'Total')
+
+# remove unneeded objects and data
 rm(column_names, full_data, special_indicators_2001, special_indicators_2006, special_indicators_2011,
    special_indicators_by_vismin_2011)
 rm(vismin_2006, vismin_2011)
@@ -421,7 +438,7 @@ time_chart <- function(x,y,
                        fill = TRUE){
   require(ggplot2)
   df <- data.frame(x,y)
-  g <- 
+  g <-
     ggplot(data = df,
            aes(x = x,
                y = y)) +
@@ -433,7 +450,7 @@ time_chart <- function(x,y,
     labs(x = 'Date',
          y = ylab)
   if(fill){
-    g <- 
+    g <-
       g +
       geom_area(fill = '#0d63c4',
                 alpha = 0.3)
@@ -445,10 +462,10 @@ time_chart <- function(x,y,
 ontario_map <- function(x){
   require(dplyr)
   require(ggplot2)
-  # This function expects "x" to be a dataframe with a column named "geography" 
+  # This function expects "x" to be a dataframe with a column named "geography"
   # and another named "value"
   # Keep only the numbered values
-  right <- x %>% 
+  right <- x %>%
     filter(!is.na(as.numeric(geography))) %>%
     mutate(geography = substr(geography, 3,4))
   # join to ont fortified
@@ -457,7 +474,7 @@ ontario_map <- function(x){
     left_join(right,
               by = 'geography')
   # Make a plot
-  g <- 
+  g <-
     ggplot(data = shp,
            aes(x = long,
                y = lat,
@@ -470,7 +487,7 @@ ontario_map <- function(x){
     theme(legend.text = element_text(size = 7),
           legend.position = 'right') +
     labs(x = '',
-         y = '') 
+         y = '')
   return(g)
 }
 
@@ -488,10 +505,10 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
   require(dplyr)
   require(leaflet)
   require(RColorBrewer)
-  # This function expects "x" to be a dataframe with a column named "geography" 
+  # This function expects "x" to be a dataframe with a column named "geography"
   # and another named "value"
   # Keep only the numbered values
-  right <- x %>% 
+  right <- x %>%
     filter(!is.na(as.numeric(geography))) %>%
     mutate(geography = substr(geography, 3,4))
   # join to ont shapefile
@@ -500,30 +517,30 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
     mutate(geography = CCA_2) %>%
     left_join(right,
               by = 'geography')
-  
+
   # Create a color palette
   # pal <- colorQuantile("Blues", NULL, n = 9)
   # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
   bins <- round(c(quantile(shp@data$value, na.rm = TRUE)))
   pal <- colorBin(palette, domain = shp@data$value, bins = bins)
-  
+
   # Create a popup
   popper <- paste0(shp@data$NAME_2, ': ',
                    shp@data$value)
-  
+
   # Create map
   l <- leaflet(data = shp) %>%
-    addProviderTiles(tile) 
+    addProviderTiles(tile)
   if(show_legend){
     l <- l %>%
       addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
-                position = "bottomleft") 
+                position = "bottomleft")
   }
   l <- l %>%
-    addPolygons(fillColor = ~pal(value), 
-                fillOpacity = 0.8, 
-                color = "#BDBDC3", 
-                weight = 1, 
+    addPolygons(fillColor = ~pal(value),
+                fillOpacity = 0.8,
+                color = "#BDBDC3",
+                weight = 1,
                 # popup = popper,
                 highlight = highlightOptions(
                   weight = 5,
@@ -535,11 +552,11 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
                 labelOptions = labelOptions(
                   style = list("font-weight" = "normal", padding = "3px 8px"),
                   textsize = "15px",
-                  direction = "auto")) 
+                  direction = "auto"))
   return(l)
 }
 
-  
+
 # Clean up special indicators
 si <- special_indicators_by_vismin_2006
 names(si)[2:ncol(si)] <- unlist(lapply(strsplit(names(si)[2:ncol(si)], ' '), function(x){paste0(x[1:(length(x) - 1)], collapse = ' ')}))

@@ -61,10 +61,10 @@ function(input, output) {
       color = "yellow", fill = TRUE
     )
   })
-  
+
   # Leaflet
   output$demo_leaflet <- renderLeaflet({
-    
+
       df <- birthplace %>%
         filter(year == input$demo_year,
                age_group == input$demo_age,
@@ -76,17 +76,17 @@ function(input, output) {
       } else {
         df <- df %>%
           group_by(geography) %>%
-          summarise(value = sum(value[place == 'abroad'], na.rm = TRUE) / 
+          summarise(value = sum(value[place == 'abroad'], na.rm = TRUE) /
                       sum(value[place == 'anywhere'], na.rm = TRUE) * 100)
       }
-        
-    
+
+
     leaf(x = df,
          tile = input$tile,
          palette = input$palette,
          show_legend = input$show_legend)
   })
-  
+
 
   # # Demo selector
   # output$demo_selector <- renderUI({
@@ -114,13 +114,13 @@ function(input, output) {
                y = Indicator)) +
       theme_databrew() +
       geom_bar(stat = 'identity',
-               fill = 'lightblue',
-               alpha = 0.8,
+               fill = 'darkblue',
+               alpha = 0.6,
                color = 'black',
                lwd = 0.1) +
       theme(axis.text.x = element_text(angle = 90)) +
       labs(y = 'People',
            title = var)
   })
-  
+
 }
