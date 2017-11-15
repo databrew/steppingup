@@ -420,7 +420,6 @@ time_chart <- function(x,y,
                        ylab = '',
                        fill = TRUE){
   require(ggplot2)
-  # require(databrew) # devtools::install_github('databrew/databrew')
   df <- data.frame(x,y)
   g <- 
     ggplot(data = df,
@@ -446,7 +445,6 @@ time_chart <- function(x,y,
 ontario_map <- function(x){
   require(dplyr)
   require(ggplot2)
-  # require(databrew)
   # This function expects "x" to be a dataframe with a column named "geography" 
   # and another named "value"
   # Keep only the numbered values
@@ -488,7 +486,6 @@ ontario_map <- function(x){
 leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
                  show_legend = TRUE){
   require(dplyr)
-  # require(databrew)
   require(leaflet)
   require(RColorBrewer)
   # This function expects "x" to be a dataframe with a column named "geography" 
