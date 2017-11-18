@@ -3,6 +3,7 @@ rsconnect/*
 */rsconnect
 *.RData
 *.csv
+data/census_data/*.csv
 *.xls
 *.xlsx
 data/*
