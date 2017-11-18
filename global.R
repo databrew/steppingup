@@ -70,7 +70,7 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 ##########
 # This function will be used in the get_data function to clean columns and make long
 ##########
-clean_cols_long <- function(x, wide_column_start, dups){
+clean_cols_long <- function(x, wide_column_start, dups, name){
   colnames(x) <- tolower(colnames(x))
   colnames(x) <- gsub('x', replacement = '', colnames(x))
   for(i in 1:ncol(x)){
@@ -142,11 +142,22 @@ get_data <- function(data_type) {
       temp.dat <- rbind(temp.dat_on,
                         temp.dat_geo)
       # starts at 6 because in this data set only 5 varibles by 1
-      temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 6, dups = F)
+      temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 6, dups = F, name = name)
       #remove undeeded data
-      rm(temp.dat_geo, temp.dat_on)
+      # rm(temp.dat_geo, temp.dat_on)
       # rename columns
-      colnames(temp.dat_long) <- c("geography", "age_group", "sex", "pob", "vis_min","special_ind","value","year" )
+      colnames(temp.dat_long) <- c("geography", "age_group", "sex", "pob", "vis_min","special_ind","value","year")
+      # remove white space from all columns
+      temp.dat_long <- as.data.frame(apply(temp.dat_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
+
+      # recode sex
+      temp.dat_long$sex <- gsub('Females', 'Female', temp.dat_long$sex)
+      temp.dat_long$sex <- gsub('Males', 'Male', temp.dat_long$sex)
+
+      # recod pob
+      temp.dat_long$pob <- gsub('birth', 'Birth', temp.dat_long$pob)
+      temp.dat_long$pob <- gsub('inside', 'in', temp.dat_long$pob)
+
       data_list[[name]] <- temp.dat_long
     }
     if(data_type == 'nhs') {
@@ -158,13 +169,17 @@ get_data <- function(data_type) {
         # starts at 4 because in this data set only 4 varibles by 1
         temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 2, dups = T)
         colnames(temp.dat_long) <- c("geography", "key","value","year" )
+
+        # remove white space from all columns
+        temp.dat_long <- as.data.frame(apply(temp.dat_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
+
       }
       data_list[[name]] <- temp.dat_long
     }
     print(name)
   }
-  if(grepl('census', name)){
-    dat <- do.call(rbind, data_list)
+  if(data_type == 'census'){
+    dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
     return(dat)
   } else {
     return(data_list)
@@ -172,7 +187,7 @@ get_data <- function(data_type) {
 }
 
 # apply the function and set "data_type" to census
-census_all <- get_data("census")
+census_all <- get_data(data_type = "census")
 
 # save data to to "data" folder
 saveRDS(census_all, 'data/census_all.rda')
