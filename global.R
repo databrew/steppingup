@@ -124,59 +124,93 @@ get_data <- function(data_type = 'census') {
       # Address the weirdness with "New Credit (Part)"
       temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
       # Keep only the first part of the name (what is with the %?)
-      temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE), function(x){x[1]})), ')')
+      temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE),
+                                                  function(x){x[1]})), ')')
+
+      # give Ontario four digit number to subset by.
+      temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
+
       #subset to Ontarios and 4 digit geo codes
       geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
-                                          '(', fixed = TRUE), 
+                                          '(', fixed = TRUE),
                                  function(x){
                                    gsub(')', '', x[2], fixed = TRUE)}))
-      # (those wih NA for the geo_code are all ontario)
+
+      # (those wih NA for the geo_code are all ontario) - give it 3500 so we can subset
+      # entirely by 4 digit geo_code
       temp_data$geo_code <- geo_codes
-      temp_data$geo_code[is.na(temp_data$geo_code)] <- 'Ontario'
+      temp_data$geo_code[is.na(temp_data$geo_code)] <- '3500'
+
+      # keep only rows that have 4 number
+      temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
+
+      # # remove any 'Total' from columns
+      temp_data <- as.data.frame(temp_data[, !grepl('Total', colnames(temp_data))], stringsAsFactors = F)
+
+      # remove any row that has total by looping through columns
+      remove_total <- function(data_frame) {
+        # group by get an indicator for column name
+        variable_names <- as.character(colnames(data_frame))[1:5]
+        # loop through variables and remove rows with 'Total'
+        for(v in variable_names) {
+          data_frame <- data_frame[!grepl('Total', data_frame[, v]),]
+          print(v)
+        }
+        return(data_frame)
+      }
+
+      # remove total from all rows
+      temp_data <- remove_total(temp_data)
+
       # Make long
       temp_data_long <- tidyr::gather(temp_data,
                                       key,
                                       value,
-                                      `Total - Population 15 years and over by legal marital status`:`Living in band housing`)
-      # Clean up names
+                                      `Never married (single) 15 years and over`:`Living in band housing`)
+
+       # Clean up names
       names(temp_data_long) <- c('geo',
-                                 'age', 
+                                 'age',
                                  'sex',
                                  'pob',
                                  'vm',
                                  'geo_code',
+                                 'special_indicators',
                                  'value')
-      
+
+      # temp_11 <- temp_no_
       # recode sex
       temp_data_long$sex <- gsub('Females', 'Female', temp_data_long$sex)
       temp_data_long$sex <- gsub('Males', 'Male', temp_data_long$sex)
-      
+
       # recod pob
       temp_data_long$pob <- gsub('birth', 'Birth', temp_data_long$pob)
       temp_data_long$pob <- gsub('inside', 'in', temp_data_long$pob)
-      
+
+      # Clean up sex
+      temp_data_long$sex <- ifelse(temp_data_long$sex == 'Total - Sex', 'Total', temp_data_long$sex)
+
+      # Clean up pob
+      temp_data_long$pob <-
+        ifelse(temp_data_long$pob == 'Total - Place of Birth', 'Total', temp_data_long$pob)
+
       # Add year
       temp_data_long$year <- as.numeric(substr(name, 1, 4))
-      
+
       # Remove duplicate columns
       temp_data_long <- temp_data_long[,!duplicated(names(temp_data_long))]
       temp_data_long <- temp_data_long[,!is.na(names(temp_data_long))]
-      
+
       # Clean up age group
       temp_data_long$age <-
         ifelse(temp_data_long$age == '15 to 2', '15 to 24 years',
                ifelse(temp_data_long$age == 'Total - 15 years and over', '15 +',
                       ifelse(temp_data_long$age == 'Total - 15 year', '15 +',
                              temp_data_long$age)))
+
       data_list[[name]] <- temp_data_long
-      
-      # Clean up sex
-      temp_data_long$sex <- ifelse(temp_data_long$sex == 'Total - Sex', 'Total', temp_data_long$sex)
-      
-      # Clean up pob
-      temp_data_long$pob <- 
-        ifelse(temp_data_long$pob == 'Total - Place of Birth', 'Total', temp_data_long$pob)
-      
+
+
     }
     # Commenting out all the NHS stuff, since it's not yet functional
     # if(data_type == 'nhs') {
@@ -188,10 +222,10 @@ get_data <- function(data_type = 'census') {
     #     # starts at 4 because in this data set only 4 varibles by 1
     #     temp_data_long <- clean_cols_long(x = temp_data, wide_column_start = 2, dups = T)
     #     colnames(temp_data_long) <- c("geography", "key","value","year" )
-    # 
+    #
     #     # remove white space from all columns
     #     temp_data_long <- as.data.frame(apply(temp_data_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
-    # 
+    #
     #   }
     #   data_list[[name]] <- temp_data_long
     # }
@@ -215,10 +249,10 @@ if('census_all.feather' %in% dir('data')){
   # Otherwise (ie, the aggregated/cleaned flie does not already exist)
   # Read the files from csvs, clean, and aggregate
   census_all <- get_data(data_type = "census")
-  
+
   # and then save data to to "data" folder for faster retrieval in subsequent runs
   # save(census_all, file = 'data/census_all.RData')
   write_feather(census_all, 'data/census_all.feather')
-  
+
 }
 
