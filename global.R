@@ -120,12 +120,12 @@ get_data <- function(data_type = 'census') {
   for (name in sub_names) {
     temp_data <- read_csv(paste0('data/census_data/', name))
     if(data_type == 'census'){
-        # Declare that the encoding is all screwed up for this file
-        Encoding(temp_data$Geography) <- "latin1"
-        # Address the weirdness with "New Credit (Part)"
-        temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
-        # Keep only the first part of the name (what is with the %?)
-        temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE), function(x){x[1]})), ')')
+      # Declare that the encoding is all screwed up for this file
+      Encoding(temp_data$Geography) <- "latin1"
+      # Address the weirdness with "New Credit (Part)"
+      temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
+      # Keep only the first part of the name (what is with the %?)
+      temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE), function(x){x[1]})), ')')
       #subset to Ontarios and 4 digit geo codes
       geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
                                           '(', fixed = TRUE), 
@@ -136,17 +136,17 @@ get_data <- function(data_type = 'census') {
       temp_data$geo_code[is.na(temp_data$geo_code)] <- 'Ontario'
       # Make long
       temp_data_long <- tidyr::gather(temp_data,
-                                     key,
-                                     value,
-                                     `Total - Population 15 years and over by legal marital status`:`Living in band housing`)
+                                      key,
+                                      value,
+                                      `Total - Population 15 years and over by legal marital status`:`Living in band housing`)
       # Clean up names
       names(temp_data_long) <- c('geo',
-                                'age', 
-                                'sex',
-                                'pob',
-                                'vm',
-                                'geo_code',
-                                'value')
+                                 'age', 
+                                 'sex',
+                                 'pob',
+                                 'vm',
+                                 'geo_code',
+                                 'value')
       
       # recode sex
       temp_data_long$sex <- gsub('Females', 'Female', temp_data_long$sex)
@@ -155,6 +155,12 @@ get_data <- function(data_type = 'census') {
       # recod pob
       temp_data_long$pob <- gsub('birth', 'Birth', temp_data_long$pob)
       temp_data_long$pob <- gsub('inside', 'in', temp_data_long$pob)
+      
+      # Add year
+      temp_data_long$year <- as.numeric(substr(name, 1, 4))
+      
+      # Remove duplicate columns
+      temp_data_long <- temp_data_long[,!duplicated(names(temp_data_long))]
       
       data_list[[name]] <- temp_data_long
     }
@@ -175,7 +181,7 @@ get_data <- function(data_type = 'census') {
     #   }
     #   data_list[[name]] <- temp_data_long
     # }
-    print(name)
+    message(name)
   }
   if(data_type == 'census'){
     # dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
@@ -185,7 +191,7 @@ get_data <- function(data_type = 'census') {
   #   return(data_list)
   # }
 }
-
+census_all <- census_all[,!is.na(names(census_all))]
 
 # Get census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
@@ -197,7 +203,7 @@ if('census_all.RData' %in% dir('data')){
   # Read the files from csvs, clean, and aggregate
   census_all <- get_data(data_type = "census")
   # and then save data to to "data" folder for faster retrieval in subsequent runs
-  save(census_all, 'data/census_all.RData')
+  save(census_all, file = 'data/census_all.RData')
 }
 
 
