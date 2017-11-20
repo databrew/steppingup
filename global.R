@@ -10,7 +10,7 @@ library(readxl)
 library(dplyr)
 library(tidyr)
 library(broom)
-
+library(feather)
 
 ##########
 # Source databrew package files
@@ -107,11 +107,10 @@ clean_cols_long <- function(x, wide_column_start, dups, name){
 # and all for 2011. They do not have geo coding census tracks so for now lets stick with just census.
 ##########
 
-# first get vector of data set names to loop through later
-data_names <- list.files('data/census_data')
-
 # data_type = 'nhs'
 get_data <- function(data_type = 'census') {
+  # first get vector of data set names to loop through later
+  data_names <- list.files('data/census_data')
   # cread empty list to store data
   data_list <- list()
   # get data type
@@ -161,8 +160,23 @@ get_data <- function(data_type = 'census') {
       
       # Remove duplicate columns
       temp_data_long <- temp_data_long[,!duplicated(names(temp_data_long))]
+      temp_data_long <- temp_data_long[,!is.na(names(temp_data_long))]
       
+      # Clean up age group
+      temp_data_long$age <-
+        ifelse(temp_data_long$age == '15 to 2', '15 to 24 years',
+               ifelse(temp_data_long$age == 'Total - 15 years and over', '15 +',
+                      ifelse(temp_data_long$age == 'Total - 15 year', '15 +',
+                             temp_data_long$age)))
       data_list[[name]] <- temp_data_long
+      
+      # Clean up sex
+      temp_data_long$sex <- ifelse(temp_data_long$sex == 'Total - Sex', 'Total', temp_data_long$sex)
+      
+      # Clean up pob
+      temp_data_long$pob <- 
+        ifelse(temp_data_long$pob == 'Total - Place of Birth', 'Total', temp_data_long$pob)
+      
     }
     # Commenting out all the NHS stuff, since it's not yet functional
     # if(data_type == 'nhs') {
@@ -191,22 +205,20 @@ get_data <- function(data_type = 'census') {
   #   return(data_list)
   # }
 }
-census_all <- census_all[,!is.na(names(census_all))]
 
 # Get census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
 # load it
-if('census_all.RData' %in% dir('data')){
-  load('data/census_all.RData')
+if('census_all.feather' %in% dir('data')){
+  census_all <- read_feather('data/census_all.feather')
 } else {
   # Otherwise (ie, the aggregated/cleaned flie does not already exist)
   # Read the files from csvs, clean, and aggregate
   census_all <- get_data(data_type = "census")
+  
   # and then save data to to "data" folder for faster retrieval in subsequent runs
-  save(census_all, file = 'data/census_all.RData')
+  # save(census_all, file = 'data/census_all.RData')
+  write_feather(census_all, 'data/census_all.feather')
+  
 }
-
-
-
-
 
