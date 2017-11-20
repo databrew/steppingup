@@ -10,20 +10,250 @@ output:
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
 # no scientific notation
 options(scipen=999)
+library(tidyverse)
+library(dplyr)
+library(knitr)
+
 
 ```
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
-# read in census data 
+##########
+# read in and finish cleaning census data 
+##########
 dat <- readRDS('data/census_all.rda')
 
+dat_ontario <- nrow(dat_ontario[!complete.cases(dat_ontario),])
+
+# dat <- dat[c(1:100, 300000:350000, 560000, 690000),]
+#"5956012"
 # data set with 9,513,585 observations and 8 variables
 # variables: geography(103), ag_group(5), sex (3), pob(3), vis_min(21), special_ind(110), value, year(3)
-unique(dat$year)
 
+# remove non_response
+
+# make all variables lower case 
+dat[, -7] <- as.data.frame(apply(dat[, -7], 2, function(x) tolower(x)), stringsAsFactors = T)
+
+# make value numeric and the rest factors 
+dat$value <- as.numeric(dat$value)
+
+# make non response rate numeric 
+dat$non_response_rate <- as.numeric(as.character(dat$non_response_rate))
+
+# subset to ontario only 
+dat_ontario <- dat[grepl('ontario', dat$geo),]
+
+# 
+dat_ontario$geography <- ifelse(grepl('ontario', dat_ontario$geography), 'ontario (35)', dat_ontario$geography)
+
+ # save.image('~/Desktop/temp_table.RData')
+ # load('~/Desktop/temp_table.RData')
+
+
+```
+
+```{r, results='asis'}
+
+##########
+# explore columns and see if you need to recode any or change anything 
+##########
+
+# (1)  total - total population by visible minority groups
+# (2)  total visible minority population 
+# (3)  total - population by visible minority groups     
+
+
+# you can find total youth if total and is in each column
+# vis_min is only column with multiple 'totals' 
+# anything with "total"" is all the youth for that category or by anything. They should all be the same bust some differ by a little, doesnt matter though. could remove all but one. this should be denominator of percent. 
+
+# 1) age_group = total - 15 years and over
+# 2) sex = total - sex
+# 3) pob = total - place of birth
+# 4) vis_min =  total - total population by visible minority groups, total visible minority population
+# vis_min has another total right under is that is total visible minortiy, which should be sum"
+
+# 5) special_ind = total_population_15_years_and_over_by_legal_marital_status
+
+# we should be able to remove any rows containing total as we can construct our own total variable 
+# with the available data
+
+
+####### IGNORE
+# # get total information 
+# i = 4
+# temp_col <- dat_ontario[,i]
+# length(which(unique(grepl('by', temp_col))))
+# unique(temp_col)
+#######
+
+# remove geography if ontario. remove non_response_rate for now
+dat_ontario$geography <- NULL
+dat_ontario$non_response_rate <- NULL
+
+# group by get an indicator for column name 
+variable_names <- as.character(colnames(dat_ontario))
+
+# # remove any row that has total by looping through columns 
+remove_total <- function(data_frame, vars) {
+  for(v in 1:length(vars)) {
+    data_frame <- data_frame[!grepl('total', data_frame[, v]),]
+    print(v)
+  }
+  return(data_frame)
+}
+
+dat_ontario <- remove_total(dat_ontario, variable_names)
+# temp_11 <- temp_no_total[!duplicated(c(temp_no_total$age_group,
+#                  temp_no_total$sex,
+#                  temp_no_total$pob,
+#                  temp_no_total$vis_min,
+#                  temp_no_total$special_ind, 
+#                  temp_no_total$year)),]
+# 
+# temp <- remove_total(data_frame = dat_ontario, vars =  variable_names)
+# 
+# temp <- apply(dat_ontario, 2, function(x) x[!grepl('total', x)])
+# temp <- do.call()
+# temp <- dat_ontario[!grepl('total', dat_ontario), ]
+
+# takes a vis_min level and subsets on that
+# then groups by age and summarises each one 
+# visible_min = 'chinese'
+
+vis_min_summarise <- function(visible_min){
+  
+  # get visible minority category
+  vis_min_sub <- dat_ontario[dat_ontario$vis_min == visible_min,]
+  
+  ##########
+  # group by year and age_group and summarise sex
+  ##########
+  vis_min_sex <- vis_min_sub %>%
+    group_by(year, age_group) %>%
+    summarise(sum_male = sum(value[sex == 'male']))
+  ##########
+  # group by year and age_group and summarise pob
+  ##########
+  
+  ##########
+  # group by year and age_group and summarise special_ind
+  ##########
+  
+
+}
+
+
+
+
+
+
+# for loop that loops through each variable and does group by with plot or table 
+data_frame <- dat_ontario
+x_variable <- 'age_group'
+y_variable <- 'pob'
+
+get_vis_min_stats <- function(data_frame, x_variable) {
+  
+  for (x_variable in variable_names) {
+  # define other variable 
+  other_variables <- variable_names[variable_names != x_variable]
+  
+  # loop through other variables and group by variable to summarise the other variable
+  for(y_variable in other_variables) {
+    # get data with x,y variables as well as year and value
+    x_y_data <- data_frame[, c('year', x_variable, y_variable, 'value')]
+
+    # group by year, age, and y variable to get sum of year, age group, and y totals
+    year_x_y <- x_y_data %>%
+      group_by_('year', x_variable, y_variable) %>%
+      summarise(total_x_y = sum(value, na.rm = T)) %>% spread(key = x_variable, value = total_x_y) 
+    
+    # change colnames 
+    colnames(year_x_y) <- make.names(gsub(" ", "_", colnames(year_x_y)))
+    
+    # make total comlumn
+    year_x_y$tot <- sum(year_x_y$X15_to_19_years, year_x_y$X15_to_24_years, 
+                        year_x_y$X20_to_24_years, year_x_y$X25_to_29_years)
+    
+    # total_x_y/total_y - ex 15_19 make 40% percent of youth born in canadacanada
+    year_x_y$percent_ages_15_to_19 <- round((year_x_y$X15_to_19_years/year_x_y$tot)*100, 2)
+    year_x_y$percent_ages_15_to_24 <- round((year_x_y$X15_to_24_years/year_x_y$tot)*100, 2)
+    year_x_y$percent_ages_20_to_24 <- round((year_x_y$X20_to_24_years/year_x_y$tot)*100, 2)
+    year_x_y$percent_ages_25_to_29 <- round((year_x_y$X25_to_29_years/year_x_y$tot)*100, 2)
+    
+    # remove unneeded oclumns
+    year_x_y$X15_to_19_years <- year_x_y$X15_to_24_years <-
+      year_x_y$X20_to_24_years <- year_x_y$X25_to_29_years <-
+      year_x_y$tot <- NULL
+  
+    # break up by year 
+    x_y_2001 <- subset(year_x_y, year == '2001')
+    x_y_2006 <- subset(year_x_y, year == '2006')
+    x_y_2011 <- subset(year_x_y, year == '2011')
+    
+    # remove year
+    x_y_2001$year <-
+      x_y_2006$year <-     
+      x_y_2011$year <- NULL
+
+# 
+#     # make table for each one 
+#     table_title <- paste0(x_variable, ' by ', y_variable, ' for ', '2001')
+#     kable(x_y_2001, caption =table_title)
+#     
+#     table_title <- paste0(x_variable, ' by ', y_variable, ' for ', '2006')
+#     kable(x_y_2006, caption =table_title)
+#     
+#     table_title <- paste0(x_variable, ' by ', y_variable, ' for ', '2011')
+#     kable(x_y_2011, caption =table_title)
+  
+    }
+
+  }
+
+}
+
+get_stats(dat_ontario, x_variable = 'age_group')
+
+```
+
+
+```{r}
+
+##########
+# function that takes one of the 6 variables and creates a data table with summary statistics in
+# both raw and percent form. And possible a button to download that data
+##########
+
+make_table <-function(x) {
+  
+}
 
 ```
 
 ```{r}
 
+##########
+# function that takes one of the 6 variables and creates a data table with summary statistics in
+# both raw and percent form. And possible a button to download that data
+##########
+
+make_table <-function(x) {
+  # # get total string 
+  # unique_string_x <- unique(dat_ontario[,x_variable])
+  # unique_string_y <- unique(dat_ontario[,y_variable])
+  # #get total string
+  # total_string_x <- as.character(unique_string_x[grepl('total', unique_string_x)])
+  # total_string_y <- as.character(unique_string_y[grepl('total', unique_string_y)])
+  # # remove total from the two variables
+  # remove_totals <- paste(total_string_x, total_string_y, sep = '|')
+  # dat_sub <- dat_ontario[grepl(remove_totals, dat_ontario[, x_variable]),]
+  # dat_sub <- dat_ontario[grepl(remove_totals, dat_ontario[, y_variable]),]
+}
+
 ```
+
+
+  

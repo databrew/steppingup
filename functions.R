@@ -7,6 +7,7 @@ crazy_map <- function(){
   plot(ont_crazy, col = ont_crazy_colors)
 }
 
+
 # Function for a time chart
 time_chart <- function(x,y,
                        ylab = '',

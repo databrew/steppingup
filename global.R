@@ -97,6 +97,45 @@ clean_cols_long <- function(x, wide_column_start, dups, name){
   return(x_long)
 }
 
+##########
+# get non response column and clean geography column
+##########
+
+add_non_response <- function(data_frame){
+
+  temp.non_response <- unlist(lapply(unique(strsplit(as.character(data_frame$geography),
+                                                     '20000|0000')),
+                                     function(x) x[length(x)]))
+  temp.geo <- unlist(lapply(unique(strsplit(as.character(data_frame$geography),
+                                            '20000|0000')),
+                            function(x) x[1]))
+  geo_final <- trimws(temp.geo, which = 'both')
+
+  # any with no percent impute 100%
+  temp.non_response[!grepl('%', temp.non_response)] <- '0'
+
+  # clean the other
+  temp.non_response <- gsub("(", "", temp.non_response, fixed = T)
+  temp.non_response <- gsub(")", "", temp.non_response)
+  temp.non_response <- gsub("%", "", temp.non_response)
+  temp.non_response <- gsub("0 ", "", temp.non_response)
+  temp.non_response <- trimws(temp.non_response, 'both')
+  temp.non_response <- as.numeric(temp.non_response)
+
+  # put back in data frame
+  temp_final <- as.data.frame(cbind(non_response_rate = temp.non_response,
+                                    geography = as.character(unique(data_frame$geography))),
+                              stringsAsFactors = F)
+  temp_final$non_response_rate <- as.numeric(temp_final$non_response)
+  # combine with new geography to bring into join to data frame
+  temp_final_join <- cbind(temp_final, geo_final)
+  data_final <- left_join(data_frame, temp_final_join, by = 'geography')
+  data_final$geography <- as.character(data_final$geo_final)
+  data_final$value <- as.numeric(data_final$value)
+  data_final$geo_final <- NULL
+
+  return(data_final)
+}
 
 ##########
 # function that will take on argument "data_type" which is either census or nhs
@@ -163,11 +202,11 @@ get_data <- function(data_type) {
     if(data_type == 'nhs') {
       if(grepl('employment', name)) {
         # starts at 4 because in this data set only 4 varibles by 1
-        temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 5, dups = F)
+        temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 5, dups = F, name = name)
         colnames(temp.dat_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
       } else {
         # starts at 4 because in this data set only 4 varibles by 1
-        temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 2, dups = T)
+        temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 2, dups = T, name = name)
         colnames(temp.dat_long) <- c("geography", "key","value","year" )
 
         # remove white space from all columns
@@ -186,12 +225,16 @@ get_data <- function(data_type) {
   }
 }
 
+
+
 # apply the function and set "data_type" to census
 census_all <- get_data(data_type = "census")
 
+# add non response
+census_all <- add_non_response(census_all)
+
 # save data to to "data" folder
 saveRDS(census_all, 'data/census_all.rda')
-
 
 
 
