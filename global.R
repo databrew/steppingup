@@ -11,24 +11,21 @@ library(dplyr)
 library(tidyr)
 library(broom)
 
+
+##########
 # Source databrew package files
+##########
 db_files <- dir('R')
 for (i in 1:length(db_files)){
   source(paste0('R/', db_files[i]))
 }
 
-# Define whether we want to fetch new data or not
-# (useful after a data update, but slow, so generally set to false)
-# (set to TRUE only for the first run)
-fetch_new <- FALSE
-
-# new data just added by xing
-# 2011_special_indicators_by_vismin
-# 2011_birthplace_by_vismin
-# 2011_age_sex_by_vismin
-
+##########
 # Get Canadian shapefile
-if('map_data.RData' %in% dir('data/geo') & !fetch_new){
+##########
+# https://drive.google.com/file/d/1vew1zjUFJwR6sQJY0OxaczcddW_fJ1fH/view
+
+if('map_data.RData' %in% dir('data/geo')){
   load('data/geo/map_data.RData')
 } else {
   # Get a map of canada
@@ -54,509 +51,132 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
                                                              geography = CCA_2)) %>%
   mutate(geography = as.character(geography))
 
-# Download each file
-if('all_drive_data.RData' %in% dir('data/drive') & !fetch_new){
-  load('data/drive/all_drive_data.RData')
-} else {
-  g_files <- drive_find(pattern = 'databrew_youth_compass',
-                        n_max = 100)
-  # use .httr-oauth
-  # Download each file
-  for (i in 1:nrow(g_files)){
-    file_name <- g_files$name[i]
-    file_id <- g_files$id[i]
-    message('Fetching ', file_name, ' from google drive.')
-    drive_download(file = as_id(file_id),
-                   path = paste0('data/drive/', file_name),
-                   overwrite = TRUE)
-  }
-  # Load in each file
-  object_names <- c()
-  for (i in 1:nrow(g_files)){
-    # Get the file name
-    this_file <- g_files$name[i]
-    # Get the year (if applicable)
-    year <- stringr::str_extract(this_file, "[[:digit:]]+")
-    # If a csv, clean up the name and then read it in
-    if(grepl('.csv', this_file, fixed = TRUE)){
-      this_path <- paste0('data/drive/', this_file)
-      this_name <- gsub('databrew_youth_compass', '', this_file)
-      has_year <- !is.na(year)
-      if(has_year){
-        this_name <- gsub(paste0('_', year, '_'), '', this_name)
-      }
-      file_type <- unlist(strsplit(this_name, '.', fixed = TRUE))[2]
-      this_name <- gsub(paste0('.', file_type),
-                        '',
-                        this_name,
-                        fixed = TRUE)
-      # Add the year back ot the name
-      if(has_year){
-        this_name <- paste0(this_name, '_', year)
-      }
+##########
+# Load all census data from census_data folder in data folder
+##########
+# first 3 are short form census data. usually they accompany the short form with
+# the long form, but conservative govt took over in 2011 and they did the
+# National Household survey (nhs), completely voluntary.
+# Currently we have 9 csvs.
+# "2001_census.csv"
+# "2006_census.csv"
+# "2011_census.csv"
+# "2011_nhs_16_19.csv"
+# "2011_nhs_20_24.csv"
+# "2011_nhs_25_29.csv"
+# "2011_nhs_employment.csv"
+# "2011_nhs_employment_toronto.csv"
 
-      # Get the column names only
-      if(grepl('special|birth|by_vismin', this_path)){
-        skipper <- 3
-      } else {
-        skipper <- 2
-      }
-      # if(grepl('birth', this_path) &
-      #    grepl('2011', this_path)){
-      #    skipper <- 2
-      # }
-      column_names <- read_csv(this_path,
-                               col_names = FALSE,
-                               n_max = skipper)
-      # Generate better column names
-      new_column_names <- c()
-      for(j in 1:ncol(column_names)){
-        unlisted <- unlist(column_names[,j])
-        unlisted <- unlisted[!is.na(unlisted)]
-        new_column_name <- paste0(unlisted, collapse = ' ')
-        new_column_names[j] <- new_column_name
-      }
-      new_column_names <- gsub(' - Place of birth',
-                               '_total',
-                               new_column_names)
-      # Read in the full data
-      if(grepl('by_vismin', this_path)) {
-
-        full_data <- read_csv(this_path,
-                              col_names = TRUE,
-                              skip = 0)
-      } else {
-        full_data <- read_csv(this_path,
-                              col_names = TRUE,
-                              skip = skipper -1)
-      }
-
-      # Replace the column names
-      names(full_data) <- new_column_names
-      # Assign to the global environment
-      message('Reading in ',
-              this_file,
-              ' as ',
-              this_name)
-
-      assign(this_name, full_data)
-      object_names[i] <- this_name
+##########
+# This function will be used in the get_data function to clean columns and make long
+##########
+clean_cols_long <- function(x, wide_column_start, dups){
+  colnames(x) <- tolower(colnames(x))
+  colnames(x) <- gsub('x', replacement = '', colnames(x))
+  for(i in 1:ncol(x)){
+    temp.name <- colnames(x)[i]
+    if(grepl('.', temp.name, fixed = T)){
+      temp.name_1 <- unlist(strsplit(temp.name, '.', fixed = T))
+      temp.name_2 <- paste0(temp.name_1[temp.name_1 != ""], collapse = '_')
+      temp.name <- temp.name_2
     }
+    colnames(x)[i] <- temp.name
   }
-  object_names <- object_names[!is.na(object_names)]
-  save(list = object_names,
-       file = 'data/drive/all_drive_data.RData')
-}
-
-# Combine into more meaningful datafames
-clean_columns_age_sex <- function(x){
-  x <- tolower(x)
-  x <- gsub(' ', '_', x)
-  x <- gsub('-', '', x)
-  x <- gsub('__', '_', x)
-  x <- gsub('_to_', '_', x)
-  x <- gsub('_sex_', '_', x)
-  sex <- ifelse(grepl('female', x), 'female',
-                ifelse(grepl('male', x), 'male',
-                       ifelse(grepl('total', x), 'total',
-                              NA)))
-  age <- ifelse(grepl('15_19', x), '15_19',
-                ifelse(grepl('15_24', x), '15_24',
-                       ifelse(grepl('20_24', x), '20_24',
-                              ifelse(grepl('25_29', x), '25_29',
-                                     ifelse(grepl('15_years_and_over', x), '15_up',
-                                            NA)))))
-  new_name <- paste0(sex, '_', age)
-  new_name <- ifelse(is.na(age), x, new_name)
-  return(new_name)
-}
-
-
-# Clean up column names and combine
-names(age_sex_2001) <- clean_columns_age_sex(names(age_sex_2001))
-names(age_sex_2006) <- clean_columns_age_sex(names(age_sex_2006))
-names(age_sex_2011) <- clean_columns_age_sex(names(age_sex_2011))
-
-# homogenize all age_sex data
-clean_columns_age_sex_vismin <- function(x) {
-  x <- tolower(x)
-  x <- gsub(' ', '_', x)
-  x <- gsub('-', '_', x)
-  x <- gsub('f', 'female', x)
-  x <- gsub('m', 'male', x)
-
-  return(x)
-}
-# apply to column names
-names(age_sex_by_vismin_2011) <- clean_columns_age_sex_vismin(names(age_sex_by_vismin_2011))
-
-#bind other age_sex data
-age_sex <-
-  bind_rows(
-    age_sex_2001 %>% mutate(year = 2001),
-    age_sex_2006 %>% mutate(year = 2006),
-    age_sex_2011 %>% mutate(year = 2011)
-  )
-
-# Make both age_sex and age_sex_by_vismin
-age_sex <-
-  age_sex %>%
-  gather(age_sex, value, total_15_up:female_25_29)
-
-age_sex_by_vismin_2011 <-
-  age_sex_by_vismin_2011 %>%
-  gather(age_sex, value, total_15_24_1702345_502670:male_25_29_396485_116590)
-
-
-create_age_gender <- function(x) {
-  # Separate age and sex
-  x$sex <- ifelse(grepl('female', x$age_sex), 'female',
-                  ifelse(grepl('male', x$age_sex), 'male', 'total'))
-  x$age_group <- unlist(lapply(strsplit(x$age_sex, split = '_'), function(x){paste0(x[2], '_', x[3])}))
-  return(x)
-}
-
-# apply to age sex data
-age_sex <- create_age_gender(age_sex)
-age_sex_by_vismin_2011 <- create_age_gender(age_sex_by_vismin_2011)
-
-# clean key for geo codes
-clean_geo_key <- function(x) {
-  # create new column based on number ids in geography
-  temp_geo_key <- unlist(lapply(strsplit(x$geography, '(', fixed = T), function(x) x[length(x)]))
-  # remove ) and X
-  temp_geo_key <- gsub(')', replacement = '', temp_geo_key, fixed = T)
-  temp_geo_key <- gsub('X', replacement = '', temp_geo_key, fixed = T)
-  # put in data frame
-  x$geography <- temp_geo_key
-  # keep only 4 digit and ontario
-  x <- subset(x, grepl('On', geography) | nchar(geography) == '4')
-  return(x)
-}
-
-# get subset age_sex - with 4 digit codes and ontario
-age_sex <- clean_geo_key(age_sex)
-
-# Get rid of the no longer necessary files
-rm(age_sex_2001, age_sex_2006, age_sex_2011)
-
-# Clean up the birthplace data
-# save.image('~/Desktop/temp_step_up.RData')
-
-# (have to define special function for birthplace 2011, different format)
-clean_columns_birthplace <- function(x){
-  sex <- ifelse(grepl('Female', x), 'female',
-                ifelse(grepl('Male', x), 'male',
-                       ifelse(grepl('Total', x), 'total',
-                              ifelse(grepl('Geography', x), NA,
-                                     'total'))))
-  age <- ifelse(grepl('15 to 24', x), '15_24',
-                ifelse(grepl('15 to 19', x), '15_19',
-                       ifelse(grepl('20 to 24', x), '20_24',
-                              ifelse(grepl('25 to 29', x), '25_29',
-                                     ifelse(grepl('15 years and', x), '15_up',
-                                            NA)))))
-  place <- ifelse(grepl('in', x), 'Canada',
-                  ifelse(grepl('out', x), 'Abroad', NA))
-  place <- ifelse(is.na(place) & x != 'Geography', 'Anywhere', place)
-  new_name <- paste0(sex, '_', age, ifelse(!is.na(place), '_', ''), ifelse(!is.na(place), place, ''))
-  x <- tolower(x)
-  new_name <- ifelse(is.na(age), x, new_name)
-  new_name <- tolower(new_name)
-  return(new_name)
-}
-
-names(birthplace_2001) <- clean_columns_birthplace(names(birthplace_2001))
-names(birthplace_2006) <- clean_columns_birthplace(names(birthplace_2006))
-names(birthplace_2011) <- clean_columns_birthplace(names(birthplace_2011))
-
-# homogenize all age_sex data
-clean_columns_age_sex_vismin <- function(x) {
-  x <- tolower(x)
-  x <- gsub(' ', '_', x)
-  x <- gsub('-', '_', x)
-  x <- gsub('f', 'female', x)
-  x <- gsub('m', 'male', x)
-
-  return(x)
-}
-
-# apply to column names
-names(birthplace_by_vismin_2011) <- clean_columns_age_sex_vismin(names(birthplace_by_vismin_2011))
-
-# Combine
-birthplace_2011$total_15_up_anywhere <- as.numeric(birthplace_2011$total_15_up_anywhere)
-birthplace <-
-  bind_rows(birthplace_2001 %>% mutate(year = 2001),
-            birthplace_2006 %>% mutate(year = 2006),
-            birthplace_2011 %>% mutate(year = 2011))
-
-# Make long
-birthplace <- birthplace %>%
-  gather(key, value, total_15_up_anywhere:female_25_29_abroad)
-
-birthplace_by_vismin_2011 <- birthplace_by_vismin_2011 %>%
-  gather(key, value,  total_15_19_856955_253390:outside_15_29_percent_22.7_58.9)
-
-
-# function to creat sex, age_group, and place columns
-create_age_gender_birthplace <- function(x, has_sex) {
-  # Separate age and sex
-  if(has_sex) {
-    x$sex <- ifelse(grepl('female', x$key), 'female',
-                    ifelse(grepl('male', x$key), 'male', 'total'))
+  # make long format
+  # find 6 column name and last colum name
+  column_start <- colnames(x)[wide_column_start]
+  last_column <- colnames(x)[ncol(x)]
+  if(dups) {
+    x <-  x[,!duplicated(colnames(x))]
+    column_start <- colnames(x)[wide_column_start]
+    last_column <- colnames(x)[ncol(x)]
   }
-
-  x$age_group <- unlist(lapply(strsplit(x$key, split = '_'), function(x){paste0(x[2], '_', x[3])}))
-  x$place <-   ifelse(grepl('canada', x$key), 'canada',
-                      ifelse(grepl('abroad', x$key), 'abroad', 'anywhere'))
-  return(x)
+  x_long <- gather(x, key, value, column_start:last_column)
+  #add a year column
+  x_long$year <- as.character(unlist(lapply(strsplit(name, '_'), function(x) x[1])))
+  return(x_long)
 }
 
-# apply to birthplace data, normal and vismin
-birthplace <- create_age_gender_birthplace(birthplace, has_sex = T)
-birthplace_by_vismin_2011 <- create_age_gender_birthplace(birthplace_by_vismin_2011, has_sex = F)
 
-# get subset age_sex - with 4 digit codes and ontario
-birthplace <- clean_geo_key(birthplace)
+##########
+# function that will take on argument "data_type" which is either census or nhs
+# for the time being only use data_type ='census' and this will read in and clean
+# and aggregate census data from 2001, 2006, 2011 and combine them into one large data set
+# this will be the base data set for the app and my further analysis
+# if you do data_type == 'nhs', then it will return a list the 5 nhs data sets we have, cleaned
+# and all for 2011. They do not have geo coding census tracks so for now lets stick with just census.
+##########
 
-# remove the other birthplace stuff
-rm(birthplace_2001, birthplace_2006, birthplace_2011)
+# first get vector of data set names to loop through later
+data_names <- list.files('data/census_data')
 
-# remove key from data
-birthplace$key <- NULL
-birthplace_by_vismin_2011$key <- NULL
-
-# remove Total from all data sets
-remove_column_string <- function(x, string){
- string_index <- grepl(string, colnames(x))
- string_index[1] <- FALSE
- x <- x[,!string_index]
-return(x)
-}
-# remove 'Total' from all by vismin data
-age_sex_by_vismin_2006 <- remove_column_string(age_sex_by_vismin_2006, 'Total')
-age_sex_by_vismin_2011 <- remove_column_string(age_sex_by_vismin_2011, 'Total')
-
-birthplace_by_vismin_2006 <- remove_column_string(birthplace_by_vismin_2006, 'Total')
-birthplace_by_vismin_2011 <- remove_column_string(birthplace_by_vismin_2011, 'Total')
-
-special_indicators_by_vismin_2006 <- remove_column_string(special_indicators_by_vismin_2006, 'Total')
-
-# remove unneeded objects and data
-rm(column_names, full_data, special_indicators_2001, special_indicators_2006, special_indicators_2011,
-   special_indicators_by_vismin_2011)
-rm(vismin_2006, vismin_2011)
-
-# save.image('~/Desktop/temp_global.RData')
-# load('~/Desktop/temp_global.RData')
-
-
-# # special indicators
-# clean_up_special_indicators <- function(df){
-#   out <- df[, !duplicated(colnames(df))]
-#   out <- out %>%
-#     gather(key, value, -Geography)
-#   colnames(out) <- tolower(colnames(out))
-#
-#   return(out)
-# }
-#
-# # get new long format data
-# special_indicators_2001 <- clean_up_special_indicators(special_indicators_2001)
-# special_indicators_2006 <- clean_up_special_indicators(special_indicators_2006)
-# special_indicators_2011 <- clean_up_special_indicators(special_indicators_2011)
-#
-# # combine special indicator data and creat year variable
-# special_indicators <-
-#   bind_rows(
-#     special_indicators_2001 %>% mutate(year = 2011),
-#     special_indicators_2006 %>% mutate(year = 2006),
-#     special_indicators_2011 %>% mutate(year = 2011)
-#   )
-#
-# # get subset age_sex - with 4 digit codes and ontario
-# special_indicators <- clean_geo_key(special_indicators)
-#
-# rm(special_indicators_2001, special_indicators_2006, special_indicators_2011)
-# # # create new columns based on key variable
-# # names(special_indicators)
-# # temp <- as.data.frame(unique(special_indicators$key))
-#
-# # special inidcators has quite a bit of info, so im just gona choose one category for the purpose of the template.
-# # background - possible sub cateogries to divide data set into
-# # look at temp to find sub categories
-# # 1) population, 2) marriage (widowed, divorced, never married), 3) language, 4) population,
-# # 5) migration (movers, migrators, non movers),
-# # 6) Total - Census family status, persons in census, family (spouses, kids, parents, single parents, living with relatives),
-# # 7) Education - university, certificates,
-# # 8) Employment -
-# # 9) worker class
-# # 10) household income - std err, low income status,
-# # 11) housing deatails - owner occupied dwelling,
-#
-# # how many duplicates
-# length(which(duplicated(special_indicators$geography)))
-# length(which(duplicated(paste0(special_indicators$geography, special_indicators$key, special_indicators$year))))
-#
-# ###### CONTINUE
-# # get information on household income and marriage status
-# # column names with marriage and employment
-# married_employment_strings <- 'marital|married|Divorced|Widowed|Employed|Unemployed|Unemployment|Participation'
-# temp_dat <- special_indicators[grepl(married_employment_strings, special_indicators$key),]
-#
-# # creat new columns off of key variable
-# temp <- as.data.frame(unique(temp_dat$key))
-#
-# # ages range from 15-19, 15-24, 20-24, 25-29, 15 years and over
-#
-# # for gender - Male, Female, Total, Male Total, Female Total.
-# temp_dat$gender <- ifelse(grepl('Male|male', temp_dat$key), 'M',
-#                           ifelse(grepl('Female|female', temp_dat$key), 'F', 'Total'))
-#
-# # for age range
-# temp_dat$age <-  ifelse(grepl('15 years and', temp_dat$key), '15_up',
-#                         ifelse(grepl('15 to 24', temp_dat$key), '15_24',
-#                                ifelse(grepl('15 to 19', temp_dat$key), '15_19',
-#                                       ifelse(grepl('20 to 24', temp_dat$key), '20_24',
-#                                              ifelse(grepl('25 to 29', temp_dat$key), '25_29', 'no_age')))))
-#
-# # look at unique places
-
-
-# Define a function for creating a crazy looking map
-crazy_map <- function(){
-  # Add some colors
-  lots_of_colors <- c(rainbow(100), grey(seq(0.001, 0.999, length = 100)))
-  ont_crazy_colors <- sample(lots_of_colors, nrow(ont_crazy))
-  plot(ont_crazy, col = ont_crazy_colors)
-}
-
-# Function for a time chart
-time_chart <- function(x,y,
-                       ylab = '',
-                       fill = TRUE){
-  require(ggplot2)
-  df <- data.frame(x,y)
-  g <-
-    ggplot(data = df,
-           aes(x = x,
-               y = y)) +
-    geom_line(alpha = 0.6,
-              color = '#0d63c4') +
-    geom_point(alpha = 0.6,
-               color = '#0d63c4') +
-    theme_databrew() +
-    labs(x = 'Date',
-         y = ylab)
-  if(fill){
-    g <-
-      g +
-      geom_area(fill = '#0d63c4',
-                alpha = 0.3)
+# data_type = 'nhs'
+get_data <- function(data_type) {
+  # cread empty list to stor data
+  data_list <- list()
+  # get data type
+  sub_names <- data_names[grepl(data_type, data_names)]
+  # name = "2001_census.csv"
+  # function that loops through each name in for census data and read into a list
+  for (name in sub_names) {
+    temp.dat <- read.csv(paste0('data/census_data/', name), stringsAsFactors = F)
+    if(data_type == 'census'){
+      if(grepl('2011', name)){
+        temp.codes <-  gsub("^35$", replacement = "Ontario",
+                            gsub(').*', '',
+                                 gsub('20000', '', unlist(lapply(strsplit(temp.dat$Geography, '(',
+                                                                          fixed = T),
+                                                                 function(x) x[2])))))
+      } else {
+        #subset to Ontarios and 4 digit geo codes
+        temp.codes <- gsub(pattern = ')', '',unlist(lapply(strsplit(temp.dat$Geography, '(', fixed = T),
+                                                           function(x) x[length(x)])))
+      }
+      # get index for Ontario and 4 digit codes
+      ontario_index <- temp.codes == 'Ontario'
+      geo_index <- nchar(temp.codes) == 4
+      # subset data by these indices
+      temp.dat_on <- temp.dat[ontario_index,]
+      temp.dat_geo <- temp.dat[geo_index,]
+      # recombined to get a dataset with ontario aggregated and individual census tracks
+      temp.dat <- rbind(temp.dat_on,
+                        temp.dat_geo)
+      # starts at 6 because in this data set only 5 varibles by 1
+      temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 6, dups = F)
+      #remove undeeded data
+      rm(temp.dat_geo, temp.dat_on)
+      # rename columns
+      colnames(temp.dat_long) <- c("geography", "age_group", "sex", "pob", "vis_min","special_ind","value","year" )
+      data_list[[name]] <- temp.dat_long
+    }
+    if(data_type == 'nhs') {
+      if(grepl('employment', name)) {
+        # starts at 4 because in this data set only 4 varibles by 1
+        temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 5, dups = F)
+        colnames(temp.dat_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
+      } else {
+        # starts at 4 because in this data set only 4 varibles by 1
+        temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 2, dups = T)
+        colnames(temp.dat_long) <- c("geography", "key","value","year" )
+      }
+      data_list[[name]] <- temp.dat_long
+    }
+    print(name)
   }
-  return(g)
-}
-
-# Function for map
-ontario_map <- function(x){
-  require(dplyr)
-  require(ggplot2)
-  # This function expects "x" to be a dataframe with a column named "geography"
-  # and another named "value"
-  # Keep only the numbered values
-  right <- x %>%
-    filter(!is.na(as.numeric(geography))) %>%
-    mutate(geography = substr(geography, 3,4))
-  # join to ont fortified
-  shp <- ont_fortified
-  shp <- shp %>%
-    left_join(right,
-              by = 'geography')
-  # Make a plot
-  g <-
-    ggplot(data = shp,
-           aes(x = long,
-               y = lat,
-               group = group,
-               fill = value)) +
-    geom_polygon() +
-    coord_map() +
-    theme_databrew() +
-    scale_fill_continuous(low = 'lightblue', high = 'darkorange', name = '', na.value = 'white') +
-    theme(legend.text = element_text(size = 7),
-          legend.position = 'right') +
-    labs(x = '',
-         y = '')
-  return(g)
-}
-
-# # Example
-# df <- age_sex %>%
-#   filter(year == 2011,
-#          age_sex == 'total_15_up') %>%
-#   group_by(geography) %>%
-#   summarise(value = sum(value))
-# ontario_map(x = df)
-
-# Define function for generating a leaflet plot
-leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
-                 show_legend = TRUE){
-  require(dplyr)
-  require(leaflet)
-  require(RColorBrewer)
-  # This function expects "x" to be a dataframe with a column named "geography"
-  # and another named "value"
-  # Keep only the numbered values
-  right <- x %>%
-    filter(!is.na(as.numeric(geography))) %>%
-    mutate(geography = substr(geography, 3,4))
-  # join to ont shapefile
-  shp <- ont2
-  shp@data <- shp@data %>%
-    mutate(geography = CCA_2) %>%
-    left_join(right,
-              by = 'geography')
-
-  # Create a color palette
-  # pal <- colorQuantile("Blues", NULL, n = 9)
-  # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
-  bins <- round(c(quantile(shp@data$value, na.rm = TRUE)))
-  pal <- colorBin(palette, domain = shp@data$value, bins = bins)
-
-  # Create a popup
-  popper <- paste0(shp@data$NAME_2, ': ',
-                   shp@data$value)
-
-  # Create map
-  l <- leaflet(data = shp) %>%
-    addProviderTiles(tile)
-  if(show_legend){
-    l <- l %>%
-      addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
-                position = "bottomleft")
+  if(grepl('census', name)){
+    dat <- do.call(rbind, data_list)
+    return(dat)
+  } else {
+    return(data_list)
   }
-  l <- l %>%
-    addPolygons(fillColor = ~pal(value),
-                fillOpacity = 0.8,
-                color = "#BDBDC3",
-                weight = 1,
-                # popup = popper,
-                highlight = highlightOptions(
-                  weight = 5,
-                  color = "#666",
-                  dashArray = "",
-                  fillOpacity = 0.7,
-                  bringToFront = TRUE),
-                label = popper,
-                labelOptions = labelOptions(
-                  style = list("font-weight" = "normal", padding = "3px 8px"),
-                  textsize = "15px",
-                  direction = "auto"))
-  return(l)
 }
 
+# apply the function and set "data_type" to census
+census_all <- get_data("census")
 
-# Clean up special indicators
-si <- special_indicators_by_vismin_2006
-names(si)[2:ncol(si)] <- unlist(lapply(strsplit(names(si)[2:ncol(si)], ' '), function(x){paste0(x[1:(length(x) - 1)], collapse = ' ')}))
+# save data to to "data" folder
+saveRDS(census_all, 'data/census_all.rda')
+
+
+
+
