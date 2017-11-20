@@ -111,86 +111,95 @@ clean_cols_long <- function(x, wide_column_start, dups, name){
 data_names <- list.files('data/census_data')
 
 # data_type = 'nhs'
-get_data <- function(data_type) {
-  # cread empty list to stor data
+get_data <- function(data_type = 'census') {
+  # cread empty list to store data
   data_list <- list()
   # get data type
   sub_names <- data_names[grepl(data_type, data_names)]
-  # name = "2001_census.csv"
   # function that loops through each name in for census data and read into a list
   for (name in sub_names) {
-    temp.dat <- read.csv(paste0('data/census_data/', name), stringsAsFactors = F)
+    temp_data <- read_csv(paste0('data/census_data/', name))
     if(data_type == 'census'){
-      if(grepl('2011', name)){
-        temp.codes <-  gsub("^35$", replacement = "Ontario",
-                            gsub(').*', '',
-                                 gsub('20000', '', unlist(lapply(strsplit(temp.dat$Geography, '(',
-                                                                          fixed = T),
-                                                                 function(x) x[2])))))
-      } else {
-        #subset to Ontarios and 4 digit geo codes
-        temp.codes <- gsub(pattern = ')', '',unlist(lapply(strsplit(temp.dat$Geography, '(', fixed = T),
-                                                           function(x) x[length(x)])))
-      }
-      # get index for Ontario and 4 digit codes
-      ontario_index <- temp.codes == 'Ontario'
-      geo_index <- nchar(temp.codes) == 4
-      # subset data by these indices
-      temp.dat_on <- temp.dat[ontario_index,]
-      temp.dat_geo <- temp.dat[geo_index,]
-      # recombined to get a dataset with ontario aggregated and individual census tracks
-      temp.dat <- rbind(temp.dat_on,
-                        temp.dat_geo)
-      # starts at 6 because in this data set only 5 varibles by 1
-      temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 6, dups = F, name = name)
-      #remove undeeded data
-      # rm(temp.dat_geo, temp.dat_on)
-      # rename columns
-      colnames(temp.dat_long) <- c("geography", "age_group", "sex", "pob", "vis_min","special_ind","value","year")
-      # remove white space from all columns
-      temp.dat_long <- as.data.frame(apply(temp.dat_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
-
+        # Declare that the encoding is all screwed up for this file
+        Encoding(temp_data$Geography) <- "latin1"
+        # Address the weirdness with "New Credit (Part)"
+        temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
+        # Keep only the first part of the name (what is with the %?)
+        temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE), function(x){x[1]})), ')')
+      #subset to Ontarios and 4 digit geo codes
+      geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
+                                          '(', fixed = TRUE), 
+                                 function(x){
+                                   gsub(')', '', x[2], fixed = TRUE)}))
+      # (those wih NA for the geo_code are all ontario)
+      temp_data$geo_code <- geo_codes
+      temp_data$geo_code[is.na(temp_data$geo_code)] <- 'Ontario'
+      # Make long
+      temp_data_long <- tidyr::gather(temp_data,
+                                     key,
+                                     value,
+                                     `Total - Population 15 years and over by legal marital status`:`Living in band housing`)
+      # Clean up names
+      names(temp_data_long) <- c('geo',
+                                'age', 
+                                'sex',
+                                'pob',
+                                'vm',
+                                'geo_code',
+                                'value')
+      
       # recode sex
-      temp.dat_long$sex <- gsub('Females', 'Female', temp.dat_long$sex)
-      temp.dat_long$sex <- gsub('Males', 'Male', temp.dat_long$sex)
-
+      temp_data_long$sex <- gsub('Females', 'Female', temp_data_long$sex)
+      temp_data_long$sex <- gsub('Males', 'Male', temp_data_long$sex)
+      
       # recod pob
-      temp.dat_long$pob <- gsub('birth', 'Birth', temp.dat_long$pob)
-      temp.dat_long$pob <- gsub('inside', 'in', temp.dat_long$pob)
-
-      data_list[[name]] <- temp.dat_long
+      temp_data_long$pob <- gsub('birth', 'Birth', temp_data_long$pob)
+      temp_data_long$pob <- gsub('inside', 'in', temp_data_long$pob)
+      
+      data_list[[name]] <- temp_data_long
     }
-    if(data_type == 'nhs') {
-      if(grepl('employment', name)) {
-        # starts at 4 because in this data set only 4 varibles by 1
-        temp.dat_long <- clean_cols_long(temp.dat, wide_column_start = 5, dups = F)
-        colnames(temp.dat_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
-      } else {
-        # starts at 4 because in this data set only 4 varibles by 1
-        temp.dat_long <- clean_cols_long(x = temp.dat, wide_column_start = 2, dups = T)
-        colnames(temp.dat_long) <- c("geography", "key","value","year" )
-
-        # remove white space from all columns
-        temp.dat_long <- as.data.frame(apply(temp.dat_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
-
-      }
-      data_list[[name]] <- temp.dat_long
-    }
+    # Commenting out all the NHS stuff, since it's not yet functional
+    # if(data_type == 'nhs') {
+    #   if(grepl('employment', name)) {
+    #     # starts at 4 because in this data set only 4 varibles by 1
+    #     temp_data_long <- clean_cols_long(temp_data, wide_column_start = 5, dups = F)
+    #     colnames(temp_data_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
+    #   } else {
+    #     # starts at 4 because in this data set only 4 varibles by 1
+    #     temp_data_long <- clean_cols_long(x = temp_data, wide_column_start = 2, dups = T)
+    #     colnames(temp_data_long) <- c("geography", "key","value","year" )
+    # 
+    #     # remove white space from all columns
+    #     temp_data_long <- as.data.frame(apply(temp_data_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
+    # 
+    #   }
+    #   data_list[[name]] <- temp_data_long
+    # }
     print(name)
   }
   if(data_type == 'census'){
-    dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
+    # dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
+    dat <- bind_rows(data_list)
     return(dat)
-  } else {
-    return(data_list)
-  }
+  } #else {
+  #   return(data_list)
+  # }
 }
 
-# apply the function and set "data_type" to census
-census_all <- get_data(data_type = "census")
 
-# save data to to "data" folder
-saveRDS(census_all, 'data/census_all.rda')
+# Get census data
+# If the aggregated/cleaned file already exists (ie, this script has already been run)
+# load it
+if('census_all.RData' %in% dir('data')){
+  load('data/census_all.RData')
+} else {
+  # Otherwise (ie, the aggregated/cleaned flie does not already exist)
+  # Read the files from csvs, clean, and aggregate
+  census_all <- get_data(data_type = "census")
+  # and then save data to to "data" folder for faster retrieval in subsequent runs
+  save(census_all, 'data/census_all.RData')
+}
+
 
 
 
