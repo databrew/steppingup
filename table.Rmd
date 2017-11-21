@@ -1,0 +1,72 @@
+---
+title: "Youthrex data table script"
+author: "Ben Brew"
+output:
+    html_document:
+      toc: true
+      theme: united
+---
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
+library(knitr)
+# no scientific notation
+options(scipen=999)
+## Global options
+options(max.print="75")
+opts_chunk$set(echo=FALSE,
+	             cache=TRUE,
+               prompt=FALSE,
+               tidy=TRUE,
+               comment=NA,
+               message=FALSE,
+               warning=FALSE)
+opts_knit$set(width=75)
+
+# Libraries
+library(feather)
+library(tidyverse)
+library(googleVis)
+library(RColorBrewer)
+library(databrew)
+op <- options(gvis.plot.tag='chart')
+
+
+# Helper functions
+source('functions.R')
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
+# read in census data 
+dat <- read_feather('data/census_all.feather')
+```
+
+# Table
+
+```{r}
+# Example table
+x <- dat %>%
+  filter(geo_code == '3500',
+         age == '15 to 24 years',
+         special_indicators == 'Employment rate %') %>%
+  group_by(`Visible minority` = vm,
+           year,
+           sex) %>%
+  summarise(`Employment rate` = mean(value)) %>%
+  ungroup
+prettify(x)
+```
+
+# Chart
+
+```{r}
+ggplot(data = x,
+       aes(x = sex, y = `Employment rate`,
+           fill = sex)) +
+  geom_bar(stat = 'identity',
+           pos = 'dodge',
+           alpha = 0.6) +
+  facet_wrap(~`Visible minority`) +
+  scale_fill_manual(name = '',
+                    values = c('darkblue', 'darkorange')) +
+  theme_databrew()
+```
