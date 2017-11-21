@@ -250,9 +250,28 @@ if('census_all.feather' %in% dir('data')){
   # Read the files from csvs, clean, and aggregate
   census_all <- get_data(data_type = "census")
 
+  # Clean up geography
+  geo_dictionary <- census_all %>% group_by(geo, geo_code) %>% tally %>% dplyr::select(-n) %>% ungroup
+  geo_dictionary$geo <- unlist(lapply(strsplit(geo_dictionary$geo, ' (', fixed = TRUE), function(x){x[1]}))
+  geo_dictionary <- geo_dictionary %>%
+    arrange(geo_code, geo)
+  geo_dictionary <- geo_dictionary %>%
+    filter(!duplicated(geo_code))
+  census_all <- 
+    census_all %>%
+    dplyr::select(-geo) %>%
+    left_join(geo_dictionary, by = 'geo_code') %>%
+    dplyr::select(geo_code, geo, year, age, sex, pob, vm, special_indicators, value)
+  census_all <- 
+    census_all %>%
+    rename(si = special_indicators)
+  
+  # Remove the 15 to 24 age group (since it overlaps with others)
+  census_all <- census_all %>%
+    filter(age != '15 to 24 years')
+  
   # and then save data to to "data" folder for faster retrieval in subsequent runs
   # save(census_all, file = 'data/census_all.RData')
   write_feather(census_all, 'data/census_all.feather')
-
 }
 

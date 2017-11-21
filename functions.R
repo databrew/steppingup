@@ -190,3 +190,75 @@ prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns 
   }
   return(the_table)
 }
+
+
+# Define function for subsetting tables
+subset_table <- function(data = census_all,
+                        geo_code = NULL,
+                        year = NULL,
+                        age = NULL,
+                        sex = NULL,
+                        pob = NULL,
+                        vm = NULL,
+                        si = NULL){
+  # Create data
+  sub_data <- data
+  
+  # Modify param names
+  the_geo_code = geo_code
+  the_year = year
+  the_age = age
+  the_sex = sex
+  the_pob = pob
+  the_vm = vm
+  the_si = si
+  
+  # Empty vector of groupers
+  groupers <- c()
+  
+  if(!is.null(geo_code)){
+    sub_data <- sub_data %>% dplyr::filter(geo_code == the_geo_code)
+  } else {
+    groupers <- c(groupers, 'geo_code')
+  }
+  if(!is.null(year)){
+    sub_data <- sub_data %>% dplyr::filter(year == the_year)
+  } else {
+    groupers <- c(groupers, 'year')
+  }
+  if(!is.null(age)){
+    sub_data <- sub_data %>% dplyr::filter(age == the_age)
+  } else {
+    groupers <- c(groupers, 'age')
+  }
+  if(!is.null(sex)){
+    sub_data <- sub_data %>% dplyr::filter(sex == the_sex)
+  } else {
+    groupers <- c(groupers, 'sex')
+  }
+  if(!is.null(pob)){
+    sub_data <- sub_data %>% dplyr::filter(pob == the_pob)
+  } else {
+    groupers <- c(groupers, 'pob')
+  }
+  if(!is.null(vm)){
+    sub_data <- sub_data %>% dplyr::filter(vm == the_vm)
+  } else {
+    groupers <- c(groupers, 'vm')
+  }
+  if(!is.null(si)){
+    sub_data <- sub_data %>% dplyr::filter(si == the_si)
+  } else {
+    groupers <- c(groupers, 'si')
+  }
+  
+  # Apply groupers
+  if(length(groupers) > 0){
+    sub_data <- 
+      sub_data %>%
+      group_by_(groupers) %>%
+      summarise(value = sum(value))
+  }
+
+  return(sub_data)
+}

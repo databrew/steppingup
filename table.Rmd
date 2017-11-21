@@ -1,6 +1,6 @@
 ---
-title: "Youthrex data table script"
-author: "Ben Brew"
+title: "Youthrex raw data"
+author: "www.databrew.cc"
 output:
     html_document:
       toc: true
@@ -9,12 +9,13 @@ output:
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
 library(knitr)
+library(htmltools)
 # no scientific notation
 options(scipen=999)
 ## Global options
 options(max.print="75")
 opts_chunk$set(echo=FALSE,
-	             cache=TRUE,
+	             cache=FALSE,
                prompt=FALSE,
                tidy=TRUE,
                comment=NA,
@@ -37,36 +38,118 @@ source('functions.R')
 
 ```{r, echo=FALSE, warning=FALSE, message=FALSE, comment=NA, error=FALSE}
 # read in census data 
-dat <- read_feather('data/census_all.feather')
+census_all <- read_feather('data/census_all.feather')
 ```
 
-# Table
+
+
+# Tables
+
+## Ontario
 
 ```{r}
-# Example table
-x <- dat %>%
-  filter(geo_code == '3500',
-         age == '15 to 24 years',
-         special_indicators == 'Employment rate %') %>%
-  group_by(`Visible minority` = vm,
-           year,
-           sex) %>%
-  summarise(`Employment rate` = mean(value)) %>%
-  ungroup
-prettify(x)
-```
+geo_codes <- sort(unique(census_all$geo_code))
+sis <- sort(unique(census_all$si))
+# years <- sort(unique(census_all$year))
+# ages <- sort(unique(census_all$age))
+# sexes <- sort(unique(census_all$sex))
+# pobs <- sort(unique(census_all$pob))
+# vms <- sort(unique(census_all$vm))
+counter <- 0
+chunks <- c()
+tables <- list()
 
-# Chart
+for(si in sis){
+  counter <- counter + 1
+  # cat(paste0('### ', si, '\n\n'))
+  this_si <- si
+  x <- census_all
+  x <-
+    x %>%
+    filter(geo_code == '3500',
+           si == this_si) %>%
+    group_by(year, si) %>%
+    summarise(value = sum(value)) %>%
+    ungroup
+  header <- x$si[1]
+  x <- x %>% dplyr::select(-si)
+  tables[[counter]] <- x
+
+  chunks[counter] <- paste0('\n\n### ', header, '\n\n```{r}\nprettify(tables[[', counter, ']])\n```\n')
+}
+
+chunks <- paste0(chunks, collapse = '')
+```
 
 ```{r}
-ggplot(data = x,
-       aes(x = sex, y = `Employment rate`,
-           fill = sex)) +
-  geom_bar(stat = 'identity',
-           pos = 'dodge',
-           alpha = 0.6) +
-  facet_wrap(~`Visible minority`) +
-  scale_fill_manual(name = '',
-                    values = c('darkblue', 'darkorange')) +
-  theme_databrew()
+# Write our order / child-calls to a doc
+file_connection <- file('children.Rmd')
+writeLines(paste0('---\noutput: html_document\n---\n\n', 
+                  chunks), 
+           file_connection)
+close(file_connection)
 ```
+
+```{r child='children.Rmd', echo = FALSE}
+# Now, we simply include "children.Rmd" to construct our doc
+# (ie, children is the child doc, and each section is a grandchild)
+```
+
+```{r, results='hide'}
+# Having already called the auto-generated children.Rmd, we can delete it
+file.remove('children.Rmd')
+```
+
+
+## Census areas
+
+```{r}
+counter <- 0
+chunks <- c()
+tables <- list()
+
+for(si in sis){
+  for(geo_code in geo_codes){
+  counter <- counter + 1
+  this_si <- si
+  this_geo_code <- geo_code
+  x <- census_all
+  x <-
+    x %>%
+    filter(geo_code == this_geo_code,
+           si == this_si) %>%
+    group_by(year, si) %>%
+    summarise(value = sum(value)) %>%
+    ungroup
+  header <- x$si[1]
+  geo <- census_all$geo[census_all$geo_code == this_geo_code][1]
+  header <- paste0(geo, ': ', header)
+  x <- x %>% dplyr::select(-si)
+  tables[[counter]] <- x
+
+  chunks[counter] <- paste0('\n\n### ', header, '\n\n```{r}\nprettify(tables[[', counter, ']])\n```\n')
+  }
+}
+
+chunks <- paste0(chunks, collapse = '')
+```
+
+```{r}
+# Write our order / child-calls to a doc
+file_connection <- file('children.Rmd')
+writeLines(paste0('---\noutput: html_document\n---\n\n', 
+                  chunks), 
+           file_connection)
+close(file_connection)
+```
+
+```{r child='children.Rmd', echo = FALSE}
+# Now, we simply include "children.Rmd" to construct our doc
+# (ie, children is the child doc, and each section is a grandchild)
+```
+
+```{r, results='hide'}
+# Having already called the auto-generated children.Rmd, we can delete it
+file.remove('children.Rmd')
+```
+
