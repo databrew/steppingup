@@ -131,7 +131,134 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
   return(l)
 }
 
+# Define function for printing nice html tables
+prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns = TRUE, 
+                      cap_characters = TRUE, comma_numbers = TRUE, date_format = "%B %d, %Y", 
+                      round_digits = 2, remove_row_names = TRUE, remove_line_breaks = TRUE, 
+                      data_table = TRUE, nrows = 5, download_options = FALSE) 
+{
+  column_names <- names(the_table)
+  the_table <- data.frame(the_table)
+  names(the_table) <- column_names
+  classes <- lapply(the_table, function(x) {
+    unlist(class(x))[1]
+  })
+  if (cap_columns) {
+    names(the_table) <- Hmisc::capitalize(names(the_table))
+  }
+  if (remove_underscores_columns) {
+    names(the_table) <- gsub("_", " ", names(the_table))
+  }
+  for (j in 1:ncol(the_table)) {
+    the_column <- the_table[, j]
+    the_class <- classes[j][1]
+    if (the_class %in% c("character", "factor")) {
+      if (cap_characters) {
+        the_column <- as.character(the_column)
+        the_column <- Hmisc::capitalize(the_column)
+      }
+      if (remove_line_breaks) {
+        the_column <- gsub("\n", " ", the_column)
+      }
+    }
+    else if (the_class %in% c("POSIXct", "Date")) {
+      the_column <- format(the_column, format = date_format)
+    }
+    else if (the_class %in% c("numeric", "integer")) {
+      the_column <- round(the_column, digits = round_digits)
+      if (comma_numbers) {
+        the_column <- scales::comma(the_column)
+      }
+    }
+    the_table[, j] <- the_column
+  }
+  if (remove_row_names) {
+    row.names(the_table) <- NULL
+  }
+  if (data_table) {
+    if (download_options) {
+      the_table <- DT::datatable(the_table, options = list(pageLength = nrows, 
+                                                           dom = "Bfrtip", buttons = list("copy", "print", 
+                                                                                          list(extend = "collection", buttons = "csv", 
+                                                                                               text = "Download"))), rownames = FALSE, extensions = "Buttons")
+    }
+    else {
+      the_table <- DT::datatable(the_table, options = list(pageLength = nrows, 
+                                                           columnDefs = list(list(className = "dt-right", 
+                                                                                  targets = 0:(ncol(the_table) - 1)))), rownames = FALSE)
+    }
+  }
+  return(the_table)
+}
 
-# Clean up special indicators
-si <- special_indicators_by_vismin_2006
-names(si)[2:ncol(si)] <- unlist(lapply(strsplit(names(si)[2:ncol(si)], ' '), function(x){paste0(x[1:(length(x) - 1)], collapse = ' ')}))
+
+# Define function for subsetting tables
+subset_table <- function(data = census_all,
+                        geo_code = NULL,
+                        year = NULL,
+                        age = NULL,
+                        sex = NULL,
+                        pob = NULL,
+                        vm = NULL,
+                        si = NULL){
+  # Create data
+  sub_data <- data
+  
+  # Modify param names
+  the_geo_code = geo_code
+  the_year = year
+  the_age = age
+  the_sex = sex
+  the_pob = pob
+  the_vm = vm
+  the_si = si
+  
+  # Empty vector of groupers
+  groupers <- c()
+  
+  if(!is.null(geo_code)){
+    sub_data <- sub_data %>% dplyr::filter(geo_code == the_geo_code)
+  } else {
+    groupers <- c(groupers, 'geo_code')
+  }
+  if(!is.null(year)){
+    sub_data <- sub_data %>% dplyr::filter(year == the_year)
+  } else {
+    groupers <- c(groupers, 'year')
+  }
+  if(!is.null(age)){
+    sub_data <- sub_data %>% dplyr::filter(age == the_age)
+  } else {
+    groupers <- c(groupers, 'age')
+  }
+  if(!is.null(sex)){
+    sub_data <- sub_data %>% dplyr::filter(sex == the_sex)
+  } else {
+    groupers <- c(groupers, 'sex')
+  }
+  if(!is.null(pob)){
+    sub_data <- sub_data %>% dplyr::filter(pob == the_pob)
+  } else {
+    groupers <- c(groupers, 'pob')
+  }
+  if(!is.null(vm)){
+    sub_data <- sub_data %>% dplyr::filter(vm == the_vm)
+  } else {
+    groupers <- c(groupers, 'vm')
+  }
+  if(!is.null(si)){
+    sub_data <- sub_data %>% dplyr::filter(si == the_si)
+  } else {
+    groupers <- c(groupers, 'si')
+  }
+  
+  # Apply groupers
+  if(length(groupers) > 0){
+    sub_data <- 
+      sub_data %>%
+      group_by_(groupers) %>%
+      summarise(value = sum(value))
+  }
+
+  return(sub_data)
+}

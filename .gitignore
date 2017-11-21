@@ -8,3 +8,4 @@ data/census_data/*.csv
 *.xlsx
 data/*
 .httr-oauth
+*.html
