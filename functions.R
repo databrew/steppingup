@@ -42,6 +42,7 @@ ontario_map <- function(x){
   # Keep only the numbered values
   right <- x %>%
     filter(!is.na(as.numeric(geography))) %>%
+    mutate(geography_name = geography) %>%
     mutate(geography = substr(geography, 3,4))
   # join to ont fortified
   shp <- ont_fortified
@@ -65,11 +66,14 @@ ontario_map <- function(x){
          y = '')
   return(g)
 }
-
 # # Example
-# df <- age_sex %>%
+# df <- census_all %>%
 #   filter(year == 2011,
-#          age_sex == 'total_15_up') %>%
+#          age == '15 to 19 years',
+#          sex == 'Male',
+#          pob == 'Born in Canada',
+#          vm == 'Chinese',
+#          si == 'Never married (single) 15 years and over') %>%
 #   group_by(geography) %>%
 #   summarise(value = sum(value))
 # ontario_map(x = df)
@@ -80,7 +84,7 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
   require(dplyr)
   require(leaflet)
   require(RColorBrewer)
-  # This function expects "x" to be a dataframe with a column named "geography"
+  # This function expects "x" to be a dataframe with a column named "geography" (a 4 character string)
   # and another named "value"
   # Keep only the numbered values
   right <- x %>%
@@ -96,7 +100,7 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
   # Create a color palette
   # pal <- colorQuantile("Blues", NULL, n = 9)
   # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
-  bins <- round(c(quantile(shp@data$value, na.rm = TRUE)))
+  bins <- unique(round(c(quantile(shp@data$value, na.rm = TRUE, c(seq(0, 1, 0.15), 1)))))
   pal <- colorBin(palette, domain = shp@data$value, bins = bins)
 
   # Create a popup
