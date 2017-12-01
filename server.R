@@ -62,65 +62,72 @@ function(input, output) {
     )
   })
 
+  # Create a reactive dataframe for leaflet mapping
+  leaflet_data <- reactive({
+    df <- census_all %>%
+      filter(year == input$demo_year)
+    
+    # Filter age or keep them all
+    if(!input$demo_age == '15 to 29 years'){
+      df <- df %>% 
+        filter(age == input$demo_age)
+    }
+    
+    # Filter sex or keep them all
+    if(!input$demo_sex == 'Both'){
+      df <- df %>% filter(sex == input$demo_sex)
+    }
+    
+    # Filter pob or keep them all
+    if(!input$demo_pob == 'Born anywhere'){
+      df <- df %>% filter(pob == input$demo_pob)
+    }
+    
+    # Filter vm or keep them all
+    if(!input$demo_vm == 'All ethnicities'){
+      df <- df %>% filter(vm == input$demo_vm)
+    }
+    
+    # Require special indicators
+    df <- df %>% filter(si == input$demo_si)
+    
+    # Aggregate
+    df <- df %>%
+      group_by(geography) %>%
+      summarise(value = sum(value, na.rm = TRUE))
+    df
+  })
+  
+  # Test table
+  output$test <- renderTable({
+    leaflet_data()
+  })
+  
   # Leaflet
   output$demo_leaflet <- renderLeaflet({
-
-      df <- birthplace %>%
-        filter(year == input$demo_year,
-               age_group == input$demo_age,
-               sex == input$demo_sex)
-      if(!input$by_birthplace){
-        df <- df %>%
-          group_by(geography) %>%
-          summarise(value = sum(value, na.rm = TRUE))
-      } else {
-        df <- df %>%
-          group_by(geography) %>%
-          summarise(value = sum(value[place == 'abroad'], na.rm = TRUE) /
-                      sum(value[place == 'anywhere'], na.rm = TRUE) * 100)
-      }
-
+    
+    df <- leaflet_data()
 
     leaf(x = df,
          tile = input$tile,
          palette = input$palette,
          show_legend = input$show_legend)
   })
-
-
-  # # Demo selector
-  # output$demo_selector <- renderUI({
-  #   the_choices <- names(si)[2:ncol(si)]
-  #   selectInput(inputId = 'demo_selection', label = 'Indicator', choices = the_choices)
-  # })
-  # Demo plot
-  output$demo_plot <- renderPlot({
-    require(ggplot2)
-    # if(is.null(input$demo_selection)){
-      var <- input$demo_selection
-    # } else {
-    #   var <- names(si)[5]
-    # }
-    the_data <- si[,c(1, which(names(si) == var))]
-    names(the_data) <- c('Group', 'Indicator')
-    the_data <- the_data[3:nrow(the_data),]
-    the_data <- the_data[1:14,]
-    the_data <- data.frame(the_data)
-    the_data[,2] <- as.numeric(the_data[,2])
-    the_data <- the_data %>% filter(!Group %in% c('Total visible minority population',
-                                                  'Multiple visible minority'))
-    ggplot(data = the_data,
-           aes(x = Group,
-               y = Indicator)) +
-      theme_databrew() +
-      geom_bar(stat = 'identity',
-               fill = 'darkblue',
-               alpha = 0.6,
-               color = 'black',
-               lwd = 0.1) +
-      theme(axis.text.x = element_text(angle = 90)) +
-      labs(y = 'People',
-           title = var)
+  
+  # Table below leaflet plot
+  output$demo_table <- DT::renderDataTable({
+    x <- leaflet_data() %>%
+      filter(geography != '3500') %>%
+      mutate(percent = value / sum(value) * 100)
+    prettify(x, download_options = TRUE)
   })
+  
+  # Download table
+  output$downloadData <- downloadHandler(
+    filename = function() { paste('databrew', '.csv', sep='') },
+    content = function(file) {
+      write.csv(census_all, file)
+    }
+  )
 
 }

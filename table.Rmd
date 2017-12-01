@@ -28,7 +28,14 @@ library(feather)
 library(tidyverse)
 library(googleVis)
 library(RColorBrewer)
-library(databrew)
+##########
+# Source databrew package files
+##########
+db_files <- dir('R')
+for (i in 1:length(db_files)){
+  source(paste0('R/', db_files[i]))
+}
+
 op <- options(gvis.plot.tag='chart')
 
 
