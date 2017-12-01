@@ -1,11 +1,17 @@
 library(shiny)
 library(leaflet)
+library(shinyBS)
+library(shinyLP)
+library(shinythemes)
 dashboardPage(skin = 'blue',
               dashboardHeader(title = "Ontario Youth Compass",
                               titleWidth = 300),
               dashboardSidebar(width = 300,
 
                 sidebarMenu(
+                  menuItem('Welcome',
+                           icon = icon('users'),
+                           tabName = 'welcome'),
                   menuItem('Geographic explorer',
                            icon = icon('pencil'),
                            tabName = 'demo'),
@@ -43,6 +49,31 @@ dashboardPage(skin = 'blue',
                            badgeColor = "green"))),
               dashboardBody(
                 tabItems(
+                  tabItem(tabName = 'welcome',
+                                  jumbotron("Welcome!", "Ready to explore some Ontario youth data?",
+                                            buttonLabel = "Let's go!"),
+                          fluidRow(
+                            column(6, panel_div(class_type = "primary", panel_title = "Directions",
+                                                content = "How to use the app<br>One day soon<br>There will be instructions here.")),
+                            column(6, panel_div("success", "Application Maintainers",
+                                                "Email us: <a href='mailto:xing@databrew.cc?Subject=Stepping%20Up%20App' target='_top'>Xing Brew</a>"))
+                          ),  # end of fluidRow
+                          fluidRow(
+                            column(6, panel_div("info", "App Status", "Include text with status, version and updates")),
+                            column(6, panel_div("danger", "Design and support", "Copyright 2017 <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
+                            
+                            #### FAVICON TAGS SECTION ####
+                            tags$head(tags$link(rel="shortcut icon", href="favicon.ico")),
+                            
+                            #### JAVASCRIPT TAGS SECTION #### - ENABLE WHEN READY
+                            # tags$head(tags$script(src='pl.js')), # comment this out?
+                            
+                            bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
+                                    p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
+                                    iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
+                            )
+                            
+                          )),
                   tabItem(tabName = "demo",
                           helpText('Select a sex, age group, and year to visualize an interactive population map.'),
                           fluidRow(column(2,
@@ -132,7 +163,9 @@ dashboardPage(skin = 'blue',
                           h2("About"),
                           h4('A collaboration with www.databrew.cc')),
                   tabItem(tabName = "download",
-                          h2("Data download")),
+                          h2("Data download"),
+                          fluidRow(column(12,
+                                          DT::dataTableOutput('download_data')))),
                   tabItem(tabName = "widgets",
                           h2("Widgets tab content"),
                           # infoBoxes with fill=FALSE

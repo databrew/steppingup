@@ -121,5 +121,10 @@ function(input, output) {
       mutate(percent = value / sum(value) * 100)
     prettify(x, download_options = TRUE)
   })
+  
+  # Table for raw download
+  output$download_data <- DT::renderDataTable({
+    prettify(census_all, download_options = TRUE)
+  })
 
 }
