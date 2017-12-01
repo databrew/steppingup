@@ -115,9 +115,11 @@ function(input, output) {
   })
   
   # Table below leaflet plot
-  output$demo_table <- renderDataTable({
-    x <- leaflet_data()
-    prettify(x)
+  output$demo_table <- DT::renderDataTable({
+    x <- leaflet_data() %>%
+      filter(geography != '3500') %>%
+      mutate(percent = value / sum(value) * 100)
+    prettify(x, download_options = TRUE)
   })
 
 }
