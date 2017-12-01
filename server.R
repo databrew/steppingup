@@ -122,9 +122,12 @@ function(input, output) {
     prettify(x, download_options = TRUE)
   })
   
-  # Table for raw download
-  output$download_data <- DT::renderDataTable({
-    prettify(census_all, download_options = TRUE)
-  })
+  # Download table
+  output$downloadData <- downloadHandler(
+    filename = function() { paste('databrew', '.csv', sep='') },
+    content = function(file) {
+      write.csv(census_all, file)
+    }
+  )
 
 }
