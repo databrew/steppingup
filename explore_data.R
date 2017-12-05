@@ -23,23 +23,100 @@ source('global.R')
 #12) "year_ontario_social_assistance_database"
 ##########################################################################
 
-##########
-# datasets - NHS
-##########
-# nhs_data_folder
-# 1) "1987_2015_labour_force_survey"
-# 2) "2010_general_social_survey"
-# 3) "2010_imdb_tax_file"
-# 4) "2011_general_social_survey"
-# 5) "2012_general_social_survey"
-# 6) "2012_program_for_international_assessment_of_adult_comptencies"
-# 7)  "2013_general_social_survey"
-# 8) "2014_cananda_financial_capabilities_survey"
-# 9) "2014_employment_insurance_coverage_survey"
-# 10) "2014_general_social_survey"
-# 11) "2015_ontario_student_drug_use_and_health_survey"
-#12) "year_ontario_social_assistance_database"
-##########################################################################
+# read in variable list that xing and i chose
+var_list <- read.csv('data/var_summary.csv')
+var_names <- as.character(var_list$long_name)
+
+#########
+# read in survey data, subset by our variables, and write to csv
+#########
+path_to_data <- 'data/survey_data'
+survey_folders <- list.files(path_to_data)
+for(i in 1:length(survey_folders)) {
+  temp_folder <- survey_folders[i]
+  survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
+  for(j in 1:length(survey_data)) {
+    if (grepl('.sav', temp_data)) {
+      if(length(survey_data == 1)) {
+        temp_data <- survey_data[j]
+        temp_dat <- read.spss(file = paste(path_to_data,
+                                           temp_folder,
+                                           temp_data, sep = '/'),
+                              use.value.labels = T,
+                              to.data.frame = T,
+                              trim.factor.names = T,
+                              trim_values = F,
+                              use.missings = T)
+
+
+        # get column names
+        colnames(temp_dat) <- attr(temp_dat,"variable.labels")
+        temp_sub <-  temp_dat[, colnames(temp_dat)[var_names %in% colnames(temp_dat)]]
+      } else {
+        temp_data <- survey_data[j]
+        temp_dat <- read.spss(file = paste(path_to_data,
+                                           temp_folder,
+                                           temp_data, sep = '/'),
+                              use.value.labels = T,
+                              to.data.frame = T,
+                              trim.factor.names = T,
+                              trim_values = F,
+                              use.missings = T)
+
+
+        # get column names
+        colnames(temp_dat) <- attr(temp_dat,"variable.labels")
+        temp_sub <-  temp_dat[, colnames(temp_dat)[var_names %in% colnames(temp_dat)]]
+      }
+
+    } else {
+      temp_dat <- as.data.frame(read.sas7bdat(file = paste(path_to_data,
+                                                           temp_folder,
+                                                           temp_data,
+                                                           sep = '/')),
+                                stringsAsFactors = F)
+
+      # get column names
+      var_names <- colnames(temp_dat)
+    }
+
+  }
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 get_data <-
   function(path_to_data) {
