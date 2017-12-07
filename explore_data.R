@@ -4,7 +4,13 @@ library(feather)
 library(foreign)
 library(sas7bdat)
 
-source('global.R')
+# GO THROUGH EACH ONE AND FINISH FILLING OUT DATA NOTES AND CLEAN AND JOIN
+
+survey_data <- T
+if(!survey_data) {
+  source('global.R')
+}
+
 ##########
 # datasets - survey
 ##########
@@ -34,6 +40,9 @@ var_names <- as.character(var_list$long_name)
 #########
 path_to_data <- 'data/survey_data'
 survey_folders <- list.files(path_to_data)
+i = 7
+j = 1
+
 result_list <- list()
 for(i in 1:length(survey_folders)) {
   temp_folder <- survey_folders[i]
@@ -56,6 +65,8 @@ for(i in 1:length(survey_folders)) {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         temp_sub <-  temp_dat[, colnames(temp_dat)[colnames(temp_dat) %in% var_names]]
         colnames(temp_sub) <- tolower(colnames(temp_sub))
+        colnames(temp_sub) <- gsub('.', '', colnames(temp_sub), fixed = T)
+        temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
         data_list[[j]] <- temp_sub
         } else {
 
@@ -66,7 +77,9 @@ for(i in 1:length(survey_folders)) {
                                     stringsAsFactors = F)
           # get column names
           colnames(temp_dat) <- tolower(colnames(temp_dat))
-          data_list[[j]] <- temp_dat
+          temp_sub <- temp_dat
+          temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
+          data_list[[j]] <- temp_sub
       }
 
   }
@@ -76,8 +89,23 @@ for(i in 1:length(survey_folders)) {
     temp_2 <- data_list[[2]]
     temp_3 <- data_list[[3]]
 
+
     # make colnames the same and join
-    colnames(temp_1) <- ifelse(grepl('whatever you rename it after going through 1 by 1', colnames(temp_1)))
+    join_key <- Reduce(intersect, list(colnames(temp_1),
+                                       colnames(temp_2),
+                                       colnames(temp_3)))[1]
+
+    # change to character
+    temp_1[, join_key] <- as.character(temp_1[, join_key])
+    temp_2[, join_key] <- as.character(temp_2[, join_key])
+    temp_3[, join_key] <- as.character(temp_3[, join_key])
+
+
+    # outer join temp1 and temp2
+    temp <- full_join(temp_1, temp_2, by = join_key)
+    temp_full <- full_join(temp, temp_3, by = join_key)
+
+    result_list[[i]] <- temp_full
 
   } else {
     result_list[[i]] <- data_list
@@ -89,63 +117,21 @@ for(i in 1:length(survey_folders)) {
 
 length(result_list)
 
-# save.image('~/Desktop/survey_temp_readin.RData')
+save.image('~/Desktop/survey_temp_readin.RData')
 load('~/Desktop/survey_temp_readin.RData')
 
-length(result_list[[1]])
-length(result_list[[2]])
-length(result_list[[3]])
-length(result_list[[4]])
-length(result_list[[5]])
-length(result_list[[6]])
-length(result_list[[7]])
-length(result_list[[8]])
-length(result_list[[9]])
-length(result_list[[10]])
-length(result_list[[11]])
 
 temp_1 <- as.data.frame(result_list[[1]])
-temp_2_1 <- result_list[[2]][[1]]
-temp_2_2 <- result_list[[2]][[2]]
-temp_2_3 <- result_list[[2]][[3]]
+temp_2 <- as.data.frame(result_list[[2]])
 temp_3 <- as.data.frame(result_list[[3]])
 temp_4 <- as.data.frame(result_list[[4]])
 temp_5 <- as.data.frame(result_list[[5]])
 temp_6 <- as.data.frame(result_list[[6]])
-temp_7_1 <- result_list[[7]][[1]]
-temp_7_2 <- result_list[[7]][[2]]
-temp_7_3 <- result_list[[7]][[3]]
+temp_7 <- as.data.frame(result_list[[7]])
 temp_8 <- as.data.frame(result_list[[8]])
 temp_9 <- as.data.frame(result_list[[9]])
 temp_10 <- as.data.frame(result_list[[10]])
 temp_11 <- as.data.frame(result_list[[11]])
-#
-# tt_ids <- temp_2_1$`Record identification`
-# tf_ids <- temp_2_2$`Record identification.`
-# tt <-  temp_2_1[,colnames(temp_2_1) %in% colnames(temp_2_2)]
-# tf <-  temp_2_2[,colnames(temp_2_2) %in% colnames(temp_2_1)]
-#
-# temp <- cbind(ids = tt_ids[1:1000],tt[1:1000, ])
-# temp_1 <- cbind(ids = tt_ids[1:1000],tt[1:1000, ])
-
-# temp_f <- inner_join(temp, temp_1, by = 'ids')
-##########
-# datasets - survey
-##########
-# survey_data folder
-# 1) "1987_2015_labour_force_survey"
-# 2) "2010_general_social_survey"
-# 3) "2010_imdb_tax_file"
-# 4) "2011_general_social_survey"
-# 5) "2012_general_social_survey"
-# 6) "2012_program_for_international_assessment_of_adult_comptencies"
-# 7)  "2013_general_social_survey"
-# 8) "2014_cananda_financial_capabilities_survey"
-# 9) "2014_employment_insurance_coverage_survey"
-# 10) "2014_general_social_survey"
-# 11) "2015_ontario_student_drug_use_and_health_survey"
-#12) "year_ontario_social_assistance_database"
-##########################################################################
 
 
 
