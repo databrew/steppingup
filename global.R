@@ -210,34 +210,13 @@ get_data <- function(data_type = 'census') {
 
       data_list[[name]] <- temp_data_long
 
-
     }
-    # Commenting out all the NHS stuff, since it's not yet functional
-    # if(data_type == 'nhs') {
-    #   if(grepl('employment', name)) {
-    #     # starts at 4 because in this data set only 4 varibles by 1
-    #     temp_data_long <- clean_cols_long(temp_data, wide_column_start = 5, dups = F)
-    #     colnames(temp_data_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
-    #   } else {
-    #     # starts at 4 because in this data set only 4 varibles by 1
-    #     temp_data_long <- clean_cols_long(x = temp_data, wide_column_start = 2, dups = T)
-    #     colnames(temp_data_long) <- c("geography", "key","value","year" )
-    #
-    #     # remove white space from all columns
-    #     temp_data_long <- as.data.frame(apply(temp_data_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
-    #
-    #   }
-    #   data_list[[name]] <- temp_data_long
-    # }
     message(name)
   }
   if(data_type == 'census'){
-    # dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
     dat <- bind_rows(data_list)
     return(dat)
-  } #else {
-  #   return(data_list)
-  # }
+  }
 }
 
 # Get census data
@@ -257,19 +236,19 @@ if('census_all.feather' %in% dir('data')){
     arrange(geo_code, geo)
   geo_dictionary <- geo_dictionary %>%
     filter(!duplicated(geo_code))
-  census_all <- 
+  census_all <-
     census_all %>%
     dplyr::select(-geo) %>%
     left_join(geo_dictionary, by = 'geo_code') %>%
     dplyr::select(geo_code, geo, year, age, sex, pob, vm, special_indicators, value)
-  census_all <- 
+  census_all <-
     census_all %>%
     rename(si = special_indicators)
-  
+
   # Remove the 15 to 24 age group (since it overlaps with others)
   census_all <- census_all %>%
     filter(age != '15 to 24 years')
-  
+
   # and then save data to to "data" folder for faster retrieval in subsequent runs
   # save(census_all, file = 'data/census_all.RData')
   write_feather(census_all, 'data/census_all.feather')
