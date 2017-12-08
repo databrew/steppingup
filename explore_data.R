@@ -40,7 +40,7 @@ var_names <- as.character(var_list$long_name)
 #########
 path_to_data <- 'data/survey_data'
 survey_folders <- list.files(path_to_data)
-i = 7
+i = 11
 j = 1
 
 result_list <- list()
@@ -63,9 +63,9 @@ for(i in 1:length(survey_folders)) {
 
         # get column names
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
+        colnames(temp_dat) <- gsub('.', '', as.character(colnames(temp_dat)), fixed = T)
         temp_sub <-  temp_dat[, colnames(temp_dat)[colnames(temp_dat) %in% var_names]]
         colnames(temp_sub) <- tolower(colnames(temp_sub))
-        colnames(temp_sub) <- gsub('.', '', colnames(temp_sub), fixed = T)
         temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
         data_list[[j]] <- temp_sub
         } else {
@@ -95,12 +95,6 @@ for(i in 1:length(survey_folders)) {
                                        colnames(temp_2),
                                        colnames(temp_3)))[1]
 
-    # change to character
-    temp_1[, join_key] <- as.character(temp_1[, join_key])
-    temp_2[, join_key] <- as.character(temp_2[, join_key])
-    temp_3[, join_key] <- as.character(temp_3[, join_key])
-
-
     # outer join temp1 and temp2
     temp <- full_join(temp_1, temp_2, by = join_key)
     temp_full <- full_join(temp, temp_3, by = join_key)
@@ -120,17 +114,41 @@ length(result_list)
 save.image('~/Desktop/survey_temp_readin.RData')
 load('~/Desktop/survey_temp_readin.RData')
 
-
+survey_folders[1]
 temp_1 <- as.data.frame(result_list[[1]])
+apply(temp_1, 2, function(x) any(is.na(x)))
+length(which(is.na(temp_1$self.employed)))
+dim(temp_1)
+colnames(temp_1)
+
+survey_folders[2]
 temp_2 <- as.data.frame(result_list[[2]])
+
+survey_folders[3]
 temp_3 <- as.data.frame(result_list[[3]])
+
+survey_folders[4]
 temp_4 <- as.data.frame(result_list[[4]])
+
+survey_folders[5]
 temp_5 <- as.data.frame(result_list[[5]])
+
+survey_folders[6]
 temp_6 <- as.data.frame(result_list[[6]])
+
+survey_folders[7]
 temp_7 <- as.data.frame(result_list[[7]])
+
+survey_folders[8]
 temp_8 <- as.data.frame(result_list[[8]])
+
+survey_folders[9]
 temp_9 <- as.data.frame(result_list[[9]])
+
+survey_folders[10]
 temp_10 <- as.data.frame(result_list[[10]])
+
+survey_folders[11]
 temp_11 <- as.data.frame(result_list[[11]])
 
 
