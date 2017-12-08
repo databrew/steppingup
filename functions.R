@@ -132,10 +132,10 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
 }
 
 # Define function for printing nice html tables
-prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns = TRUE, 
-                      cap_characters = TRUE, comma_numbers = TRUE, date_format = "%B %d, %Y", 
-                      round_digits = 2, remove_row_names = TRUE, remove_line_breaks = TRUE, 
-                      data_table = TRUE, nrows = 5, download_options = FALSE) 
+prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns = TRUE,
+                      cap_characters = TRUE, comma_numbers = TRUE, date_format = "%B %d, %Y",
+                      round_digits = 2, remove_row_names = TRUE, remove_line_breaks = TRUE,
+                      data_table = TRUE, nrows = 5, download_options = FALSE)
 {
   column_names <- names(the_table)
   the_table <- data.frame(the_table)
@@ -177,14 +177,14 @@ prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns 
   }
   if (data_table) {
     if (download_options) {
-      the_table <- DT::datatable(the_table, options = list(pageLength = nrows, 
-                                                           dom = "Bfrtip", buttons = list("copy", "print", 
-                                                                                          list(extend = "collection", buttons = "csv", 
+      the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
+                                                           dom = "Bfrtip", buttons = list("copy", "print",
+                                                                                          list(extend = "collection", buttons = "csv",
                                                                                                text = "Download"))), rownames = FALSE, extensions = "Buttons")
     }
     else {
-      the_table <- DT::datatable(the_table, options = list(pageLength = nrows, 
-                                                           columnDefs = list(list(className = "dt-right", 
+      the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
+                                                           columnDefs = list(list(className = "dt-right",
                                                                                   targets = 0:(ncol(the_table) - 1)))), rownames = FALSE)
     }
   }
@@ -203,7 +203,7 @@ subset_table <- function(data = census_all,
                         si = NULL){
   # Create data
   sub_data <- data
-  
+
   # Modify param names
   the_geo_code = geo_code
   the_year = year
@@ -212,10 +212,10 @@ subset_table <- function(data = census_all,
   the_pob = pob
   the_vm = vm
   the_si = si
-  
+
   # Empty vector of groupers
   groupers <- c()
-  
+
   if(!is.null(geo_code)){
     sub_data <- sub_data %>% dplyr::filter(geo_code == the_geo_code)
   } else {
@@ -251,14 +251,35 @@ subset_table <- function(data = census_all,
   } else {
     groupers <- c(groupers, 'si')
   }
-  
+
   # Apply groupers
   if(length(groupers) > 0){
-    sub_data <- 
+    sub_data <-
       sub_data %>%
       group_by_(groupers) %>%
       summarise(value = sum(value))
   }
 
   return(sub_data)
+}
+
+
+# function for cleaning the columns of the survey data
+temp <- temp_dat
+clean_subset_survey <- function(temp) {
+  # get long for variable names
+  colnames(temp) <- attr(temp,"variable.labels")
+  # get the column names we want from are varibale list
+  temp_sub <-  temp[, colnames(temp)[colnames(temp) %in% var_names]]
+  colnames(temp_sub) <- tolower(colnames(temp_sub))
+  # clean cols
+  colnames(temp_sub) <- gsub("[[:punct:]]", '', as.character(colnames(temp_sub)))
+  colnames(temp_sub) <- trimws(colnames(temp_sub), which = 'both')
+  colnames(temp_sub) <- gsub("[[:space:]]", '_', as.character(colnames(temp_sub)))
+  colnames(temp_sub) <- gsub("__", '_', as.character(colnames(temp_sub)), fixed = T)
+
+  # remove any whitespaces left over
+  temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
+
+  return(temp_sub)
 }

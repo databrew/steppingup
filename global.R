@@ -52,7 +52,7 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
   mutate(geography = as.character(geography))
 
 ##########
-# Load all census data from census_data folder in data folder
+# all census data from census_data folder in data folder
 ##########
 # first 3 are short form census data. usually they accompany the short form with
 # the long form, but conservative govt took over in 2011 and they did the
@@ -68,8 +68,24 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # "2011_nhs_employment_toronto.csv"
 
 ##########
+# all survey data
+##########
+# survey_data folder
+# 1) "1987_2015_labour_force_survey"
+# 2) "2010_general_social_survey"
+# 3) "2011_general_social_survey"
+# 4) "2012_general_social_survey"
+# 5) "2012_program_for_international_assessment_of_adult_comptencies"
+# 6) "2013_general_social_survey"
+# 7) "2014_cananda_financial_capabilities_survey"
+# 8) "2014_employment_insurance_coverage_survey"
+# 9) "2014_general_social_survey"
+# 10) "2015_ontario_student_drug_use_and_health_survey"
+
+##########
 # This function will be used in the get_data function to clean columns and make long
 ##########
+
 clean_cols_long <- function(x, wide_column_start, dups, name){
   colnames(x) <- tolower(colnames(x))
   colnames(x) <- gsub('x', replacement = '', colnames(x))
@@ -109,16 +125,17 @@ clean_cols_long <- function(x, wide_column_start, dups, name){
 
 # data_type = 'nhs'
 get_data <- function(data_type = 'census') {
-  # first get vector of data set names to loop through later
-  data_names <- list.files('data/census_data')
-  # cread empty list to store data
-  data_list <- list()
-  # get data type
-  sub_names <- data_names[grepl(data_type, data_names)]
-  # function that loops through each name in for census data and read into a list
-  for (name in sub_names) {
-    temp_data <- read_csv(paste0('data/census_data/', name))
-    if(data_type == 'census'){
+
+ if(data_type == 'census'){
+    # first get vector of data set names to loop through later
+    data_names <- list.files('data/census_data')
+    # cread empty list to store data
+    data_list <- list()
+    # get data type
+    sub_names <- data_names[grepl(data_type, data_names)]
+    # function that loops through each name in for census data and read into a list
+    for (name in sub_names) {
+      temp_data <- read_csv(paste0('data/census_data/', name))
       # Declare that the encoding is all screwed up for this file
       Encoding(temp_data$Geography) <- "latin1"
       # Address the weirdness with "New Credit (Part)"
@@ -168,7 +185,7 @@ get_data <- function(data_type = 'census') {
                                       value,
                                       `Never married (single) 15 years and over`:`Living in band housing`)
 
-       # Clean up names
+      # Clean up names
       names(temp_data_long) <- c('geo',
                                  'age',
                                  'sex',
@@ -208,14 +225,95 @@ get_data <- function(data_type = 'census') {
                       ifelse(temp_data_long$age == 'Total - 15 year', '15 +',
                              temp_data_long$age)))
 
-      data_list[[name]] <- temp_data_long
+      }
 
-    }
-    message(name)
+    data_list[[name]] <- temp_data_long
+
+   } else {
+
+     # get the survey folder names in data
+     path_to_data <- 'data/survey_data'
+     survey_folders <- list.files(path_to_data)
+     # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
+     survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
+     # create list to store results
+     result_list <- list()
+     # loop through each folder and read in all data in that folder (either 1 or 3)
+     i = 1
+     j = 1
+
+     for(i in 1:length(survey_folders)) {
+       temp_folder <- survey_folders[i]
+       survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
+       data_list <- list()
+       for(j in 1:length(survey_data)) {
+         temp_data <- survey_data[j]
+         if (grepl('.sav', temp_data)) {
+           temp_dat <- read.spss(file = paste(path_to_data,
+                                              temp_folder,
+                                              temp_data, sep = '/'),
+                                 use.value.labels = T,
+                                 to.data.frame = T,
+                                 trim.factor.names = T,
+                                 trim_values = F,
+                                 use.missings = T)
+
+           temp_sub <- clean_subset_survey(temp_dat)
+           data_list[[j]] <- temp_sub
+         } else {
+
+           temp_dat <- as.data.frame(read.sas7bdat(file = paste(path_to_data,
+                                                                temp_folder,
+                                                                temp_data,
+                                                                sep = '/')),
+                                     stringsAsFactors = F)
+           # get column names
+           colnames(temp_dat) <- tolower(colnames(temp_dat))
+           temp_sub <- temp_dat
+           temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
+           data_list[[j]] <- temp_sub
+         }
+
+       }
+
+       if(length(data_list) > 1) {
+         temp_1 <- data_list[[1]]
+         temp_2 <- data_list[[2]]
+         temp_3 <- data_list[[3]]
+
+
+         # make colnames the same and join
+         join_key <- Reduce(intersect, list(colnames(temp_1),
+                                            colnames(temp_2),
+                                            colnames(temp_3)))[1]
+
+         # outer join temp1 and temp2
+         temp <- full_join(temp_1, temp_2, by = join_key)
+         temp_full <- full_join(temp, temp_3, by = join_key)
+
+         result_list[[i]] <- temp_full
+
+       } else {
+         result_list[[i]] <- data_list
+
+       }
+
+       print(temp_folder)
+     }
+
+     length(result_list)
+
+
   }
+
+    message(name)
   if(data_type == 'census'){
     dat <- bind_rows(data_list)
     return(dat)
+  } else {
+
+
+
   }
 }
 

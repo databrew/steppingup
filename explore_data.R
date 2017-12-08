@@ -30,7 +30,7 @@ if(!survey_data) {
 ##########################################################################
 
 # read in variable list that xing and i chose
-var_list <- read.csv('data/var_summary.csv')
+var_list <- read.csv('data/survey_data/var_summary.csv')
 var_names <- as.character(var_list$long_name)
 
 # get id indicators
@@ -40,8 +40,7 @@ var_names <- as.character(var_list$long_name)
 #########
 path_to_data <- 'data/survey_data'
 survey_folders <- list.files(path_to_data)
-i = 11
-j = 1
+
 
 result_list <- list()
 for(i in 1:length(survey_folders)) {
