@@ -264,22 +264,24 @@ subset_table <- function(data = census_all,
 }
 
 
-# function for cleaning the columns of the survey data
-temp <- temp_dat
-clean_subset_survey <- function(temp) {
-  # get long for variable names
-  colnames(temp) <- attr(temp,"variable.labels")
-  # get the column names we want from are varibale list
-  temp_sub <-  temp[, colnames(temp)[colnames(temp) %in% var_names]]
-  colnames(temp_sub) <- tolower(colnames(temp_sub))
+
+# temp <- temp_dat
+clean_subset_survey <- function(temp, get_year, folder) {
+
+  colnames(temp) <- tolower(colnames(temp))
   # clean cols
-  colnames(temp_sub) <- gsub("[[:punct:]]", '', as.character(colnames(temp_sub)))
-  colnames(temp_sub) <- trimws(colnames(temp_sub), which = 'both')
-  colnames(temp_sub) <- gsub("[[:space:]]", '_', as.character(colnames(temp_sub)))
-  colnames(temp_sub) <- gsub("__", '_', as.character(colnames(temp_sub)), fixed = T)
+  colnames(temp) <- gsub("[[:punct:]]", '', as.character(colnames(temp)))
+  colnames(temp) <- trimws(colnames(temp), which = 'both')
+  colnames(temp) <- gsub("[[:space:]]", '_', as.character(colnames(temp)))
+  colnames(temp) <- gsub("__", '_', as.character(colnames(temp)), fixed = T)
 
   # remove any whitespaces left over
-  temp_sub <- as.data.frame(temp_sub, stringsAsFactors = F)
+  temp <- as.data.frame(temp, stringsAsFactors = F)
 
-  return(temp_sub)
+  if(get_year) {
+    year <- unlist(lapply(strsplit(folder, split = '_',  fixed = T), function(x) x[1]))
+    temp$year <- year
+  }
+
+  return(temp)
 }
