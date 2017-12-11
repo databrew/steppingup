@@ -11,9 +11,6 @@ library(dplyr)
 library(tidyr)
 library(broom)
 library(feather)
-library(foreign)
-library(sas7bdat)
-
 
 ##########
 # Source databrew package files
@@ -58,7 +55,7 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
   mutate(geography = as.character(geography))
 
 ##########
-# all census data from census_data folder in data folder
+# Load all census data from census_data folder in data folder
 ##########
 # first 3 are short form census data. usually they accompany the short form with
 # the long form, but conservative govt took over in 2011 and they did the
@@ -74,24 +71,8 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # "2011_nhs_employment_toronto.csv"
 
 ##########
-# all survey data
-##########
-# survey_data folder
-# 1) "1987_2015_labour_force_survey"
-# 2) "2010_general_social_survey"
-# 3) "2011_general_social_survey"
-# 4) "2012_general_social_survey"
-# 5) "2012_program_for_international_assessment_of_adult_comptencies"
-# 6) "2013_general_social_survey"
-# 7) "2014_cananda_financial_capabilities_survey"
-# 8) "2014_employment_insurance_coverage_survey"
-# 9) "2014_general_social_survey"
-# 10) "2015_ontario_student_drug_use_and_health_survey"
-
-##########
 # This function will be used in the get_data function to clean columns and make long
 ##########
-
 clean_cols_long <- function(x, wide_column_start, dups, name){
   colnames(x) <- tolower(colnames(x))
   colnames(x) <- gsub('x', replacement = '', colnames(x))
@@ -130,18 +111,17 @@ clean_cols_long <- function(x, wide_column_start, dups, name){
 ##########
 
 # data_type = 'nhs'
-get_data <- function(data_type) {
-
-  if(data_type == 'census'){
-    # first get vector of data set names to loop through later
-    data_names <- list.files('data/census_data')
-    # cread empty list to store data
-    data_list <- list()
-    # get data type
-    sub_names <- data_names[grepl(data_type, data_names)]
-    # function that loops through each name in for census data and read into a list
-    for (name in sub_names) {
-      temp_data <- read_csv(paste0('data/census_data/', name))
+get_data <- function(data_type = 'census') {
+  # first get vector of data set names to loop through later
+  data_names <- list.files('data/census_data')
+  # cread empty list to store data
+  data_list <- list()
+  # get data type
+  sub_names <- data_names[grepl(data_type, data_names)]
+  # function that loops through each name in for census data and read into a list
+  for (name in sub_names) {
+    temp_data <- read_csv(paste0('data/census_data/', name))
+    if(data_type == 'census'){
       # Declare that the encoding is all screwed up for this file
       Encoding(temp_data$Geography) <- "latin1"
       # Address the weirdness with "New Credit (Part)"
@@ -191,7 +171,7 @@ get_data <- function(data_type) {
                                       value,
                                       `Never married (single) 15 years and over`:`Living in band housing`)
 
-      # Clean up names
+       # Clean up names
       names(temp_data_long) <- c('geo',
                                  'age',
                                  'sex',
@@ -231,97 +211,37 @@ get_data <- function(data_type) {
                       ifelse(temp_data_long$age == 'Total - 15 year', '15 +',
                              temp_data_long$age)))
 
+      data_list[[name]] <- temp_data_long
+
+
     }
-    data_list[[name]] <- temp_data_long
-  } else {
-    # get the survey folder names in data
-    path_to_data <- 'data/survey_data'
-    var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
-    var_names <- as.character(var_summary$long_name)
-    survey_folders <- list.files(path_to_data)
-    # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
-    survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
-    # create list to store results
-    result_list <- list()
-    # loop through each folder and read in all data in that folder (either 1 or 3)
-    for(i in 1:length(survey_folders)) {
-      temp_folder <- survey_folders[i]
-      survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
-      data_list <- list()
-      for(j in 1:length(survey_data)) {
-        temp_data <- survey_data[j]
-        if (grepl('.sav', temp_data)) {
-          temp_dat <- read.spss(file = paste(path_to_data,
-                                             temp_folder,
-                                             temp_data, sep = '/'),
-                                use.value.labels = T,
-                                to.data.frame = T,
-                                trim.factor.names = T,
-                                trim_values = F,
-                                use.missings = T)
-
-          if(grepl('gss|piaac|cfcs|sduhs', temp_data)) {
-            get_year = T
-          } else {
-            get_year = F
-          }
-
-          # get long for variable names
-          colnames(temp_dat) <- attr(temp_dat,"variable.labels")
-          # get the column names we want from are varibale list
-          temp_sub <-  temp_dat[, colnames(temp_dat)[colnames(temp_dat) %in% var_names]]
-          temp_sub <- clean_subset_survey(temp_sub, get_year = get_year, folder = temp_folder)
-          data_list[[j]] <- as.data.frame(temp_sub)
-        }
-      }
-
-      if(length(data_list) > 1) {
-
-        list_length = length(data_list)
-
-        if(list_length == 2) {
-          temp_1 <- data_list[[1]]
-          temp_2 <- data_list[[2]]
-          # make colnames the same and join
-          join_key <- Reduce(intersect, list(colnames(temp_1),
-                                             colnames(temp_2)))[1]
-          # outer join temp1 and temp2
-          data_frame <- full_join(temp_1, temp_2, by = join_key)
-          result_list[[i]] <- data_frame
-        } else {
-          temp_1 <- data_list[[1]]
-          temp_2 <- data_list[[2]]
-          temp_3 <- data_list[[3]]
-          # make colnames the same and join
-          join_key <- Reduce(intersect, list(colnames(temp_1),
-                                             colnames(temp_2),
-                                             colnames(temp_3)))[1]
-          # outer join temp1 and temp2
-          temp <- full_join(temp_1, temp_2, by = join_key)
-          data_frame <- full_join(temp, temp_3, by = join_key)
-          result_list[[i]] <- data_frame
-        }
-
-      } else {
-        result_list[[i]] <- data_list
-      }
-      print(temp_folder)
-    }
-    length(result_list)
+    # Commenting out all the NHS stuff, since it's not yet functional
+    # if(data_type == 'nhs') {
+    #   if(grepl('employment', name)) {
+    #     # starts at 4 because in this data set only 4 varibles by 1
+    #     temp_data_long <- clean_cols_long(temp_data, wide_column_start = 5, dups = F)
+    #     colnames(temp_data_long) <- c("geography", "age_group", "sex", "work_activity", "key","value","year")
+    #   } else {
+    #     # starts at 4 because in this data set only 4 varibles by 1
+    #     temp_data_long <- clean_cols_long(x = temp_data, wide_column_start = 2, dups = T)
+    #     colnames(temp_data_long) <- c("geography", "key","value","year" )
+    #
+    #     # remove white space from all columns
+    #     temp_data_long <- as.data.frame(apply(temp_data_long, 2, function(x) trimws(x, 'both')), stringsAsFactors = F)
+    #
+    #   }
+    #   data_list[[name]] <- temp_data_long
+    # }
+    message(name)
   }
-
   if(data_type == 'census'){
+    # dat <- as.data.frame(do.call(rbind, data_list), stringsAsFactors = F)
     dat <- bind_rows(data_list)
     return(dat)
-  } else {
-    return(result_list)
-  }
+  } #else {
+  #   return(data_list)
+  # }
 }
-
-# read in temporary data, before organizing into theme, returns a list of 10 data sets,
-# corresponding to the 10 folder (multiple data sets per folder were combined with full_join,
-# creating NAs)
-survey_data <- get_data(data_type = 'survey')
 
 # Get census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
@@ -340,26 +260,26 @@ if('census_all.feather' %in% dir('data')){
     arrange(geo_code, geo)
   geo_dictionary <- geo_dictionary %>%
     filter(!duplicated(geo_code))
-  census_all <-
+  census_all <- 
     census_all %>%
     dplyr::select(-geo) %>%
     left_join(geo_dictionary, by = 'geo_code') %>%
     dplyr::select(geo_code, geo, year, age, sex, pob, vm, special_indicators, value)
-  census_all <-
+  census_all <- 
     census_all %>%
     rename(si = special_indicators)
-
+  
   # Remove the 15 to 24 age group (since it overlaps with others)
   census_all <- census_all %>%
     filter(age != '15 to 24 years')
-
-
+  
   # Rename geo code to geography
   census_all <-
     census_all %>%
     rename(geography = geo_code)
-
+  
   # and then save data to to "data" folder for faster retrieval in subsequent runs
   # save(census_all, file = 'data/census_all.RData')
   write_feather(census_all, 'data/census_all.feather')
 }
+
