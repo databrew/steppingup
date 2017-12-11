@@ -318,19 +318,18 @@ get_data <- function(data_type) {
   }
 }
 
-# read in temporary data, before organizing into theme, returns a list of 10 data sets,
-# corresponding to the 10 folder (multiple data sets per folder were combined with full_join,
-# creating NAs)
-survey_data <- get_data(data_type = 'survey')
-
-# Get census data
+# Get surey and census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
 # load it
+if('survey_list.rda' %in% dir('data')) {
+  survey_list <- readRDS('data/survey_list.rda')
+} else {
+  survey_list <- get_data(data_type = 'survey')
+  saveRDS(survey_list, 'data/survey_list.rda')
+}
 if('census_all.feather' %in% dir('data')){
   census_all <- read_feather('data/census_all.feather')
 } else {
-  # Otherwise (ie, the aggregated/cleaned flie does not already exist)
-  # Read the files from csvs, clean, and aggregate
   census_all <- get_data(data_type = "census")
 
   # Clean up geography
