@@ -244,6 +244,9 @@ get_data <- function(data_type) {
     # create list to store results
     result_list <- list()
     # loop through each folder and read in all data in that folder (either 1 or 3)
+    i = 1
+    j = 1
+
     for(i in 1:length(survey_folders)) {
       temp_folder <- survey_folders[i]
       survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
