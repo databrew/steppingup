@@ -49,28 +49,30 @@ ui = dashboardPage(skin = 'blue',
                      #   includeHTML("www/head.html"),
                      tabItems(
                        tabItem(tabName = 'welcome',
-                               jumbotron("Welcome!", "Ready to explore some Ontario youth data?",
-                                         buttonLabel = "Let's go!"),
+                               jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
+                                         button = FALSE
+                                         # buttonLabel = "Explore!"
+                                         ),
                                fluidRow(
-                                 column(6, panel_div(class_type = "primary", panel_title = "Directions",
+                                 column(6, panel_div(class_type = "primary", panel_title = "App Directions",
                                                      content = "How to use the app<br>One day soon<br>There will be instructions here.")),
-                                 column(6, panel_div("success", "Application Maintainers",
+                                 column(6, panel_div("success", "App Maintenance",
                                                      "Email us: <a href='mailto:xing@databrew.cc?Subject=Stepping%20Up%20App' target='_top'>Xing Brew</a>"))
                                ),  # end of fluidRow
                                fluidRow(
                                  column(6, panel_div("info", "App Status", "Include text with status, version and updates")),
-                                 column(6, panel_div("danger", "Design and support", "Copyright 2017 <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
+                                 column(6, panel_div("danger", "App Design and Support", "Copyright 2017 <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
                                  
                                  #### FAVICON TAGS SECTION ####
-                                 tags$head(tags$link(rel="shortcut icon", href="favicon.ico")),
+                                 tags$head(tags$link(rel="shortcut icon", href="favicon.ico"))#,
                                  
                                  #### JAVASCRIPT TAGS SECTION #### - ENABLE WHEN READY
                                  # tags$head(tags$script(src='pl.js')), # comment this out?
                                  
-                                 bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
-                                         p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
-                                         iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
-                                 )
+                                 # bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
+                                 #         p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
+                                 #         iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
+                                 # )
                                  
                                )),
                        tabItem(tabName = "census",
@@ -137,51 +139,17 @@ ui = dashboardPage(skin = 'blue',
                                                                                             'Stamen - Terrain' = 'Stamen.Terrain',
                                                                                             'ESRI - Satellite' = 'Esri.WorldImagery',
                                                                                             'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap'))))),
-                                           tabPanel('Table',
+                                          tabPanel('Plot',
+                                                   fluidRow(column(12,
+                                                                   p('Placeholder text.')))),
+                                            tabPanel('Table',
                                                     fluidRow(column(12,
                                                                     # tableOutput('test')
                                                                     DT::dataTableOutput('demo_table')
                                                     ))))),
                        tabItem(tabName = "theme",
                                tabsetPanel(
-                                 tabPanel(title = 'Health and wellness',
-                                          h2('Health and wellness'),
-                                          p('Some text here about health and wellness'),
-                                          fluidRow(h4('Some indicator')),
-                                          fluidRow(
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 1", width = NULL, solidHeader = TRUE, status = "primary",
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     width = NULL, background = "black",
-                                                     "A box with a solid black background"
-                                                   )
-                                            ),
-                                            
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     title = "Title 5", width = NULL, background = "light-blue",
-                                                     "A box with a solid light-blue background"
-                                                   )
-                                            ),
-                                            
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 2", width = NULL, solidHeader = TRUE,
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     title = "Title 6", width = NULL, background = "maroon",
-                                                     "A box with a solid maroon background"
-                                                   )
-                                            )
-                                          )),
+                                 tabPanel(title = 'Health and wellness'),
                                  tabPanel(title = 'Supportive families'),
                                  tabPanel(title = 'Education'),
                                  tabPanel(title = 'Employment'),
