@@ -321,12 +321,13 @@ get_data <- function(data_type) {
 # Get surey and census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
 # load it
-if('survey_list.rda' %in% dir('data')) {
-  survey_list <- readRDS('data/survey_list.rda')
-} else {
-  survey_list <- get_data(data_type = 'survey')
-  saveRDS(survey_list, 'data/survey_list.rda')
-}
+# CURRENTLY COMMENTING OUT IN ORDER TO SPEED UP
+# if('survey_list.rda' %in% dir('data')) {
+#   survey_list <- readRDS('data/survey_list.rda')
+# } else {
+#   survey_list <- get_data(data_type = 'survey')
+#   saveRDS(survey_list, 'data/survey_list.rda')
+# }
 if('census_all.feather' %in% dir('data')){
   census_all <- read_feather('data/census_all.feather')
 } else {
