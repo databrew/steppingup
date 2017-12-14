@@ -115,7 +115,13 @@ ui = dashboardPage(skin = 'blue',
                                                                        'Born in Canada',
                                                                        'Born outside of Canada')))),
                                
-                               tabsetPanel(tabPanel('Map',
+                               tabsetPanel(
+                                 tabPanel('Table',
+                                          fluidRow(column(12,
+                                                          # tableOutput('test')
+                                                          DT::dataTableOutput('demo_table')
+                                          ))),
+                                 tabPanel('Map',
                                                     
                                                     leafletOutput('demo_leaflet'),
                                                     fluidRow(column(3,
@@ -142,12 +148,7 @@ ui = dashboardPage(skin = 'blue',
                                                                                             'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap'))))),
                                           tabPanel('Plot',
                                                    fluidRow(column(12,
-                                                                   p('Placeholder text.')))),
-                                            tabPanel('Table',
-                                                    fluidRow(column(12,
-                                                                    # tableOutput('test')
-                                                                    DT::dataTableOutput('demo_table')
-                                                    ))))),
+                                                                   p('Placeholder text.')))))),
                        tabItem(tabName = "theme",
                                h2('Explore data by theme'),
                                p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
