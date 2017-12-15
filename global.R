@@ -168,6 +168,7 @@ get_data <- function(data_type) {
       # keep only rows that have 4 number
       temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
 
+      # new stuff 
     
       # create a total able 
       temp_data <- as.data.frame(temp_data[, !grepl('Total', colnames(temp_data))], stringsAsFactors = F)
