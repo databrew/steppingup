@@ -46,12 +46,32 @@ get_census_data <- function() {
     # Throw away variables depending on the year (since not available in other years)
     # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
     # Therefore, we force the names from 2001 onto 2006
+    names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
     if(year == 2001){
       temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
       names_2001 <- names(temp_data)
     } else if (year == 2006){
       temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
       names(temp_data) <- names_2001
+    } else if (year == 2011){
+      # Keep those columns which are shared
+      shared <- temp_data[,names(temp_data) %in% names_2001]
+      not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+      # Get rid of subsidized data
+      not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
+      # Get rid of employment rate
+      not_shared <- not_shared[,!grepl('Employment rate %', names(not_shared), fixed = TRUE)]
+      not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
+      # Rename total diploma to match with other years
+      names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+      
+      library(stringdist)
+      fuzzy <- stringdistmatrix(a = names(not_shared),
+                          b = names_2001)
+      best_matches <- apply(fuzzy, 1, which.min)
+      best_names <- names_2001[best_matches]
+      names(not_shared) <- best_names
+      temp_data <- bind_cols(shared, not_shared)
     }
     
     # store in list
