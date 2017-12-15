@@ -206,10 +206,30 @@ get_census_data <- function() {
     distinct(geo_code, year, `Age group`, Sex, `Place of birth`, `Visible minority`, .keep_all = TRUE)
   
   census <- census[, unique(c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth', names(census)))]
+  
+  # Fix column names to make sure that denominators are correctly called "Total"
+  names(census)[names(census) == 'Population 15 years and over by Place of Residence 5 years ago'] <-
+    paste0('Total - ', 'Population 15 years and over by Place of Residence 5 years ago')
+  names(census)[names(census) == 'Population 15 years and over by labour force activity'] <-
+    paste0('Total - ', 'Population 15 years and over by labour force activity')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid housework'] <- 
+    paste0('Total - ', 'Population 15 and over by hours of unpaid housework')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid childcare'] <- 
+    paste0('Total - ', 'Population 15 and over by hours of unpaid childcare')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid care to seniors'] <-
+    paste0('Total - ', 'Population 15 and over by hours of unpaid care to seniors')
+  census$`Population - concept not applicable` <- NULL
+  census$`Population for the low income status variable` <- NULL
+  census$`Standard error of average household income $` <- NULL
 
   return(census)
-  
 }
+
+# # Generate dictionary
+# write_csv(data_frame(variable = names(census),
+#                      category = NA,
+#                      sub_category = NA),
+#           'dictionaries/census_dictionary.csv')
 
 
 ##########

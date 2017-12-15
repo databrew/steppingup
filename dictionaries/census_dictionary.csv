@@ -1,7 +1,7 @@
-variable,sub_category,category
-geo_code,geo_code,geo_code
-year,year,year
+variable,category,sub_category
 Geography,demographic,demographic
+geo_code,demographic,demographic
+year,year,year
 Age group,demographic,demographic
 Sex,demographic,demographic
 Place of birth,demographic,demographic
@@ -17,7 +17,7 @@ English only,language,language
 French only,language,language
 Both English and French,language,language
 Neither English nor French,language,language
-Population 15 years and over by Place of Residence 5 years ago,migration,migration
+Total - Population 15 years and over by Place of Residence 5 years ago,migration,migration
 Non-movers,migration,migration
 Movers,migration,migration
 Non-migrants,migration,migration
@@ -51,10 +51,10 @@ University certificate above bachelor level,education,education
 "Degree in medicine, dentistry, veterinary medicine or optometry",education,education
 Master's degree,education,education
 Earned doctorate,education,education
-Total - School attendance,school_attendance,education
-Attended school,school_attendance,education
-Did not attend school,school_attendance,education
-Population 15 years and over by labour force activity,employment,employment
+Total - School attendance,education,school_attendance
+Attended school,education,school_attendance
+Did not attend school,education,school_attendance
+Total - Population 15 years and over by labour force activity,employment,employment
 In the labour force,employment,employment
 Employed,employment,employment
 Unemployed,employment,employment
@@ -62,32 +62,28 @@ Not in the labour force,employment,employment
 Unemployment rate %,employment,employment
 Employment to population ratio %,employment,employment
 Participation rate %,employment,employment
-Total - Labour force by class of worker,job_types,employment
-Class of worker - Not applicable,job_types,employment
-All classes of worker,job_types,employment
-Paid workers,job_types,employment
-"Working for wages, salary, tips or commission",job_types,employment
-Self employed incorporated,job_types,employment
-Self employed unincorporated,job_types,employment
-Unpaid family workers,job_types,employment
-Population 15 and over by hours of unpaid housework,job_unpaid_housework,employment
-None,job_unpaid_housework,employment
-Some,job_unpaid_housework,employment
-Population 15 and over by hours of unpaid childcare,job_unpaid_childcare,employment
-None_1,job_unpaid_childcare,employment
-Some_1,job_unpaid_childcare,employment
-Population 15 and over by hours of unpaid care to seniors,job_unpaid_senior_care,employment
-None_2,job_unpaid_senior_care,employment
-Some_2,job_unpaid_senior_care,employment
-Average household income $,household_income,income
-Standard error of average household income $,household_income_se,income
-Total - Income status (LICO),low_income_status,income
-Population for the low income status variable,low_income_status,income
-Low income (LICO before tax only),low_income_status,income
-Not low income (LICO before tax only),low_income_status,income
-Population - concept not applicable,low_income_status,income
+Total - Labour force by class of worker,employment,job_types
+Class of worker - Not applicable,employment,job_types
+All classes of worker,employment,job_types
+Paid workers,employment,job_types
+"Working for wages, salary, tips or commission",employment,job_types
+Self employed incorporated,employment,job_types
+Self employed unincorporated,employment,job_types
+Unpaid family workers,employment,job_types
+Total - Population 15 and over by hours of unpaid housework,employment,job_unpaid_housework
+None,employment,job_unpaid_housework
+Some,employment,job_unpaid_housework
+Total - Population 15 and over by hours of unpaid childcare,employment,job_unpaid_childcare
+None_1,employment,job_unpaid_childcare
+Some_1,employment,job_unpaid_childcare
+Total - Population 15 and over by hours of unpaid care to seniors,employment,job_unpaid_seniorcare
+None_2,employment,job_unpaid_seniorcare
+Some_2,employment,job_unpaid_seniorcare
+Average household income $,income,income
+Total - Income status (LICO),income,low_income_status
+Low income (LICO before tax only),income,low_income_status
+Not low income (LICO before tax only),income,low_income_status
 Total - Housing tenure,housing,housing
 Living in owner occupied dwelling,housing,housing
 Living in rented dwelling,housing,housing
 Living in band housing,housing,housing
-
