@@ -65,7 +65,7 @@ get_census_data <- function() {
       
       library(stringdist)
       fuzzy <- stringdistmatrix(a = names(not_shared),
-                          b = names_2001)
+                                b = names_2001)
       best_matches <- apply(fuzzy, 1, which.min)
       best_names <- names_2001[best_matches]
       names(not_shared) <- best_names
@@ -76,7 +76,36 @@ get_census_data <- function() {
     data_list[[i]] <- temp_data
   }
   census <- bind_rows(data_list)
+  # clean column names
+  names(census)[2:3] <- c('Age group', 'Sex')
+  names(census)[5] <- c('Visible minority')
+  
+  # clean sex
+  census$Sex <- ifelse(grepl('fem', tolower(census$Sex)), 'Female', 
+                       ifelse(grepl('Male', census$Sex), 'Male', 
+                              ifelse(grepl('Total', census$Sex), 'Total',NA)))
+  # clean place of birth
+  census$`Place of birth` <- ifelse(grepl('Total', census$`Place of birth`), 'Total - Place of birth',
+                                    ifelse(grepl(' in',census$`Place of birth`), 'Born in Canada',
+                                           ifelse(grepl('out', census$`Place of birth`), 'Born outside of Canada',
+                                                  NA)))
+  
+  # fix multiple vismin
+  census$`Visible minority` <- gsub('minorities', 'minority', census$`Visible minority`)
+  census$`Visible minority` <- ifelse(grepl('Total', census$`Visible minority`), 'Total - Population by visible minority', census$`Visible minority`)
+  
+  # fix geography
+  geo_dictionary <- census %>% 
+    dplyr::select(geo_code, Geography) %>% 
+    filter(!duplicated(geo_code))
+  
+  # join dictionary to census
+  census <- census %>% 
+    dplyr::select(-Geography) %>% 
+    left_join(geo_dictionary, by = 'geo_code')
+  
   return(census)
+  
 }
 
 census <- get_census_data()
