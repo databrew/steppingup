@@ -81,7 +81,5 @@ get_census_data <- function() {
 
 census <- get_census_data()
 
-
-
 # read in dictionary 
 census_dict <- read_csv('dictionaries/census_dictionary.csv')

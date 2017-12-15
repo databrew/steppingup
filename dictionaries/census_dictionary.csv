@@ -81,7 +81,7 @@ None_2,job_unpaid_senior_care,employment
 Some_2,job_unpaid_senior_care,employment
 Average household income $,household_income,income
 Standard error of average household income $,household_income_se,income
-Total - Low income status (LICO thresholds revised to be comparable to 2006),low_income_status,income
+Total - Income status (LICO),low_income_status,income
 Population for the low income status variable,low_income_status,income
 Low income (LICO before tax only),low_income_status,income
 Not low income (LICO before tax only),low_income_status,income
@@ -91,3 +91,4 @@ Living in owner occupied dwelling,housing,housing
 Living in rented dwelling,housing,housing
 Living in band housing,housing,housing
 geo_code,geo_code,geo_code
+year,year,year
