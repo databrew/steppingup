@@ -9,7 +9,7 @@ get_census_data <- function() {
   data_list <- list()
   total_list <- list()
   # get data type
-  sub_names <- data_names[grepl(data_type, data_names)]
+  sub_names <- data_names[grepl('census', data_names)]
   # function that loops through each name in for census data and read into a list
   for (i in 1: length( sub_names)) {
     name <- sub_names[i]
@@ -40,12 +40,22 @@ get_census_data <- function() {
     temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
     
     # add year
-    temp_data$year <- substr(name, 1, 4)
+    year <- as.numeric(substr(name, 1, 4))
+    temp_data$year <- year
+    
+    # Throw away variables depending on the year (since not available in other years)
+    # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
+    # Therefore, we force the names from 2001 onto 2006
+    if(year == 2001){
+      temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
+      names_2001 <- names(temp_data)
+    } else if (year == 2006){
+      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+      names(temp_data) <- names_2001
+    }
     
     # store in list
     data_list[[i]] <- temp_data
-    
-  
   }
   return(data_list)
 }
