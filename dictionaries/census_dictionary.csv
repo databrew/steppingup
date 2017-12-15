@@ -1,4 +1,6 @@
 variable,sub_category,category
+geo_code,geo_code,geo_code
+year,year,year
 Geography,demographic,demographic
 Age group,demographic,demographic
 Sex,demographic,demographic
@@ -88,5 +90,4 @@ Total - Housing tenure,housing,housing
 Living in owner occupied dwelling,housing,housing
 Living in rented dwelling,housing,housing
 Living in band housing,housing,housing
-geo_code,geo_code,geo_code
-year,year,year
+
