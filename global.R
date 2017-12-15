@@ -530,7 +530,7 @@ censify <- function(df = census,
   # make percentages 
   if(percent) {
     if(is.null(sc)) {
-      warning("Choose an sc if you want to do percentages")
+      warning("Choose a sub category to generate percentages")
     } else {
       denom_column <- which(grepl('Total', names(df)))
       denom <- df[, denom_column]
@@ -554,3 +554,8 @@ censify <- function(df = census,
     
   return(df)
 }
+
+# define input cateogry choices
+category_choices <- sort(unique(census_dict$category))
+category_choices <- category_choices[!category_choices %in% c('demographic', 'geo_code', 'year')]
+names(category_choices) <- Hmisc::capitalize(category_choices)

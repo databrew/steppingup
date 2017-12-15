@@ -11,7 +11,7 @@ library(shinythemes)
 
 source('global.R')
 
-ui = dashboardPage(skin = 'blue',
+ui <- dashboardPage(skin = 'blue',
                    
                    
                    dashboardHeader(
@@ -79,47 +79,37 @@ ui = dashboardPage(skin = 'blue',
                                h2('Explore census data'),
                                helpText('I\'m looking for data about:'),
                                fluidRow(column(6,
-                                               selectInput('demo_si',
-                                                           'Census metric',
-                                                           choices = c('A', 'B'))),
-                                        column(3,
-                                               selectInput('demo_geo',
-                                                           'In...',
-                                                           choices = 'Ontario')),
-                                        column(3,
-                                               selectInput('demo_year', 'From...',
-                                                           choices = c(2001, 2006, 2011),
-                                                           selected = 2011))),
-                               fluidRow(column(6,
-                                               helpText('I\'m particularly interested in youth that are...')),
-                                        column(6)),
-                               fluidRow(column(3,
-                                               selectInput('demo_age', 'Age:',
-                                                           choices = c('15 to 29 years',
-                                                                       '15 to 19 years',
-                                                                       '20 to 24 years',
-                                                                       '25 to 29 years'))),
-                                        column(3,
-                                               selectInput('demo_sex', 'Sex',
-                                                           choices = c('Both', 
-                                                                       'Female', 
-                                                                       'Male'))),
-                                        column(3,
-                                               selectInput('demo_vm',
-                                                           'Visible minority:',
-                                                           choices = c("All ethnicities","Aboriginal identity","All others","Arab","Arab/West Asian","Black","Chinese","Filipino","Japanese","Korean","Latin American","Multiple visible minorities","Multiple visible minority","Non-Aboriginal identity","South Asian","Southeast Asian","Visible minority, n.i.e.","West Asian"))),
-                                        column(3,
-                                               selectInput('demo_pob',
-                                                           'Place of birth',
-                                                           choices = c('Born anywhere',
-                                                                       'Born in Canada',
-                                                                       'Born outside of Canada')))),
+                                               selectInput('category',
+                                                           'Category',
+                                                           choices = category_choices)),
+                                        column(6, 
+                                               uiOutput("sub_category"))),
+                               fluidRow(column(4,
+                                               textOutput('fake_text'),
+                                               checkboxGroupInput('group_vector',
+                                                                  'Examine by sub groups:',
+                                                                  choices = c('Age',
+                                                                              'Sex',
+                                                                              'Place of birth',
+                                                                              'Visible minority',
+                                                                              'Geography'),
+                                                                  selected = c('Age', 'Sex'))),
+                                        column(4,
+                                               radioButtons('percent',
+                                                            'View as percentage or raw number',
+                                                            choices = c('Percentage' = TRUE, 
+                                                                        'Raw numbers' = FALSE))),
+                                        column(4,
+                                               checkboxGroupInput('years',
+                                                                  'Year',
+                                                                  choices = c('2001', '2006', '2011'),
+                                                                  selected = '2001'))),
                                
                                tabsetPanel(
                                  tabPanel('Table',
                                           fluidRow(column(12,
                                                           # tableOutput('test')
-                                                          DT::dataTableOutput('demo_table')
+                                                          DT::dataTableOutput('xing_table')
                                           ))),
                                  tabPanel('Map',
                                                     
@@ -260,16 +250,8 @@ ui = dashboardPage(skin = 'blue',
                                           "A box with a solid maroon background"
                                         )
                                  )
-                               ),
-                               fluidRow(
-                                 box(plotOutput("plot1")),
-                                 
-                                 box(
-                                   "Box content here", br(), "More box content",
-                                   sliderInput("slider", "Slider input:", 1, 100, 50),
-                                   textInput("text", "Text input:")
-                                 )
                                )
+                               
                        ))
                      
                      
@@ -279,38 +261,42 @@ ui = dashboardPage(skin = 'blue',
 
 # Define server logic for random distribution app ----
 server <- function(input, output) {
+  output$xing_table <- renderDataTable({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    
+    if(length(choices) == 1) {
+      sc <- input$category
+    } else {
+      sc <- input$sub_category 
+    }
   
-  output$crazy_plot1 <- renderPlot({
-    crazy_map()
+   x <- censify(df = census, dict = census_dict, age = 'Age' %in% input$group_vector, 
+            sex = 'Sex' %in% input$group_vector,
+            pob = 'Place of birth' %in% input$group_vector,
+            vm = 'Visible minority' %in% input$group_vector,
+            geo_code = 'Geography' %in% input$group_vector,
+            years = input$years,
+            sc = sc,
+            percent = input$percent)
+   prettify(x, download_options = TRUE)
   })
-  output$crazy_plot2 <- renderPlot({
-    crazy_map()
+  output$fake_text <- renderText({
+    input$group_vector
   })
-  output$crazy_plot3 <- renderPlot({
-    crazy_map()
+  output$sub_category <- renderUI({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    if(length(choices) == 1) {
+      return(NULL)
+    } else {
+      names(choices) <- Hmisc::capitalize(gsub('_', ' ', choices))
+      radioButtons('sub_category',
+                   'Sub Category',
+                   choices = choices,
+                   selected = choices[1])
+    }
+    
   })
-  output$crazy_plot4 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot5 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot6 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot7 <- renderPlot({
-    crazy_map()
-  })
-  
-  output$crazy_plot8 <- renderPlot({
-    crazy_map()
-  })
-  
-  output$plot1 <- renderPlot({
-    hist(rnorm(n = input$slider))
-    title(main = 'Some title')
-  })
-  
+    
   output$progressBox <- renderInfoBox({
     infoBox(
       "Progress", paste0(25 + input$count, "%"), icon = icon("list"),
@@ -340,7 +326,8 @@ server <- function(input, output) {
   
   # Create a reactive dataframe for leaflet mapping
   leaflet_data <- reactive({
-    x <- censify(df = census,
+   
+         censify(df = census,
                  dict = census_dict,
                  age = FALSE,
                  sex = FALSE,
