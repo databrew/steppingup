@@ -186,6 +186,9 @@ get_census_data <- function() {
   
   # fix multiple vismin
   census$`Visible minority` <- gsub('minorities', 'minority', census$`Visible minority`)
+  census$`Visible minority` <- ifelse(census$`Visible minority` == "Total visible minority population",
+                                      'All visible minorities',
+                                      census$`Visible minority`)
   census$`Visible minority` <- ifelse(grepl('Total', census$`Visible minority`), 'Total - Population by visible minority', census$`Visible minority`)
   
   # fix geography
