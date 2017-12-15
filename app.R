@@ -112,6 +112,7 @@ ui <- dashboardPage(skin = 'blue',
                                                           DT::dataTableOutput('xing_table')
                                           ))),
                                  tabPanel('Map',
+                                          p('To be finished on December 16'),
                                                     
                                                     leafletOutput('demo_leaflet'),
                                                     fluidRow(column(3,
@@ -138,7 +139,7 @@ ui <- dashboardPage(skin = 'blue',
                                                                                             'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap'))))),
                                           tabPanel('Plot',
                                                    fluidRow(column(12,
-                                                                   p('Placeholder text.')))))),
+                                                                   p('To be finished on Dec 16')))))),
                        tabItem(tabName = "theme",
                                h2('Explore data by theme'),
                                p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
@@ -261,7 +262,8 @@ ui <- dashboardPage(skin = 'blue',
 
 # Define server logic for random distribution app ----
 server <- function(input, output) {
-  output$xing_table <- renderDataTable({
+  
+  censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
     
     if(length(choices) == 1) {
@@ -269,15 +271,20 @@ server <- function(input, output) {
     } else {
       sc <- input$sub_category 
     }
+    
+  censify(df = census, dict = census_dict, age = 'Age' %in% input$group_vector, 
+                 sex = 'Sex' %in% input$group_vector,
+                 pob = 'Place of birth' %in% input$group_vector,
+                 vm = 'Visible minority' %in% input$group_vector,
+                 geo_code = 'Geography' %in% input$group_vector,
+                 years = input$years,
+                 sc = sc,
+                 percent = input$percent)
+    
+  })
   
-   x <- censify(df = census, dict = census_dict, age = 'Age' %in% input$group_vector, 
-            sex = 'Sex' %in% input$group_vector,
-            pob = 'Place of birth' %in% input$group_vector,
-            vm = 'Visible minority' %in% input$group_vector,
-            geo_code = 'Geography' %in% input$group_vector,
-            years = input$years,
-            sc = sc,
-            percent = input$percent)
+  output$xing_table <- renderDataTable({
+    x <- censified()
    prettify(x, download_options = TRUE)
   })
   output$fake_text <- renderText({
@@ -324,28 +331,20 @@ server <- function(input, output) {
     )
   })
   
-  # Create a reactive dataframe for leaflet mapping
-  leaflet_data <- reactive({
-   
-         censify(df = census,
-                 dict = census_dict,
-                 age = FALSE,
-                 sex = FALSE,
-                 pob = FALSE,
-                 vm = FALSE,
-                 geo_code = FALSE,
-                 years = 2006,
-                 sc = 'family',
-                 percent = TRUE)
-  })
-  
-  # Test table
-  output$test <- renderTable({
-    leaflet_data()
-  })
   
   # Leaflet
   output$demo_leaflet <- renderLeaflet({
+    
+    # x <- censified()
+    # if(!'geo_code' %in% names(x) |
+    #    'Age group' %in% names(x) |
+    #    'Sex' %in% names(x) |
+    #    'Place of birth' %in% names(x) |
+    #    'Visible minority' %in% names(x)){
+    #   return(NULL)
+    # } else {
+    #   
+    # }
     
     leaflet() %>%
       addTiles()
