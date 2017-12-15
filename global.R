@@ -501,8 +501,11 @@ censify <- function(df,
   df <- df %>%
     filter(year %in% years)
   
+  # remove duplicates 
+  df <- df %>%
+    distinct(geo_code, year, `Age group`, Sex, `Place of birth`, `Visible minority`, .keep_all = TRUE)
+  
   return(df)
   
 }
 
-x <- censify(census)
