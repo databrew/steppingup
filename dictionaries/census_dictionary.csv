@@ -1,0 +1,89 @@
+variable,category,sub_category
+Geography,demographic,demographic
+geo_code,demographic,demographic
+year,year,year
+Age group,demographic,demographic
+Sex,demographic,demographic
+Place of birth,demographic,demographic
+Visible minority,demographic,demographic
+Total - Population 15 years and over by legal marital status,marriage,marriage
+Never married (single) 15 years and over,marriage,marriage
+Legally married and not separated,marriage,marriage
+Legally married and separated,marriage,marriage
+Divorced,marriage,marriage
+Widowed,marriage,marriage
+Total - Knowledge of official language,language,language
+English only,language,language
+French only,language,language
+Both English and French,language,language
+Neither English nor French,language,language
+Total - Population 15 years and over by Place of Residence 5 years ago,migration,migration
+Non-movers,migration,migration
+Movers,migration,migration
+Non-migrants,migration,migration
+Migrants,migration,migration
+Internal migrants,migration,migration
+Intraprovincial migrants,migration,migration
+Interprovincial migrants,migration,migration
+External migrants,migration,migration
+Total - Census family status,family,family
+Persons in census families,family,family
+Spouses and common-law partners,family,family
+Lone parents,family,family
+Children,family,family
+Children in couple families,family,family
+Children in lone parent families,family,family
+Person not in census families,family,family
+Living with relatives,family,family
+Living with non-relatives,family,family
+Living alone,family,family
+"Total - Population by highest certificate, diploma or degree",education,education
+"No certificate, diploma or degree",education,education
+"Certificate, diploma or degree",education,education
+High school or equivalent,education,education
+Apprenticeship or trades certificate or diploma,education,education
+"College, CEGEP or other non-university certificate or diploma",education,education
+"University certificate, diploma or degree",education,education
+University certificate or diploma below bachelor level,education,education
+"University certificate, diploma or degree at bachelor's or above",education,education
+Bachelor's degree,education,education
+University certificate above bachelor level,education,education
+"Degree in medicine, dentistry, veterinary medicine or optometry",education,education
+Master's degree,education,education
+Earned doctorate,education,education
+Total - School attendance,education,school_attendance
+Attended school,education,school_attendance
+Did not attend school,education,school_attendance
+Total - Population 15 years and over by labour force activity,employment,employment
+In the labour force,employment,employment
+Employed,employment,employment
+Unemployed,employment,employment
+Not in the labour force,employment,employment
+Unemployment rate %,employment,employment
+Employment to population ratio %,employment,employment
+Participation rate %,employment,employment
+Total - Labour force by class of worker,employment,job_types
+Class of worker - Not applicable,employment,job_types
+All classes of worker,employment,job_types
+Paid workers,employment,job_types
+"Working for wages, salary, tips or commission",employment,job_types
+Self employed incorporated,employment,job_types
+Self employed unincorporated,employment,job_types
+Unpaid family workers,employment,job_types
+Total - Population 15 and over by hours of unpaid housework,employment,job_unpaid_housework
+None,employment,job_unpaid_housework
+Some,employment,job_unpaid_housework
+Total - Population 15 and over by hours of unpaid childcare,employment,job_unpaid_childcare
+None_1,employment,job_unpaid_childcare
+Some_1,employment,job_unpaid_childcare
+Total - Population 15 and over by hours of unpaid care to seniors,employment,job_unpaid_seniorcare
+None_2,employment,job_unpaid_seniorcare
+Some_2,employment,job_unpaid_seniorcare
+Average household income $,income,income
+Total - Income status (LICO),income,low_income_status
+Low income (LICO before tax only),income,low_income_status
+Not low income (LICO before tax only),income,low_income_status
+Total - Housing tenure,housing,housing
+Living in owner occupied dwelling,housing,housing
+Living in rented dwelling,housing,housing
+Living in band housing,housing,housing
