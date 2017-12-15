@@ -1,9 +1,9 @@
 variable,sub_category,category
 Geography,demographic,demographic
-Age groups (5),demographic,demographic
-Sex (3),demographic,demographic
+Age groups,demographic,demographic
+Sex,demographic,demographic
 Place of birth,demographic,demographic
-Visible minorit,demographic,demographic
+Visible minority,demographic,demographic
 Total - Population 15 years and over by legal marital status,marriage,marriage
 Never married (single) 15 years and over,marriage,marriage
 Legally married and not separated,marriage,marriage
