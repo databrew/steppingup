@@ -425,11 +425,81 @@ get_data <- function(data_type) {
 # read in dictionary 
 census_dict <- read_csv('dictionaries/census_dictionary.csv')
 
-if('census_all.feather' %in% dir('data')){
-  census <- read_feather('data/census_all.feather')
+if('census.feather' %in% dir('data')){
+  census <- read_feather('data/census.feather')
 } else {
   census <- get_census_data()
   # and then save data to to "data" folder for faster retrieval in subsequent runs
   # save(census, file = 'data/census.RData')
   write_feather(census, 'data/census.feather')
 }
+
+
+# define function for filtering data by inputs
+
+# year Numeric vector of length 1 or 3. For example, c(2001, 2006) to keep data from both years
+
+df <- census
+censify <- function(df,
+                    age = FALSE, 
+                    sex = FALSE,
+                    pob = FALSE,
+                    vm = FALSE, 
+                    geo_code = FALSE,
+                    years = 2001) {
+  # age 
+  if(age) {
+    df <- df %>%
+      filter(!grepl('Total', `Age group`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Age group`))
+  }
+  
+  # sex
+  if(sex){
+    df <- df %>%
+      filter(!grepl('Total', Sex))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', Sex))
+    
+  }
+  
+  # pob
+  if(pob){
+    df <- df %>%
+      filter(!grepl('Total', `Place of birth`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Place of birth`))
+  }
+  
+  # vm
+  if(vm){
+    df <- df %>%
+      filter(!grepl('Total', `Visible minority`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total',  `Visible minority`))
+    
+  }
+  
+  # geo_code
+  if(geo_code){
+    df <- df %>%
+      filter(geo_code != '3500')
+  } else {
+    df <- df %>%
+      filter(geo_code == '3500')
+  }
+  
+  # filter for year
+  df <- df %>%
+    filter(year %in% years)
+  
+  return(df)
+  
+}
+
+x <- censify(census)
