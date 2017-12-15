@@ -426,7 +426,7 @@ get_data <- function(data_type) {
 census_dict <- read_csv('dictionaries/census_dictionary.csv')
 
 if('census_all.feather' %in% dir('data')){
-  census_all <- read_feather('data/census_all.feather')
+  census <- read_feather('data/census_all.feather')
 } else {
   census <- get_census_data()
   # and then save data to to "data" folder for faster retrieval in subsequent runs
