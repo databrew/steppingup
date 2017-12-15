@@ -549,9 +549,3 @@ censify <- function(df = census,
   }
   return(df)
 }
-
-x <- censify(census,
-             sc = "marriage",
-             sex = TRUE,
-             age = TRUE, 
-             percent = TRUE)
