@@ -447,15 +447,28 @@ if('census.feather' %in% dir('data')){
 # define function for filtering data by inputs
 
 # year Numeric vector of length 1 or 3. For example, c(2001, 2006) to keep data from both years
-
-df <- census
-censify <- function(df,
+censify <- function(df = census,
+                    dict = census_dict,
                     age = FALSE, 
                     sex = FALSE,
                     pob = FALSE,
                     vm = FALSE, 
                     geo_code = FALSE,
-                    years = 2001) {
+                    years = 2001,
+                    sc = NULL,
+                    percent = TRUE) {
+  # category
+  if(!is.null(sc)) {
+    if(!sc %in% unique(dict$sub_category)) {
+      stop("sc must be one of ", paste0(unique(dict$sub_category), collapse = ", "))
+    }
+    # extract columns corresponding to category from census dict
+    keep_columns <- dict %>%
+      filter(sub_category %in% c('demographic', 'geo_code', 'year', sc)) %>%
+      .$variable
+    df <- df[, keep_columns]
+  }
+  
   # age 
   if(age) {
     df <- df %>%
@@ -514,9 +527,31 @@ censify <- function(df,
     df$year <- NULL
   }
   
+  # make percentages 
+  if(percent) {
+    denom_column <- which(grepl('Total', names(df)))
+    denom <- df[, denom_column]
+    names(denom) <- 'x'
+    denom <- denom$x
+    
+    # identify indices of numerator columns
+    ni <- (denom_column + 1):ncol(df)
+    
+    # make temp data frame 
+    col_names <- names(df)
+    
+    df <- as.data.frame(df)
+    
+    for(j in ni) {
+      df[,j] <- (df[, j]/denom)*100
+    }
+    colnames(df) <- col_names
+  }
   return(df)
 }
 
 x <- censify(census,
+             sc = "marriage",
              sex = TRUE,
-             age = TRUE)
+             age = TRUE, 
+             percent = TRUE)
