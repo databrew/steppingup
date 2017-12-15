@@ -1,6 +1,6 @@
 variable,sub_category,category
 Geography,demographic,demographic
-Age groups,demographic,demographic
+Age group,demographic,demographic
 Sex,demographic,demographic
 Place of birth,demographic,demographic
 Visible minority,demographic,demographic
@@ -51,8 +51,6 @@ Master's degree,education,education
 Earned doctorate,education,education
 Total - School attendance,school_attendance,education
 Attended school,school_attendance,education
-Attended school part time,school_attendance,education
-Attended school full time,school_attendance,education
 Did not attend school,school_attendance,education
 Population 15 years and over by labour force activity,employment,employment
 In the labour force,employment,employment
