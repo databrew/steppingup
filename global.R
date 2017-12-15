@@ -137,6 +137,7 @@ get_data <- function(data_type) {
     data_names <- list.files('data/census_data')
     # cread empty list to store data
     data_list <- list()
+    total_list <- list()
     # get data type
     sub_names <- data_names[grepl(data_type, data_names)]
     # function that loops through each name in for census data and read into a list
@@ -167,12 +168,20 @@ get_data <- function(data_type) {
       # keep only rows that have 4 number
       temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
 
-      # # remove any 'Total' from columns
+    
+      # create a total able 
       temp_data <- as.data.frame(temp_data[, !grepl('Total', colnames(temp_data))], stringsAsFactors = F)
-
+      
+      
+      temp_total <- temp_data %>%
+        dplyr::select(Geography, `Age groups (5)`, `Sex (3)`, `Place of birth`, `Visible minorit`)
+      keep <- apply(temp_total, 1, function(x){any(grepl('Total', x))})
+      
+      temp_total <- temp_total[keep,]
+      
       # remove any row that has total by looping through columns
       remove_total <- function(data_frame) {
-        # group by get an indicator for column name
+        # get an indicator for column name
         variable_names <- as.character(colnames(data_frame))[1:5]
         # loop through variables and remove rows with 'Total'
         for(v in variable_names) {
