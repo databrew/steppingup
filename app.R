@@ -81,7 +81,7 @@ ui = dashboardPage(skin = 'blue',
                                fluidRow(column(6,
                                                selectInput('demo_si',
                                                            'Census metric',
-                                                           choices = sort(unique(census_all$si)))),
+                                                           choices = c('A', 'B'))),
                                         column(3,
                                                selectInput('demo_geo',
                                                            'In...',
@@ -306,8 +306,6 @@ server <- function(input, output) {
     crazy_map()
   })
   
-  
-  
   output$plot1 <- renderPlot({
     hist(rnorm(n = input$slider))
     title(main = 'Some title')
@@ -342,38 +340,16 @@ server <- function(input, output) {
   
   # Create a reactive dataframe for leaflet mapping
   leaflet_data <- reactive({
-    df <- census_all %>%
-      filter(year == input$demo_year)
-    
-    # Filter age or keep them all
-    if(!input$demo_age == '15 to 29 years'){
-      df <- df %>% 
-        filter(age == input$demo_age)
-    }
-    
-    # Filter sex or keep them all
-    if(!input$demo_sex == 'Both'){
-      df <- df %>% filter(sex == input$demo_sex)
-    }
-    
-    # Filter pob or keep them all
-    if(!input$demo_pob == 'Born anywhere'){
-      df <- df %>% filter(pob == input$demo_pob)
-    }
-    
-    # Filter vm or keep them all
-    if(!input$demo_vm == 'All ethnicities'){
-      df <- df %>% filter(vm == input$demo_vm)
-    }
-    
-    # Require special indicators
-    df <- df %>% filter(si == input$demo_si)
-    
-    # Aggregate
-    df <- df %>%
-      group_by(geography) %>%
-      summarise(value = sum(value, na.rm = TRUE))
-    df
+    x <- censify(df = census,
+                 dict = census_dict,
+                 age = FALSE,
+                 sex = FALSE,
+                 pob = FALSE,
+                 vm = FALSE,
+                 geo_code = FALSE,
+                 years = 2006,
+                 sc = 'family',
+                 percent = TRUE)
   })
   
   # Test table
@@ -384,19 +360,19 @@ server <- function(input, output) {
   # Leaflet
   output$demo_leaflet <- renderLeaflet({
     
-    df <- leaflet_data()
-    
-    leaf(x = df,
-         tile = input$tile,
-         palette = input$palette,
-         show_legend = input$show_legend)
+    leaflet() %>%
+      addTiles()
+    # df <- leaflet_data()
+    # 
+    # leaf(x = df,
+    #      tile = input$tile,
+    #      palette = input$palette,
+    #      show_legend = input$show_legend)
   })
   
   # Table below leaflet plot
   output$demo_table <- DT::renderDataTable({
-    x <- leaflet_data() %>%
-      filter(geography != '3500') %>%
-      mutate(percent = value / sum(value) * 100)
+    x <- leaflet_data()
     prettify(x, download_options = TRUE)
   })
   
@@ -404,10 +380,9 @@ server <- function(input, output) {
   output$downloadData <- downloadHandler(
     filename = function() { paste('databrew', '.csv', sep='') },
     content = function(file) {
-      write.csv(census_all, file)
+      write.csv(census, file)
     }
   )
-  
 }
 
 # Run the application 
