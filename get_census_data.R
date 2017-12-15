@@ -1,6 +1,3 @@
-
-
-# data_type = 'nhs'
 get_census_data <- function() {
   
   # first get vector of data set names to loop through later
@@ -72,18 +69,19 @@ get_census_data <- function() {
       best_matches <- apply(fuzzy, 1, which.min)
       best_names <- names_2001[best_matches]
       names(not_shared) <- best_names
-      temp_data <- cbind(shared, not_shared)
+      temp_data <- bind_cols(shared, not_shared)
     }
     
     # store in list
     data_list[[i]] <- temp_data
   }
-  return(data_list)
+  census <- bind_rows(data_list)
+  return(census)
 }
 
-temp_census <- get_census_data()
+census <- get_census_data()
 
-census <- bind_rows(temp_census)
+
 
 # read in dictionary 
 census_dict <- read_csv('dictionaries/census_dictionary.csv')
