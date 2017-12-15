@@ -201,6 +201,12 @@ get_census_data <- function() {
     dplyr::select(-Geography) %>% 
     left_join(geo_dictionary, by = 'geo_code')
   
+  # remove duplicates 
+  census <- census %>%
+    distinct(geo_code, year, `Age group`, Sex, `Place of birth`, `Visible minority`, .keep_all = TRUE)
+  
+  census <- census[, unique(c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth', names(census)))]
+
   return(census)
   
 }
@@ -457,6 +463,7 @@ censify <- function(df,
   } else {
     df <- df %>%
       filter(grepl('Total', `Age group`))
+    df$`Age group` <- NULL
   }
   
   # sex
@@ -466,7 +473,7 @@ censify <- function(df,
   } else {
     df <- df %>%
       filter(grepl('Total', Sex))
-    
+    df$Sex <- NULL
   }
   
   # pob
@@ -476,6 +483,7 @@ censify <- function(df,
   } else {
     df <- df %>%
       filter(grepl('Total', `Place of birth`))
+    df$`Place of birth` <- NULL
   }
   
   # vm
@@ -485,7 +493,7 @@ censify <- function(df,
   } else {
     df <- df %>%
       filter(grepl('Total',  `Visible minority`))
-    
+    df$`Visible minority` <- NULL
   }
   
   # geo_code
@@ -495,17 +503,20 @@ censify <- function(df,
   } else {
     df <- df %>%
       filter(geo_code == '3500')
+    df$geo_code <- NULL
+    df$Geography  <- NULL
   }
   
   # filter for year
   df <- df %>%
     filter(year %in% years)
-  
-  # remove duplicates 
-  df <- df %>%
-    distinct(geo_code, year, `Age group`, Sex, `Place of birth`, `Visible minority`, .keep_all = TRUE)
+  if(length(years) == 1){
+    df$year <- NULL
+  }
   
   return(df)
-  
 }
 
+x <- censify(census,
+             sex = TRUE,
+             age = TRUE)
