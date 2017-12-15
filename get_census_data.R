@@ -54,6 +54,7 @@ get_census_data <- function() {
       temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
       names(temp_data) <- names_2001
     } else if (year == 2011){
+      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
       # Keep those columns which are shared
       shared <- temp_data[,names(temp_data) %in% names_2001]
       not_shared <- temp_data[,!names(temp_data) %in% names_2001]
@@ -71,7 +72,7 @@ get_census_data <- function() {
       best_matches <- apply(fuzzy, 1, which.min)
       best_names <- names_2001[best_matches]
       names(not_shared) <- best_names
-      temp_data <- bind_cols(shared, not_shared)
+      temp_data <- cbind(shared, not_shared)
     }
     
     # store in list
