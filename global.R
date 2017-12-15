@@ -529,23 +529,28 @@ censify <- function(df = census,
   
   # make percentages 
   if(percent) {
-    denom_column <- which(grepl('Total', names(df)))
-    denom <- df[, denom_column]
-    names(denom) <- 'x'
-    denom <- denom$x
-    
-    # identify indices of numerator columns
-    ni <- (denom_column + 1):ncol(df)
-    
-    # make temp data frame 
-    col_names <- names(df)
-    
-    df <- as.data.frame(df)
-    
-    for(j in ni) {
-      df[,j] <- (df[, j]/denom)*100
+    if(is.null(sc)) {
+      warning("Choose an sc if you want to do percentages")
+    } else {
+      denom_column <- which(grepl('Total', names(df)))
+      denom <- df[, denom_column]
+      names(denom) <- 'x'
+      denom <- denom$x
+      
+      # identify indices of numerator columns
+      ni <- (denom_column + 1):ncol(df)
+      
+      # make temp data frame 
+      col_names <- names(df)
+      
+      df <- as.data.frame(df)
+      
+      for(j in ni) {
+        df[,j] <- (df[, j]/denom)*100
+      }
+      colnames(df) <- col_names
     }
-    colnames(df) <- col_names
   }
+    
   return(df)
 }
