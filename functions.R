@@ -308,3 +308,120 @@ clean_subset_survey <- function(temp, get_year, folder) {
 
   return(temp)
 }
+
+
+
+# define function for filtering data by inputs
+# year Numeric vector of length 1 or 3. For example, c(2001, 2006) to keep data from both years
+censify <- function(df = census,
+                    dict = census_dict,
+                    age = FALSE, 
+                    sex = FALSE,
+                    pob = FALSE,
+                    vm = FALSE, 
+                    geo_code = FALSE,
+                    years = 2001,
+                    sc = NULL,
+                    percent = TRUE) {
+  # category
+  if(!is.null(sc)) {
+    if(!sc %in% unique(dict$sub_category)) {
+      stop("sc must be one of ", paste0(unique(dict$sub_category), collapse = ", "))
+    }
+    # extract columns corresponding to category from census dict
+    keep_columns <- dict %>%
+      filter(sub_category %in% c('demographic', 'geo_code', 'year', sc)) %>%
+      .$variable
+    df <- df[, keep_columns]
+  }
+  
+  # age 
+  if(age) {
+    df <- df %>%
+      filter(!grepl('Total', `Age group`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Age group`))
+    df$`Age group` <- NULL
+  }
+  
+  # sex
+  if(sex){
+    df <- df %>%
+      filter(!grepl('Total', Sex))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', Sex))
+    df$Sex <- NULL
+  }
+  
+  # pob
+  if(pob){
+    df <- df %>%
+      filter(!grepl('Total', `Place of birth`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Place of birth`))
+    df$`Place of birth` <- NULL
+  }
+  
+  # vm
+  if(vm){
+    df <- df %>%
+      filter(!grepl('Total', `Visible minority`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total',  `Visible minority`))
+    df$`Visible minority` <- NULL
+  }
+  
+  # geo_code
+  if(geo_code){
+    df <- df %>%
+      filter(geo_code != '3500')
+  } else {
+    df <- df %>%
+      filter(geo_code == '3500')
+    df$geo_code <- NULL
+    df$Geography  <- NULL
+  }
+  
+  # filter for year
+  df <- df %>%
+    filter(year %in% years)
+  if(length(years) == 1){
+    df$year <- NULL
+  }
+  
+  # make percentages 
+  if(percent) {
+    if(is.null(sc)) {
+      warning("Choose a sub category to generate percentages")
+    } else {
+      if(!sc == 'income'){
+        denom_column <- which(grepl('Total', names(df)))
+        denom <- df[, denom_column]
+        names(denom) <- 'x'
+        denom <- denom$x
+        
+        # identify indices of numerator columns
+        ni <- (denom_column + 1):ncol(df)
+        
+        # make temp data frame 
+        col_names <- names(df)
+        
+        df <- as.data.frame(df)
+        
+        for(j in ni) {
+          df[,j] <- (df[, j]/denom)*100
+        }
+        colnames(df) <- col_names
+      }
+    }
+  }
+  total_columns <- grepl('Total', names(df))
+  if(length(which(total_columns)) == 1){
+    names(df)[total_columns] <- 'Total' 
+  }
+  return(df)
+}
