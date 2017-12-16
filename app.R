@@ -308,6 +308,35 @@ server <- function(input, output) {
   
   output$xing_table <- renderDataTable({
     x <- censified()
+    if(input$age & !is.null(input$age_filter)) {
+      if(input$age_filter != 'All') {
+        x <- x %>% filter(`Age group` == input$age_filter)
+      }
+    }
+    
+    if(input$sex & !is.null(input$sex_filter)) {
+      if(input$sex_filter != 'All') {
+        x <- x %>% filter(Sex == input$sex_filter)
+      }
+    }
+    
+    if(input$pob & !is.null(input$pob_filter)) {
+      if(input$pob_filter != 'All') {
+        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      }
+    }
+    
+    if(input$vm & !is.null(input$vm_filter)) {
+      if(input$vm_filter != 'All') {
+        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      }
+    }
+    
+    if(input$geography & !is.null(input$geography_filter)) {
+      if(input$geography_filter != 'All') {
+        x <- x %>% filter(Geography == input$geography_filter)
+      }
+    }
     x <- x[, names(x) %in% c(head_vector, input$variable)]
     if(length(input$variable) == 0) {
       DT::datatable(data_frame())
@@ -409,7 +438,7 @@ server <- function(input, output) {
     if(input$age){
       selectInput('age_filter',
                   'Filter',
-                  choices = sort(unique(censified()$`Age group`)))
+                  choices = c('All', sort(unique(censified()$`Age group`))))
     }
   })
   
@@ -417,7 +446,7 @@ server <- function(input, output) {
     if(input$sex){
       selectInput('sex_filter',
                   'Filter',
-                  choices = sort(unique(censified()$`Sex`)))
+                  choices = c('All', sort(unique(censified()$`Sex`))))
     }
   })
   
@@ -425,7 +454,7 @@ server <- function(input, output) {
     if(input$pob){
       selectInput('pob_filter',
                   'Filter',
-                  choices = sort(unique(censified()$`Place of birth`)))
+                  choices = c('All', sort(unique(censified()$`Place of birth`))))
     }
   })
   
@@ -433,7 +462,7 @@ server <- function(input, output) {
     if(input$vm){
       selectInput('vm_filter',
                   'Filter',
-                  choices = sort(unique(censified()$`Visible minority`)))
+                  choices = c('All', sort(unique(censified()$`Visible minority`))))
     }
   })
   
@@ -441,7 +470,7 @@ server <- function(input, output) {
     if(input$geography){
       selectInput('geography_filter',
                   'Filter',
-                  choices = sort(unique(censified()$Geography)))
+                  choices = c('All', sort(unique(censified()$Geography))))
     }
   })
 }
