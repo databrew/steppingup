@@ -485,7 +485,6 @@ server <- function(input, output) {
   output$xing_table <- renderDataTable({
     x <- censified()
     x <- x[, names(x) %in% c(head_vector, input$variable)]
-    names(x) <- gsub('(single) 15 years and over', '', names(x), fixed = TRUE)
     if(length(input$variable) == 0) {
       DT::datatable(data_frame())
     } else {
