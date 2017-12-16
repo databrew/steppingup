@@ -78,12 +78,14 @@ ui <- dashboardPage(skin = 'blue',
                        tabItem(tabName = "census",
                                h2('Explore census data'),
                                helpText('I\'m looking for data about:'),
-                               fluidRow(column(6,
+                               fluidRow(column(4,
                                                selectInput('category',
                                                            'Category',
                                                            choices = category_choices)),
-                                        column(6, 
-                                               uiOutput("sub_category"))),
+                                        column(4, 
+                                               uiOutput("sub_category")),
+                                        column(4,
+                                               uiOutput("variable"))),
                                fluidRow(column(4,
                                                textOutput('fake_text'),
                                                checkboxGroupInput('group_vector',
@@ -285,7 +287,12 @@ server <- function(input, output) {
   
   output$xing_table <- renderDataTable({
     x <- censified()
-   prettify(x, download_options = TRUE)
+    x <- x[, names(x) %in% c(head_vector, input$variable)]
+    if(length(input$variable) == 0) {
+      DT::datatable(data_frame())
+    } else {
+      prettify(x, download_options = TRUE) 
+    }
   })
   output$fake_text <- renderText({
     input$group_vector
@@ -302,6 +309,18 @@ server <- function(input, output) {
                    selected = choices[1])
     }
     
+  })
+  
+  output$variable <- renderUI({
+    x <- censified()
+    x <- names(x)
+    x <- x[!x %in% head_vector]
+    x <- x[!grepl('Total', x)]
+    selectInput('variable', 
+                'Variable',
+                choices = x,
+                selected = x[1],
+                multiple = TRUE)
   })
     
   output$progressBox <- renderInfoBox({

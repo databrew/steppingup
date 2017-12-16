@@ -139,8 +139,7 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
 prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns = TRUE,
                       cap_characters = TRUE, comma_numbers = TRUE, date_format = "%B %d, %Y",
                       round_digits = 2, remove_row_names = TRUE, remove_line_breaks = TRUE,
-                      data_table = TRUE, nrows = 5, download_options = FALSE)
-{
+                      data_table = TRUE, nrows = 5, download_options = FALSE){
   column_names <- names(the_table)
   the_table <- data.frame(the_table)
   names(the_table) <- column_names
