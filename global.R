@@ -223,6 +223,12 @@ get_census_data <- function() {
   census$`Population - concept not applicable` <- NULL
   census$`Population for the low income status variable` <- NULL
   census$`Standard error of average household income $` <- NULL
+  
+  # Create a new total youth only for ages 15 to 29
+  census <- census %>% filter(`Age group` != 'Total - 15 years and over')
+  total_rows <- census %>% dplyr::select(-`Age group`) %>% group_by(Geography, geo_code, year, Sex, `Place of birth`, `Visible minority`) %>% summarise_all(.funs = sum) %>% mutate(`Age group` = 'Total - 15 to 29 years')
+  census <- bind_rows(census,
+                      total_rows)
 
   return(census)
 }
