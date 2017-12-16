@@ -390,11 +390,12 @@ server <- function(input, output) {
        !input$age &
        !input$sex &
        !input$pob &
-       !input$vm){
+       !input$vm &
+       length(input$years) == 1){
       make_map <- TRUE
     }
     if(!make_map){
-      paste0('To generate a map, check the "geography" box above, and uncheck all the others.')
+      paste0('To generate a map, check the "geography" box above, select only one year, and uncheck all the others.')
     }
   })
   # Place of birth filter
@@ -444,7 +445,8 @@ server <- function(input, output) {
        !input$age &
        !input$sex &
        !input$pob &
-       !input$vm){
+       !input$vm &
+       length(input$years) == 1){
       make_map <- TRUE
     }
     if(make_map){
