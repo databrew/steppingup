@@ -11,7 +11,7 @@ library(shinythemes)
 
 source('global.R')
 
-ui = dashboardPage(skin = 'blue',
+ui <- dashboardPage(skin = 'blue',
                    
                    
                    dashboardHeader(
@@ -49,70 +49,70 @@ ui = dashboardPage(skin = 'blue',
                      #   includeHTML("www/head.html"),
                      tabItems(
                        tabItem(tabName = 'welcome',
-                               jumbotron("Welcome!", "Ready to explore some Ontario youth data?",
-                                         buttonLabel = "Let's go!"),
+                               jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
+                                         button = FALSE
+                                         # buttonLabel = "Explore!"
+                                         ),
                                fluidRow(
-                                 column(6, panel_div(class_type = "primary", panel_title = "Directions",
+                                 column(6, panel_div(class_type = "primary", panel_title = "App Directions",
                                                      content = "How to use the app<br>One day soon<br>There will be instructions here.")),
-                                 column(6, panel_div("success", "Application Maintainers",
+                                 column(6, panel_div("success", "App Maintenance",
                                                      "Email us: <a href='mailto:xing@databrew.cc?Subject=Stepping%20Up%20App' target='_top'>Xing Brew</a>"))
                                ),  # end of fluidRow
                                fluidRow(
                                  column(6, panel_div("info", "App Status", "Include text with status, version and updates")),
-                                 column(6, panel_div("danger", "Design and support", "Copyright 2017 <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
+                                 column(6, panel_div("danger", "App Design and Support", "Copyright 2017 <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
                                  
                                  #### FAVICON TAGS SECTION ####
-                                 tags$head(tags$link(rel="shortcut icon", href="favicon.ico")),
+                                 tags$head(tags$link(rel="shortcut icon", href="favicon.ico"))#,
                                  
                                  #### JAVASCRIPT TAGS SECTION #### - ENABLE WHEN READY
                                  # tags$head(tags$script(src='pl.js')), # comment this out?
                                  
-                                 bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
-                                         p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
-                                         iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
-                                 )
+                                 # bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
+                                 #         p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
+                                 #         iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
+                                 # )
                                  
                                )),
                        tabItem(tabName = "census",
+                               h2('Explore census data'),
                                helpText('I\'m looking for data about:'),
                                fluidRow(column(6,
-                                               selectInput('demo_si',
-                                                           'Census metric',
-                                                           choices = sort(unique(census_all$si)))),
-                                        column(3,
-                                               selectInput('demo_geo',
-                                                           'In...',
-                                                           choices = 'Ontario')),
-                                        column(3,
-                                               selectInput('demo_year', 'From...',
-                                                           choices = c(2001, 2006, 2011),
-                                                           selected = 2011))),
-                               fluidRow(column(6,
-                                               helpText('I\'m particularly interested in youth that are...')),
-                                        column(6)),
-                               fluidRow(column(3,
-                                               selectInput('demo_age', 'Age:',
-                                                           choices = c('15 to 29 years',
-                                                                       '15 to 19 years',
-                                                                       '20 to 24 years',
-                                                                       '25 to 29 years'))),
-                                        column(3,
-                                               selectInput('demo_sex', 'Sex',
-                                                           choices = c('Both', 
-                                                                       'Female', 
-                                                                       'Male'))),
-                                        column(3,
-                                               selectInput('demo_vm',
-                                                           'Visible minority:',
-                                                           choices = c("All ethnicities","Aboriginal identity","All others","Arab","Arab/West Asian","Black","Chinese","Filipino","Japanese","Korean","Latin American","Multiple visible minorities","Multiple visible minority","Non-Aboriginal identity","South Asian","Southeast Asian","Visible minority, n.i.e.","West Asian"))),
-                                        column(3,
-                                               selectInput('demo_pob',
-                                                           'Place of birth',
-                                                           choices = c('Born anywhere',
-                                                                       'Born in Canada',
-                                                                       'Born outside of Canada')))),
+                                               selectInput('category',
+                                                           'Category',
+                                                           choices = category_choices)),
+                                        column(6, 
+                                               uiOutput("sub_category"))),
+                               fluidRow(column(4,
+                                               textOutput('fake_text'),
+                                               checkboxGroupInput('group_vector',
+                                                                  'Examine by sub groups:',
+                                                                  choices = c('Age',
+                                                                              'Sex',
+                                                                              'Place of birth',
+                                                                              'Visible minority',
+                                                                              'Geography'),
+                                                                  selected = c('Age', 'Sex'))),
+                                        column(4,
+                                               radioButtons('percent',
+                                                            'View as percentage or raw number',
+                                                            choices = c('Percentage' = TRUE, 
+                                                                        'Raw numbers' = FALSE))),
+                                        column(4,
+                                               checkboxGroupInput('years',
+                                                                  'Year',
+                                                                  choices = c('2001', '2006', '2011'),
+                                                                  selected = '2001'))),
                                
-                               tabsetPanel(tabPanel('Map',
+                               tabsetPanel(
+                                 tabPanel('Table',
+                                          fluidRow(column(12,
+                                                          # tableOutput('test')
+                                                          DT::dataTableOutput('xing_table')
+                                          ))),
+                                 tabPanel('Map',
+                                          p('To be finished on December 16'),
                                                     
                                                     leafletOutput('demo_leaflet'),
                                                     fluidRow(column(3,
@@ -137,51 +137,15 @@ ui = dashboardPage(skin = 'blue',
                                                                                             'Stamen - Terrain' = 'Stamen.Terrain',
                                                                                             'ESRI - Satellite' = 'Esri.WorldImagery',
                                                                                             'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap'))))),
-                                           tabPanel('Table',
-                                                    fluidRow(column(12,
-                                                                    # tableOutput('test')
-                                                                    DT::dataTableOutput('demo_table')
-                                                    ))))),
+                                          tabPanel('Plot',
+                                                   fluidRow(column(12,
+                                                                   p('To be finished on Dec 16')))))),
                        tabItem(tabName = "theme",
+                               h2('Explore data by theme'),
+                               p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
+                               p('You can explore various data sets under each of the Stepping Up themes below.'),
                                tabsetPanel(
-                                 tabPanel(title = 'Health and wellness',
-                                          h2('Health and wellness'),
-                                          p('Some text here about health and wellness'),
-                                          fluidRow(h4('Some indicator')),
-                                          fluidRow(
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 1", width = NULL, solidHeader = TRUE, status = "primary",
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     width = NULL, background = "black",
-                                                     "A box with a solid black background"
-                                                   )
-                                            ),
-                                            
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     title = "Title 5", width = NULL, background = "light-blue",
-                                                     "A box with a solid light-blue background"
-                                                   )
-                                            ),
-                                            
-                                            column(width = 4,
-                                                   box(
-                                                     title = "Title 2", width = NULL, solidHeader = TRUE,
-                                                     "Box content"
-                                                   ),
-                                                   box(
-                                                     title = "Title 6", width = NULL, background = "maroon",
-                                                     "A box with a solid maroon background"
-                                                   )
-                                            )
-                                          )),
+                                 tabPanel(title = 'Health and wellness'),
                                  tabPanel(title = 'Supportive families'),
                                  tabPanel(title = 'Education'),
                                  tabPanel(title = 'Employment'),
@@ -287,16 +251,8 @@ ui = dashboardPage(skin = 'blue',
                                           "A box with a solid maroon background"
                                         )
                                  )
-                               ),
-                               fluidRow(
-                                 box(plotOutput("plot1")),
-                                 
-                                 box(
-                                   "Box content here", br(), "More box content",
-                                   sliderInput("slider", "Slider input:", 1, 100, 50),
-                                   textInput("text", "Text input:")
-                                 )
                                )
+                               
                        ))
                      
                      
@@ -307,39 +263,47 @@ ui = dashboardPage(skin = 'blue',
 # Define server logic for random distribution app ----
 server <- function(input, output) {
   
-  output$crazy_plot1 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot2 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot3 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot4 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot5 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot6 <- renderPlot({
-    crazy_map()
-  })
-  output$crazy_plot7 <- renderPlot({
-    crazy_map()
+  censified <- reactive({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    
+    if(length(choices) == 1) {
+      sc <- input$category
+    } else {
+      sc <- input$sub_category 
+    }
+    
+  censify(df = census, dict = census_dict, age = 'Age' %in% input$group_vector, 
+                 sex = 'Sex' %in% input$group_vector,
+                 pob = 'Place of birth' %in% input$group_vector,
+                 vm = 'Visible minority' %in% input$group_vector,
+                 geo_code = 'Geography' %in% input$group_vector,
+                 years = input$years,
+                 sc = sc,
+                 percent = input$percent)
+    
   })
   
-  output$crazy_plot8 <- renderPlot({
-    crazy_map()
+  output$xing_table <- renderDataTable({
+    x <- censified()
+   prettify(x, download_options = TRUE)
   })
-  
-  
-  
-  output$plot1 <- renderPlot({
-    hist(rnorm(n = input$slider))
-    title(main = 'Some title')
+  output$fake_text <- renderText({
+    input$group_vector
   })
-  
+  output$sub_category <- renderUI({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    if(length(choices) == 1) {
+      return(NULL)
+    } else {
+      names(choices) <- Hmisc::capitalize(gsub('_', ' ', choices))
+      radioButtons('sub_category',
+                   'Sub Category',
+                   choices = choices,
+                   selected = choices[1])
+    }
+    
+  })
+    
   output$progressBox <- renderInfoBox({
     infoBox(
       "Progress", paste0(25 + input$count, "%"), icon = icon("list"),
@@ -367,63 +331,34 @@ server <- function(input, output) {
     )
   })
   
-  # Create a reactive dataframe for leaflet mapping
-  leaflet_data <- reactive({
-    df <- census_all %>%
-      filter(year == input$demo_year)
-    
-    # Filter age or keep them all
-    if(!input$demo_age == '15 to 29 years'){
-      df <- df %>% 
-        filter(age == input$demo_age)
-    }
-    
-    # Filter sex or keep them all
-    if(!input$demo_sex == 'Both'){
-      df <- df %>% filter(sex == input$demo_sex)
-    }
-    
-    # Filter pob or keep them all
-    if(!input$demo_pob == 'Born anywhere'){
-      df <- df %>% filter(pob == input$demo_pob)
-    }
-    
-    # Filter vm or keep them all
-    if(!input$demo_vm == 'All ethnicities'){
-      df <- df %>% filter(vm == input$demo_vm)
-    }
-    
-    # Require special indicators
-    df <- df %>% filter(si == input$demo_si)
-    
-    # Aggregate
-    df <- df %>%
-      group_by(geography) %>%
-      summarise(value = sum(value, na.rm = TRUE))
-    df
-  })
-  
-  # Test table
-  output$test <- renderTable({
-    leaflet_data()
-  })
   
   # Leaflet
   output$demo_leaflet <- renderLeaflet({
     
-    df <- leaflet_data()
+    # x <- censified()
+    # if(!'geo_code' %in% names(x) |
+    #    'Age group' %in% names(x) |
+    #    'Sex' %in% names(x) |
+    #    'Place of birth' %in% names(x) |
+    #    'Visible minority' %in% names(x)){
+    #   return(NULL)
+    # } else {
+    #   
+    # }
     
-    leaf(x = df,
-         tile = input$tile,
-         palette = input$palette,
-         show_legend = input$show_legend)
+    leaflet() %>%
+      addTiles()
+    # df <- leaflet_data()
+    # 
+    # leaf(x = df,
+    #      tile = input$tile,
+    #      palette = input$palette,
+    #      show_legend = input$show_legend)
   })
   
   # Table below leaflet plot
   output$demo_table <- DT::renderDataTable({
-    x <- leaflet_data() %>%
-      filter(geography != '3500') %>%
-      mutate(percent = value / sum(value) * 100)
+    x <- leaflet_data()
     prettify(x, download_options = TRUE)
   })
   
@@ -431,10 +366,9 @@ server <- function(input, output) {
   output$downloadData <- downloadHandler(
     filename = function() { paste('databrew', '.csv', sep='') },
     content = function(file) {
-      write.csv(census_all, file)
+      write.csv(census, file)
     }
   )
-  
 }
 
 # Run the application 

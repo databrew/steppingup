@@ -92,32 +92,144 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # This function will be used in the get_data function to clean columns and make long
 ##########
 
-clean_cols_long <- function(x, wide_column_start, dups, name){
-  colnames(x) <- tolower(colnames(x))
-  colnames(x) <- gsub('x', replacement = '', colnames(x))
-  for(i in 1:ncol(x)){
-    temp.name <- colnames(x)[i]
-    if(grepl('.', temp.name, fixed = T)){
-      temp.name_1 <- unlist(strsplit(temp.name, '.', fixed = T))
-      temp.name_2 <- paste0(temp.name_1[temp.name_1 != ""], collapse = '_')
-      temp.name <- temp.name_2
+get_census_data <- function() {
+  
+  # first get vector of data set names to loop through later
+  data_names <- list.files('data/census_data')
+  # cread empty list to store data
+  data_list <- list()
+  total_list <- list()
+  # get data type
+  sub_names <- data_names[grepl('census', data_names)]
+  # function that loops through each name in for census data and read into a list
+  for (i in 1: length( sub_names)) {
+    name <- sub_names[i]
+    temp_data <- read_csv(paste0('data/census_data/', name))
+    # Declare that the encoding is all screwed up for this file
+    Encoding(temp_data$Geography) <- "latin1"
+    # Address the weirdness with "New Credit (Part)"
+    temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
+    # Keep only the first part of the name (what is with the %?)
+    temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE),
+                                                function(x){x[1]})), ')')
+    
+    # give Ontario four digit number to subset by.
+    temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
+    
+    #subset to Ontarios and 4 digit geo codes
+    geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
+                                        '(', fixed = TRUE),
+                               function(x){
+                                 gsub(')', '', x[2], fixed = TRUE)}))
+    
+    # (those wih NA for the geo_code are all ontario) - give it 3500 so we can subset
+    # entirely by 4 digit geo_code
+    temp_data$geo_code <- geo_codes
+    temp_data$geo_code[is.na(temp_data$geo_code)] <- '3500'
+    
+    # keep only rows that have 4 number
+    temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
+    
+    # add year
+    year <- as.numeric(substr(name, 1, 4))
+    temp_data$year <- year
+    
+    # Throw away variables depending on the year (since not available in other years)
+    # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
+    # Therefore, we force the names from 2001 onto 2006
+    names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
+    if(year == 2001){
+      temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
+      names_2001 <- names(temp_data)
+    } else if (year == 2006){
+      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+      names(temp_data) <- names_2001
+    } else if (year == 2011){
+      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+      # Keep those columns which are shared
+      shared <- temp_data[,names(temp_data) %in% names_2001]
+      not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+      # Get rid of subsidized data
+      not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
+      # Get rid of employment rate
+      not_shared <- not_shared[,!grepl('Employment rate %', names(not_shared), fixed = TRUE)]
+      not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
+      # Rename total diploma to match with other years
+      names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+      
+      library(stringdist)
+      fuzzy <- stringdistmatrix(a = names(not_shared),
+                                b = names_2001)
+      best_matches <- apply(fuzzy, 1, which.min)
+      best_names <- names_2001[best_matches]
+      names(not_shared) <- best_names
+      temp_data <- bind_cols(shared, not_shared)
     }
-    colnames(x)[i] <- temp.name
+    
+    # store in list
+    data_list[[i]] <- temp_data
   }
-  # make long format
-  # find 6 column name and last colum name
-  column_start <- colnames(x)[wide_column_start]
-  last_column <- colnames(x)[ncol(x)]
-  if(dups) {
-    x <-  x[,!duplicated(colnames(x))]
-    column_start <- colnames(x)[wide_column_start]
-    last_column <- colnames(x)[ncol(x)]
-  }
-  x_long <- gather(x, key, value, column_start:last_column)
-  #add a year column
-  x_long$year <- as.character(unlist(lapply(strsplit(name, '_'), function(x) x[1])))
-  return(x_long)
+  census <- bind_rows(data_list)
+  # clean column names
+  names(census)[2:3] <- c('Age group', 'Sex')
+  names(census)[5] <- c('Visible minority')
+  
+  # clean sex
+  census$Sex <- ifelse(grepl('fem', tolower(census$Sex)), 'Female', 
+                       ifelse(grepl('Male', census$Sex), 'Male', 
+                              ifelse(grepl('Total', census$Sex), 'Total',NA)))
+  # clean place of birth
+  census$`Place of birth` <- ifelse(grepl('Total', census$`Place of birth`), 'Total - Place of birth',
+                                    ifelse(grepl(' in',census$`Place of birth`), 'Born in Canada',
+                                           ifelse(grepl('out', census$`Place of birth`), 'Born outside of Canada',
+                                                  NA)))
+  
+  # fix multiple vismin
+  census$`Visible minority` <- gsub('minorities', 'minority', census$`Visible minority`)
+  census$`Visible minority` <- ifelse(census$`Visible minority` == "Total visible minority population",
+                                      'All visible minorities',
+                                      census$`Visible minority`)
+  census$`Visible minority` <- ifelse(grepl('Total', census$`Visible minority`), 'Total - Population by visible minority', census$`Visible minority`)
+  
+  # fix geography
+  geo_dictionary <- census %>% 
+    dplyr::select(geo_code, Geography) %>% 
+    filter(!duplicated(geo_code))
+  
+  # join dictionary to census
+  census <- census %>% 
+    dplyr::select(-Geography) %>% 
+    left_join(geo_dictionary, by = 'geo_code')
+  
+  # remove duplicates 
+  census <- census %>%
+    distinct(geo_code, year, `Age group`, Sex, `Place of birth`, `Visible minority`, .keep_all = TRUE)
+  
+  census <- census[, unique(c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth', names(census)))]
+  
+  # Fix column names to make sure that denominators are correctly called "Total"
+  names(census)[names(census) == 'Population 15 years and over by Place of Residence 5 years ago'] <-
+    paste0('Total - ', 'Population 15 years and over by Place of Residence 5 years ago')
+  names(census)[names(census) == 'Population 15 years and over by labour force activity'] <-
+    paste0('Total - ', 'Population 15 years and over by labour force activity')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid housework'] <- 
+    paste0('Total - ', 'Population 15 and over by hours of unpaid housework')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid childcare'] <- 
+    paste0('Total - ', 'Population 15 and over by hours of unpaid childcare')
+  names(census)[names(census) == 'Population 15 and over by hours of unpaid care to seniors'] <-
+    paste0('Total - ', 'Population 15 and over by hours of unpaid care to seniors')
+  census$`Population - concept not applicable` <- NULL
+  census$`Population for the low income status variable` <- NULL
+  census$`Standard error of average household income $` <- NULL
+
+  return(census)
 }
+
+# # Generate dictionary
+# write_csv(data_frame(variable = names(census),
+#                      category = NA,
+#                      sub_category = NA),
+#           'dictionaries/census_dictionary.csv')
 
 
 ##########
@@ -137,6 +249,7 @@ get_data <- function(data_type) {
     data_names <- list.files('data/census_data')
     # cread empty list to store data
     data_list <- list()
+    total_list <- list()
     # get data type
     sub_names <- data_names[grepl(data_type, data_names)]
     # function that loops through each name in for census data and read into a list
@@ -167,12 +280,21 @@ get_data <- function(data_type) {
       # keep only rows that have 4 number
       temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
 
-      # # remove any 'Total' from columns
+      # new stuff 
+    
+      # create a total able 
       temp_data <- as.data.frame(temp_data[, !grepl('Total', colnames(temp_data))], stringsAsFactors = F)
-
+      
+      
+      temp_total <- temp_data %>%
+        dplyr::select(Geography, `Age groups (5)`, `Sex (3)`, `Place of birth`, `Visible minorit`)
+      keep <- apply(temp_total, 1, function(x){any(grepl('Total', x))})
+      
+      temp_total <- temp_total[keep,]
+      
       # remove any row that has total by looping through columns
       remove_total <- function(data_frame) {
-        # group by get an indicator for column name
+        # get an indicator for column name
         variable_names <- as.character(colnames(data_frame))[1:5]
         # loop through variables and remove rows with 'Total'
         for(v in variable_names) {
@@ -324,44 +446,141 @@ get_data <- function(data_type) {
 # Get surey and census data
 # If the aggregated/cleaned file already exists (ie, this script has already been run)
 # load it
-if('survey_list.rda' %in% dir('data')) {
-  survey_list <- readRDS('data/survey_list.rda')
+# CURRENTLY COMMENTING OUT IN ORDER TO SPEED UP
+# if('survey_list.rda' %in% dir('data')) {
+#   survey_list <- readRDS('data/survey_list.rda')
+# } else {
+#   survey_list <- get_data(data_type = 'survey')
+#   saveRDS(survey_list, 'data/survey_list.rda')
+# }
+
+# read in dictionary 
+census_dict <- read_csv('dictionaries/census_dictionary.csv')
+
+if('census.feather' %in% dir('data')){
+  census <- read_feather('data/census.feather')
 } else {
-  survey_list <- get_data(data_type = 'survey')
-  saveRDS(survey_list, 'data/survey_list.rda')
-}
-if('census_all.feather' %in% dir('data')){
-  census_all <- read_feather('data/census_all.feather')
-} else {
-  census_all <- get_data(data_type = "census")
-
-  # Clean up geography
-  geo_dictionary <- census_all %>% group_by(geo, geo_code) %>% tally %>% dplyr::select(-n) %>% ungroup
-  geo_dictionary$geo <- unlist(lapply(strsplit(geo_dictionary$geo, ' (', fixed = TRUE), function(x){x[1]}))
-  geo_dictionary <- geo_dictionary %>%
-    arrange(geo_code, geo)
-  geo_dictionary <- geo_dictionary %>%
-    filter(!duplicated(geo_code))
-  census_all <-
-    census_all %>%
-    dplyr::select(-geo) %>%
-    left_join(geo_dictionary, by = 'geo_code') %>%
-    dplyr::select(geo_code, geo, year, age, sex, pob, vm, special_indicators, value)
-  census_all <-
-    census_all %>%
-    rename(si = special_indicators)
-
-  # Remove the 15 to 24 age group (since it overlaps with others)
-  census_all <- census_all %>%
-    filter(age != '15 to 24 years')
-
-
-  # Rename geo code to geography
-  census_all <-
-    census_all %>%
-    rename(geography = geo_code)
-
+  census <- get_census_data()
   # and then save data to to "data" folder for faster retrieval in subsequent runs
-  # save(census_all, file = 'data/census_all.RData')
-  write_feather(census_all, 'data/census_all.feather')
+  # save(census, file = 'data/census.RData')
+  write_feather(census, 'data/census.feather')
 }
+
+
+# define function for filtering data by inputs
+
+# year Numeric vector of length 1 or 3. For example, c(2001, 2006) to keep data from both years
+censify <- function(df = census,
+                    dict = census_dict,
+                    age = FALSE, 
+                    sex = FALSE,
+                    pob = FALSE,
+                    vm = FALSE, 
+                    geo_code = FALSE,
+                    years = 2001,
+                    sc = NULL,
+                    percent = TRUE) {
+  # category
+  if(!is.null(sc)) {
+    if(!sc %in% unique(dict$sub_category)) {
+      stop("sc must be one of ", paste0(unique(dict$sub_category), collapse = ", "))
+    }
+    # extract columns corresponding to category from census dict
+    keep_columns <- dict %>%
+      filter(sub_category %in% c('demographic', 'geo_code', 'year', sc)) %>%
+      .$variable
+    df <- df[, keep_columns]
+  }
+  
+  # age 
+  if(age) {
+    df <- df %>%
+      filter(!grepl('Total', `Age group`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Age group`))
+    df$`Age group` <- NULL
+  }
+  
+  # sex
+  if(sex){
+    df <- df %>%
+      filter(!grepl('Total', Sex))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', Sex))
+    df$Sex <- NULL
+  }
+  
+  # pob
+  if(pob){
+    df <- df %>%
+      filter(!grepl('Total', `Place of birth`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total', `Place of birth`))
+    df$`Place of birth` <- NULL
+  }
+  
+  # vm
+  if(vm){
+    df <- df %>%
+      filter(!grepl('Total', `Visible minority`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total',  `Visible minority`))
+    df$`Visible minority` <- NULL
+  }
+  
+  # geo_code
+  if(geo_code){
+    df <- df %>%
+      filter(geo_code != '3500')
+  } else {
+    df <- df %>%
+      filter(geo_code == '3500')
+    df$geo_code <- NULL
+    df$Geography  <- NULL
+  }
+  
+  # filter for year
+  df <- df %>%
+    filter(year %in% years)
+  if(length(years) == 1){
+    df$year <- NULL
+  }
+  
+  # make percentages 
+  if(percent) {
+    if(is.null(sc)) {
+      warning("Choose a sub category to generate percentages")
+    } else {
+      if(!sc == 'income'){
+        denom_column <- which(grepl('Total', names(df)))
+        denom <- df[, denom_column]
+        names(denom) <- 'x'
+        denom <- denom$x
+        
+        # identify indices of numerator columns
+        ni <- (denom_column + 1):ncol(df)
+        
+        # make temp data frame 
+        col_names <- names(df)
+        
+        df <- as.data.frame(df)
+        
+        for(j in ni) {
+          df[,j] <- (df[, j]/denom)*100
+        }
+        colnames(df) <- col_names
+      }
+      }
+  }
+    
+  return(df)
+}
+
+# define input cateogry choices
+category_choices <- sort(unique(census_dict$category))
+category_choices <- category_choices[!category_choices %in% c('demographic', 'geo_code', 'year')]
+names(category_choices) <- Hmisc::capitalize(category_choices)

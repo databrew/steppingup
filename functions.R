@@ -171,7 +171,9 @@ prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns 
     else if (the_class %in% c("numeric", "integer")) {
       the_column <- round(the_column, digits = round_digits)
       if (comma_numbers) {
-        the_column <- scales::comma(the_column)
+        if(!grepl('year', tolower(names(the_table)[j]))){
+          the_column <- scales::comma(the_column)
+        }
       }
     }
     the_table[, j] <- the_column
