@@ -292,7 +292,7 @@ server <- function(input, output) {
       sc <- input$sub_category 
     }
     
-    censify(df = census, dict = census_dict, 
+    x <- censify(df = census, dict = census_dict, 
             age = input$age, 
             sex = input$sex,
             pob = input$pob,
@@ -302,6 +302,36 @@ server <- function(input, output) {
             sc = sc,
             percent = input$percent)
     
+    if(input$age & !is.null(input$age_filter)) {
+      if(input$age_filter != 'All') {
+        x <- x %>% filter(`Age group` == input$age_filter)
+      }
+    }
+    
+    if(input$sex & !is.null(input$sex_filter)) {
+      if(input$sex_filter != 'All') {
+        x <- x %>% filter(Sex == input$sex_filter)
+      }
+    }
+    
+    if(input$pob & !is.null(input$pob_filter)) {
+      if(input$pob_filter != 'All') {
+        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      }
+    }
+    
+    if(input$vm & !is.null(input$vm_filter)) {
+      if(input$vm_filter != 'All') {
+        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      }
+    }
+    
+    if(input$geography & !is.null(input$geography_filter)) {
+      if(input$geography_filter != 'All') {
+        x <- x %>% filter(Geography == input$geography_filter)
+      }
+    }
+    return(x)
   })
   
   # Misc approval box
@@ -440,35 +470,6 @@ server <- function(input, output) {
   # Main table
   output$xing_table <- renderDataTable({
     x <- censified()
-    if(input$age & !is.null(input$age_filter)) {
-      if(input$age_filter != 'All') {
-        x <- x %>% filter(`Age group` == input$age_filter)
-      }
-    }
-    
-    if(input$sex & !is.null(input$sex_filter)) {
-      if(input$sex_filter != 'All') {
-        x <- x %>% filter(Sex == input$sex_filter)
-      }
-    }
-    
-    if(input$pob & !is.null(input$pob_filter)) {
-      if(input$pob_filter != 'All') {
-        x <- x %>% filter(`Place of birth` == input$pob_filter)
-      }
-    }
-    
-    if(input$vm & !is.null(input$vm_filter)) {
-      if(input$vm_filter != 'All') {
-        x <- x %>% filter(`Visible minority` == input$vm_filter)
-      }
-    }
-    
-    if(input$geography & !is.null(input$geography_filter)) {
-      if(input$geography_filter != 'All') {
-        x <- x %>% filter(Geography == input$geography_filter)
-      }
-    }
     x <- x[, names(x) %in% c(head_vector, input$variable)]
     if(length(input$variable) == 0) {
       DT::datatable(data_frame())
