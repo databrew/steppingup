@@ -353,7 +353,7 @@ server <- function(input, output) {
     if(input$age){
       selectInput('age_filter',
                   'Filter',
-                  choices = c('All', sort(unique(censified()$`Age group`))))
+                  choices = c('All', sort(unique(census$`Age group`))))
     }
   })
   # Download table
@@ -366,7 +366,7 @@ server <- function(input, output) {
     if(input$geography){
       selectInput('geography_filter',
                   'Filter',
-                  choices = c('All', sort(unique(censified()$Geography))))
+                  choices = c('All', sort(unique(census$Geography))))
     }
   })
   # Leaflet
@@ -388,7 +388,7 @@ server <- function(input, output) {
     if(input$pob){
       selectInput('pob_filter',
                   'Filter',
-                  choices = c('All', sort(unique(censified()$`Place of birth`))))
+                  choices = c('All', sort(unique(census$`Place of birth`))))
     }
   })
   # Progress box
@@ -410,7 +410,7 @@ server <- function(input, output) {
     if(input$sex){
       selectInput('sex_filter',
                   'Filter',
-                  choices = c('All', sort(unique(censified()$`Sex`))))
+                  choices = c('All', sort(unique(census$`Sex`))))
     }
   })
   # Sub category UI
@@ -464,7 +464,7 @@ server <- function(input, output) {
     if(input$vm){
       selectInput('vm_filter',
                   'Filter',
-                  choices = c('All', sort(unique(censified()$`Visible minority`))))
+                  choices = c('All', sort(unique(census$`Visible minority`))))
     }
   })
   # Main table
