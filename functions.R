@@ -439,7 +439,9 @@ plotter <- function(df){
   # Only keep necessary columns
   df <- df[,1:plot_column]
   if(total_column >= 5){
-    return(ggplot())
+    return(ggplot() +
+             theme_databrew() +
+             labs(title = 'Pick between 1 and 3 variables to view a plot'))
   } else {
     original_var_names <- names(df)[1:(total_column - 1)]
     names(df)[1:(total_column - 1)] <- paste0('var', 1:(total_column - 1))
