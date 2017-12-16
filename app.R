@@ -282,7 +282,7 @@ ui <- dashboardPage(skin = 'blue',
 )
 
 
-# Define server logic for random distribution app ----
+# Define server 
 server <- function(input, output) {
   
   censified <- reactive({
