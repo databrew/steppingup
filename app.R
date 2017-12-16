@@ -111,7 +111,6 @@ ui = dashboardPage(skin = 'blue',
                                                            choices = c('Born anywhere',
                                                                        'Born in Canada',
                                                                        'Born outside of Canada')))),
-                               
                                tabsetPanel(tabPanel('Map',
                                                     
                                                     leafletOutput('demo_leaflet'),
