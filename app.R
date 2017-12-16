@@ -86,25 +86,47 @@ ui <- dashboardPage(skin = 'blue',
                                                uiOutput("sub_category")),
                                         column(4,
                                                uiOutput("variable"))),
-                               fluidRow(column(4,
-                                               checkboxGroupInput('group_vector',
-                                                                  'Examine by sub groups:',
-                                                                  choices = c('Age',
-                                                                              'Sex',
-                                                                              'Place of birth',
-                                                                              'Visible minority',
-                                                                              'Geography'),
-                                                                  selected = c('Age', 'Sex'))),
-                                        column(4,
+                               fluidRow(
+                                        column(6,
                                                radioButtons('percent',
                                                             'View as percentage or raw number',
                                                             choices = c('Percentage' = TRUE, 
                                                                         'Raw numbers' = FALSE))),
-                                        column(4,
+                                        column(6,
                                                checkboxGroupInput('years',
                                                                   'Year',
                                                                   choices = c('2001', '2006', '2011'),
                                                                   selected = '2001'))),
+                               fluidRow(column(12,
+                                               strong('Examine by sub groups:'))),
+                               fluidRow(column(2, 
+                                               checkboxInput('age',
+                                                             'Age Group',
+                                                             value = TRUE)),
+                                        column(2,
+                                               checkboxInput('sex',
+                                                             'Sex',
+                                                             value = TRUE)),
+                                        column(2,
+                                               checkboxInput('pob',
+                                                             'Place of birth')),
+                                        column(2,
+                                               checkboxInput('vm',
+                                                             'Visible minority')),
+                                        column(2,
+                                               checkboxInput('geography',
+                                                             'Geography')),
+                                 column(2)),
+                               # fluidRow(column(2,
+                               #                 uiOutput('age_filter')),
+                               #          column(2,
+                               #                 uiOutput('sex_filter')),
+                               #          column(2,
+                               #                 uiOutput('pob_filter')),
+                               #          column(2,
+                               #                 uiOutput('vm_filter')),
+                               #          column(2,
+                               #                 uiOutput('geography_filter'))),
                                
                                tabsetPanel(
                                  tabPanel('Table',
@@ -273,14 +295,15 @@ server <- function(input, output) {
       sc <- input$sub_category 
     }
     
-  censify(df = census, dict = census_dict, age = 'Age' %in% input$group_vector, 
-                 sex = 'Sex' %in% input$group_vector,
-                 pob = 'Place of birth' %in% input$group_vector,
-                 vm = 'Visible minority' %in% input$group_vector,
-                 geo_code = 'Geography' %in% input$group_vector,
-                 years = input$years,
-                 sc = sc,
-                 percent = input$percent)
+    censify(df = census, dict = census_dict, 
+            age = input$age, 
+            sex = input$sex,
+            pob = input$pob,
+            vm = input$vm,
+            geo_code = input$geo_code,
+            years = input$years,
+            sc = sc,
+            percent = input$percent)
     
   })
   
@@ -345,6 +368,47 @@ server <- function(input, output) {
       color = "yellow", fill = TRUE
     )
   })
+  
+  output$age_filter <- renderUI({
+    if(input$age){
+      selectInput('age_filter',
+                  'Filter',
+                  choices = sort(unique(censified()$`Age group`)))
+    }
+  })
+  
+  output$sex_filter <- renderUI({
+    if(input$sex){
+      selectInput('sex_filter',
+                  'Filter',
+                  choices = sort(unique(censified()$`Sex`)))
+    }
+  })
+  
+  output$pob_filter <- renderUI({
+    if(input$pob){
+      selectInput('pob_filter',
+                  'Filter',
+                  choices = sort(unique(censified()$`Place of birth`)))
+    }
+  })
+  
+  output$vm_filter <- renderUI({
+    if(input$vm){
+      selectInput('vm_filter',
+                  'Filter',
+                  choices = sort(unique(censified()$`Visible minority`)))
+    }
+  })
+  
+  output$geography_filter <- renderUI({
+    if(input$geography){
+      selectInput('geography_filter',
+                  'Filter',
+                  choices = sort(unique(censified()$Geography)))
+    }
+  })
+  
   
   
   # Leaflet

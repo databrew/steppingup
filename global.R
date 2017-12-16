@@ -594,3 +594,10 @@ category_choices <- category_choices[!category_choices %in% c('demographic', 'ge
 names(category_choices) <- Hmisc::capitalize(category_choices)
 
 head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority', 'Total')
+
+# ui choices 
+sex_choices <- sort(unique(census$Sex))
+age_group_choices <- sort(unique(census$`Age group`))
+pob_choices <- sort(unique(census$`Place of birth`))
+vm_choices <- sort(unique(census$`Visible minority`))
+geo_choices <- sort(unique(census$Geography))
