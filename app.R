@@ -134,34 +134,31 @@ ui <- dashboardPage(skin = 'blue',
                                                           DT::dataTableOutput('xing_table')
                                           ))),
                                  tabPanel('Map',
-                                          p('To be finished on December 16'),
-                                                    
-                                                    leafletOutput('the_map'),
-                                                    fluidRow(column(3,
-                                                                    checkboxInput('show_legend',
-                                                                                  'Show legend?')),
-                                                             column(4,
-                                                                    selectInput('palette', 'Palette',
-                                                                                choices = c('Yellow-red' = 'YlOrRd',
-                                                                                            'Spectral' = 'Spectral',
-                                                                                            'Blues' = 'Blues',
-                                                                                            'Greens' = 'Greens',
-                                                                                            'Purples' = 'Purples',
-                                                                                            'Reds' = 'Reds',
-                                                                                            'Black and white' = 'Greys'))),
-                                                             column(5,
-                                                                    selectInput('tile',
-                                                                                'Background',
-                                                                                choices = c('OSM - Mapnik' = 'OpenStreetMap.Mapnik',
-                                                                                            'OSM - TopoMap' = 'OpenTopoMap',
-                                                                                            'Stamen - Simple BW' = 'Stamen.Toner',
-                                                                                            'Stamen - Watercolor' = 'Stamen.Watercolor',
-                                                                                            'Stamen - Terrain' = 'Stamen.Terrain',
-                                                                                            'ESRI - Satellite' = 'Esri.WorldImagery',
-                                                                                            'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap'))))),
-                                          tabPanel('Plot',
-                                                   fluidRow(column(12,
-                                                                   p('To be finished on Dec 16')))))),
+                                          textOutput('map_text'),
+                                          fluidRow(column(3,
+                                                          checkboxInput('show_legend',
+                                                                        'Show legend?')),
+                                                   column(4,
+                                                          selectInput('palette', 'Palette',
+                                                                      choices = c('Yellow-red' = 'YlOrRd',
+                                                                                  'Spectral' = 'Spectral',
+                                                                                  'Blues' = 'Blues',
+                                                                                  'Greens' = 'Greens',
+                                                                                  'Purples' = 'Purples',
+                                                                                  'Reds' = 'Reds',
+                                                                                  'Black and white' = 'Greys'))),
+                                                   column(5,
+                                                          selectInput('tile',
+                                                                      'Background',
+                                                                      choices = c('OSM - Mapnik' = 'OpenStreetMap.Mapnik',
+                                                                                  'OSM - TopoMap' = 'OpenTopoMap',
+                                                                                  'Stamen - Simple BW' = 'Stamen.Toner',
+                                                                                  'Stamen - Watercolor' = 'Stamen.Watercolor',
+                                                                                  'Stamen - Terrain' = 'Stamen.Terrain',
+                                                                                  'ESRI - Satellite' = 'Esri.WorldImagery',
+                                                                                  'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap')))),
+                                                    leafletOutput('the_map')),
+                                          tabPanel('Plot'))),
                        tabItem(tabName = "theme",
                                h2('Explore data by theme'),
                                p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
@@ -399,11 +396,24 @@ server <- function(input, output) {
   
   
   # Leaflet
+  output$map_text <- renderText({
+    make_map <- FALSE
+    if(input$geography &
+       !input$age &
+       !input$sex &
+       !input$pob &
+       !input$vm){
+      make_map <- TRUE
+    }
+    if(!make_map){
+      paste0('To generate a map, check the "geography" box above, and uncheck all the others.')
+    }
+  })
   output$the_map <- renderLeaflet({
     
     make_map <- FALSE
     if(input$geography &
-       !input$age_group &
+       !input$age &
        !input$sex &
        !input$pob &
        !input$vm){
@@ -418,8 +428,9 @@ server <- function(input, output) {
            palette = input$palette,
            show_legend = input$show_legend)
     } else {
-      leaflet() %>%
-        addTiles()
+      NULL
+      # leaflet() %>%
+      #   addTiles()
     }
   })
   

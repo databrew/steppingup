@@ -84,12 +84,12 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
   require(dplyr)
   require(leaflet)
   require(RColorBrewer)
-  # This function expects "x" to be a dataframe with a column named "geography" (a 4 character string)
+  # This function expects "x" to be a dataframe with a column named "geo_code" (a 4 character string)
   # and another named "value"
   # Keep only the numbered values
   right <- x %>%
-    filter(!is.na(as.numeric(geography))) %>%
-    mutate(geography = substr(geography, 3,4))
+    filter(!is.na(as.numeric(geo_code))) %>%
+    mutate(geography = substr(geo_code, 3,4))
   # join to ont shapefile
   shp <- ont2
   shp@data <- shp@data %>%
@@ -129,7 +129,8 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
                   bringToFront = TRUE),
                 label = popper,
                 labelOptions = labelOptions(
-                  style = list("font-weight" = "normal", padding = "3px 8px"),
+                  style = list("font-weight" = "normal", 
+                               padding = "3px 8px"),
                   textsize = "15px",
                   direction = "auto"))
   return(l)
