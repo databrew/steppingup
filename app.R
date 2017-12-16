@@ -361,7 +361,14 @@ server <- function(input, output) {
   
   # barplot 
   output$bar_plot <- renderPlot({
-    plotter(censified())
+    if(input$category == 'income'){
+      ggplot() +
+        theme_databrew() +
+          labs(title = 'Income variables are not visualizable yet.')
+    } else {
+      plotter(censified())
+    }
+    
   })
   # Download table
   output$downloadData <- downloadHandler(
