@@ -174,6 +174,8 @@ get_census_data <- function() {
   names(census)[2:3] <- c('Age group', 'Sex')
   names(census)[5] <- c('Visible minority')
   
+  # remove Total - 15 and up from age group
+  census  <- census[!grepl('15 to 24 years', census$`Age group`),]
   # clean sex
   census$Sex <- ifelse(grepl('fem', tolower(census$Sex)), 'Female', 
                        ifelse(grepl('Male', census$Sex), 'Male', 
