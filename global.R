@@ -581,7 +581,10 @@ censify <- function(df = census,
       }
       }
   }
-    
+  total_columns <- grepl('Total', names(df))
+  if(length(which(total_columns)) == 1){
+    names(df)[total_columns] <- 'Total' 
+  }
   return(df)
 }
 
@@ -590,4 +593,4 @@ category_choices <- sort(unique(census_dict$category))
 category_choices <- category_choices[!category_choices %in% c('demographic', 'geo_code', 'year')]
 names(category_choices) <- Hmisc::capitalize(category_choices)
 
-head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority')
+head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority', 'Total')
