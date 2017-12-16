@@ -87,7 +87,6 @@ ui <- dashboardPage(skin = 'blue',
                                         column(4,
                                                uiOutput("variable"))),
                                fluidRow(column(4,
-                                               textOutput('fake_text'),
                                                checkboxGroupInput('group_vector',
                                                                   'Examine by sub groups:',
                                                                   choices = c('Age',
@@ -293,9 +292,6 @@ server <- function(input, output) {
     } else {
       prettify(x, download_options = TRUE) 
     }
-  })
-  output$fake_text <- renderText({
-    input$group_vector
   })
   output$sub_category <- renderUI({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
