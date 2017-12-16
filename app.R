@@ -7,6 +7,7 @@ library(networkD3)
 options(gvis.plot.tag = 'chart')
 library(shinyBS)
 library(shinyLP)
+library(ggplot2)
 library(shinythemes)
 
 source('global.R')
@@ -158,7 +159,8 @@ ui <- dashboardPage(skin = 'blue',
                                                                                    'ESRI - Satellite' = 'Esri.WorldImagery',
                                                                                    'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap')))),
                                            leafletOutput('the_map')),
-                                  tabPanel('Plot'))),
+                                  tabPanel('Plot', 
+                                            plotOutput('bar_plot')))),
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
                                 p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
@@ -355,6 +357,11 @@ server <- function(input, output) {
                   'Filter',
                   choices = c('All', sort(unique(census$`Age group`))))
     }
+  })
+  
+  # barplot 
+  output$bar_plot <- renderPlot({
+    plotter(censified())
   })
   # Download table
   output$downloadData <- downloadHandler(
