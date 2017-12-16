@@ -136,7 +136,7 @@ ui <- dashboardPage(skin = 'blue',
                                  tabPanel('Map',
                                           p('To be finished on December 16'),
                                                     
-                                                    leafletOutput('demo_leaflet'),
+                                                    leafletOutput('the_map'),
                                                     fluidRow(column(3,
                                                                     checkboxInput('show_legend',
                                                                                   'Show legend?')),
@@ -370,27 +370,28 @@ server <- function(input, output) {
   
   
   # Leaflet
-  output$demo_leaflet <- renderLeaflet({
+  output$the_map <- renderLeaflet({
     
-    # x <- censified()
-    # if(!'geo_code' %in% names(x) |
-    #    'Age group' %in% names(x) |
-    #    'Sex' %in% names(x) |
-    #    'Place of birth' %in% names(x) |
-    #    'Visible minority' %in% names(x)){
-    #   return(NULL)
-    # } else {
-    #   
-    # }
-    
-    leaflet() %>%
-      addTiles()
-    # df <- leaflet_data()
-    # 
-    # leaf(x = df,
-    #      tile = input$tile,
-    #      palette = input$palette,
-    #      show_legend = input$show_legend)
+    make_map <- FALSE
+    if(input$geography &
+       !input$age_group &
+       !input$sex &
+       !input$pob &
+       !input$vm){
+      make_map <- TRUE
+    }
+    if(make_map){
+      df <- censified()
+      df <- data.frame(df)
+      df$value <- df[,4]
+      leaf(x = df,
+           tile = input$tile,
+           palette = input$palette,
+           show_legend = input$show_legend)
+    } else {
+      leaflet() %>%
+        addTiles()
+    }
   })
   
   # Table below leaflet plot
