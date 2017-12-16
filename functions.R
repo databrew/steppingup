@@ -139,7 +139,7 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
 prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns = TRUE,
                       cap_characters = TRUE, comma_numbers = TRUE, date_format = "%B %d, %Y",
                       round_digits = 2, remove_row_names = TRUE, remove_line_breaks = TRUE,
-                      data_table = TRUE, nrows = 5, download_options = FALSE){
+                      data_table = TRUE, nrows = 5, download_options = FALSE, no_scroll = TRUE){
   column_names <- names(the_table)
   the_table <- data.frame(the_table)
   names(the_table) <- column_names
@@ -182,15 +182,32 @@ prettify <- function (the_table, remove_underscores_columns = TRUE, cap_columns 
   }
   if (data_table) {
     if (download_options) {
-      the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
-                                                           dom = "Bfrtip", buttons = list("copy", "print",
-                                                                                          list(extend = "collection", buttons = "csv",
-                                                                                               text = "Download"))), rownames = FALSE, extensions = "Buttons")
+      if(no_scroll){
+        the_table <- DT::datatable(the_table, options = list(#pageLength = nrows,
+          scrollY = '300px', paging = FALSE,
+          dom = "Bfrtip", buttons = list("copy", "print",
+                                         list(extend = "collection", buttons = "csv",
+                                              text = "Download"))), rownames = FALSE, extensions = "Buttons")
+      } else {
+        the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
+          # scrollY = '300px', paging = FALSE,
+          dom = "Bfrtip", buttons = list("copy", "print",
+                                         list(extend = "collection", buttons = "csv",
+                                              text = "Download"))), rownames = FALSE, extensions = "Buttons")
+      }
+      
     }
     else {
-      the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
-                                                           columnDefs = list(list(className = "dt-right",
-                                                                                  targets = 0:(ncol(the_table) - 1)))), rownames = FALSE)
+      if(no_scroll){
+        the_table <- DT::datatable(the_table, options = list(#pageLength = nrows,
+          scrollY = '300px', paging = FALSE,
+                                                             columnDefs = list(list(className = "dt-right",
+                                                                                    targets = 0:(ncol(the_table) - 1)))), rownames = FALSE)
+      } else {
+        the_table <- DT::datatable(the_table, options = list(pageLength = nrows,
+                                                             columnDefs = list(list(className = "dt-right",
+                                                                                    targets = 0:(ncol(the_table) - 1)))), rownames = FALSE)
+      }
     }
   }
   return(the_table)
