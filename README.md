@@ -14,9 +14,13 @@ Youth Compass Stepping Up Web Application
 
 Customized Canadian census data for 2001, 2006, and 2011 has been purchased by YouthREX and is stored (in a modified form) privately in the `databrew/Conulting Projects/york university/census_data` google drive folder. The files were originally saved in .ivt format, and were opened by downloading the Statistics Canada's Beyond 20/20 Professional Browser Software on a Windows machine. The Beyond 20/20 Browser can be downloaded here: https://www.statcan.gc.ca/eng/public/beyond20-20
 
-Once the .ivt files are opened in Beyond 20/20, they can be manipulated to display data for specific parameters. The tables we downloaded all have the 'geography' parameter (broken down by Canada, provinces, census divisions, and census subdivisions) as rows and selected variables as columns. This is meant to facilitate ultimately mapping the data by census division.
+### Survey data
 
-## Use
+Survey data is stored privately at https://drive.google.com/drive/u/0/folders/1JgFxWSjvsCgX9_QS2Si3eMjRKpCkMw4s (`databrew/Consulting Projects/york university/survey_data`) in google drive. The files were originally provided to databrew by York University via a shared Box account.
+
+## The application
+
+## Developer's guide 
 
 ### Task 1: Get data
 

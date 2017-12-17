@@ -32,7 +32,7 @@ ui <- dashboardPage(skin = 'blue',
                                        menuItem("Explore data by theme",
                                                 tabName = "theme",
                                                 icon = icon("dashboard")),
-                                       menuItem("Download",
+                                       menuItem("Download raw data",
                                                 tabName = "download",
                                                 icon = icon("suitcase")),
                                        menuItem("About",
@@ -178,7 +178,12 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = "download",
                                 h2("Data download"),
                                 br(),
+                                h3('Census data'),
+                                p('Click below to download the entire census dataset (processed, formatted, and filtered by Databrew). Warning: This file is nearly 30MB large; depending on your internet connection speed, this download can be slow.'),
                                 downloadButton('downloadData', 'Download'),
+                                h3('Survey data'),
+                                p('Click below to download the entire survey dataset (processed, formatted, and filtered by Databrew). This is just a placeholder - data not yet available for download.'),
+                                downloadButton('downloadSurvey', 'Download'),
                                 br()),
                         tabItem(tabName = "about",
                                 h2("About"),
@@ -394,7 +399,14 @@ server <- function(input, output) {
                   choices = choices)
     }
   })
-  
+  # Download survey
+  output$downloadSurvey <- downloadHandler(
+    filename = function() { paste('databrew_survey', '.csv', sep='') },
+    content = function(file) {
+      write.csv(data.frame(a = 'placeholer',
+                           b = 'no',
+                           c = 'data',
+                           d = 'yet'), file)})
   # Leaflet
   output$map_text <- renderText({
     make_map <- FALSE
