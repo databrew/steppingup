@@ -492,3 +492,20 @@ head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of 
 names(census) <- gsub(' 15 and over', '', names(census))
 names(census) <- gsub(' 15 years and over', '', names(census))
 census_dict$variable <- names(census)
+
+# Make a theme dictionary
+theme_dictionary <- 
+  data_frame(long_name = c('Supportive families',
+                           'Education',
+                           'Employment',
+                           'Civic engagement',
+                           'Diversity',
+                           'Communities',
+                           'Health and wellness'),
+             short_name = c('sf',
+                            'ed',
+                            'em',
+                            'ce',
+                            'ds',
+                            'cc',
+                            'hw'))

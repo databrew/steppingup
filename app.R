@@ -165,15 +165,14 @@ ui <- dashboardPage(skin = 'blue',
                                 h2('Explore data by theme'),
                                 p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
                                 p('You can explore various data sets under each of the Stepping Up themes below.'),
-                                tabsetPanel(
+                                tabsetPanel(id = "tabs",
                                   tabPanel(title = 'Health and wellness'),
                                   tabPanel(title = 'Supportive families'),
                                   tabPanel(title = 'Education'),
                                   tabPanel(title = 'Employment'),
                                   tabPanel(title = 'Civic engagement'),
                                   tabPanel(title = 'Diversity'),
-                                  tabPanel(title = 'Communities'),
-                                  tabPanel(title = 'All themes')
+                                  tabPanel(title = 'Communities')
                                 )),
                         tabItem(tabName = "download",
                                 h2("Data download"),
@@ -289,7 +288,7 @@ ui <- dashboardPage(skin = 'blue',
 # Define server 
 server <- function(input, output) {
   
-  # Reactive
+  # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
     
