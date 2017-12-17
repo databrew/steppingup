@@ -497,8 +497,19 @@ plotter <- function(df){
          title = title, 
          y = '')
   if('Geography' %in% original_var_names){
-    g <- 
-      g + theme(axis.text.x = element_text(size = 8))
+    which_geo <- which(grepl('eograph', original_var_names))
+    geo_var <- paste0('var', which_geo)
+    lots <- length(unique(df[,geo_var])) > 10
+    if(lots){
+      if(plot_variables == 3){
+        g <- 
+          g + theme(axis.text.x = element_text(size = 6))
+      } else {
+        g <- 
+          g + theme(axis.text.x = element_text(size = 8))
+      }
+      
+    }
   }
   return(g)
 }
