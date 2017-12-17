@@ -457,9 +457,16 @@ plotter <- function(df){
       geom_bar(stat = 'identity',
                fill = 'darkorange',
                alpha = 0.6)
-    if(plot_variables >= 2){
-      g <- g + 
-        facet_wrap(~var2) 
+    if(plot_variables == 2){
+      cols <- colorRampPalette(brewer.pal(n = 9, 'Spectral'))(length(unique(df$var2)))
+      g <- ggplot(data = df,
+                  aes(x = var1,
+                      y = y, 
+                      group = var2,
+                      fill = var2)) +
+        geom_bar(stat = 'identity', position = 'dodge') +
+        scale_fill_manual(name = '',
+                          values = cols) 
     }
     if(plot_variables == 3){
       cols <- colorRampPalette(brewer.pal(n = 9, 'Spectral'))(length(unique(df$var3)))
@@ -468,17 +475,27 @@ plotter <- function(df){
                       y = y, 
                       group = var3,
                       fill = var3)) +
-        geom_bar(stat = 'identity') +
+        geom_bar(stat = 'identity', position = 'dodge') +
         scale_fill_manual(name = '',
-                          values = cols)
+                          values = cols) +
+        facet_wrap(~var2)
     }
   }
   g <- g +
     theme_databrew() +
     theme(axis.text.x = element_text(angle = 45,
                                      hjust = 1))
+  title <- paste0(original_y, ' by ', original_var_names[1])
+  if(plot_variables == 2){
+    title <- paste0(title, ' and ', original_var_names[2])
+  }
+  if(plot_variables == 3) {
+    title <- paste0(title, ', ', original_var_names[2], ', and ', original_var_names[3])
+  }
+  
   g <- g +
-    labs(x = original_var_names[1],
-         y = original_y)
+    labs(x = '',
+         title = title, 
+         y = '')
   return(g)
 }
