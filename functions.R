@@ -291,6 +291,7 @@ subset_table <- function(data = census_all,
 # temp <- temp_dat
 clean_subset_survey <- function(temp, get_year, folder) {
 
+  Encoding(colnames(temp)) <- 'latin1'
   colnames(temp) <- tolower(colnames(temp))
   # clean cols
   colnames(temp) <- gsub("[[:punct:]]", '', as.character(colnames(temp)))

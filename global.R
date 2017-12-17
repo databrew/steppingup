@@ -36,8 +36,7 @@ survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
 # create list to store results
 result_list <- list()
 # loop through each folder and read in all data in that folder (either 1 or 3)
-i = 1
-j = 1
+
 get_survey_data <- function(path_to_data) {
   for(i in 1:length(survey_folders)) {
     temp_folder <- survey_folders[i]
@@ -72,23 +71,23 @@ get_survey_data <- function(path_to_data) {
     
     if(length(data_list) > 1) {
       
-      list_length = length(data_list)
-      
       temp_1 <- data_list[[1]]
       temp_2 <- data_list[[2]]
       # make colnames the same and join
       join_key <- Reduce(intersect, list(colnames(temp_1),
                                          colnames(temp_2)))[1]
       # outer join temp1 and temp2
-      data_frame <- full_join(temp_1, temp_2, by = join_key)
-      result_list[[i]] <- data_frame
-      }
+      dat_temp <- full_join(temp_1, temp_2, by = join_key)
+      result_list[[i]] <- dat_temp
+    } else {
+      result_list[[i]] <- data_list
+    }
+    print(survey_folders[i])
   }
-  
-return(resutl_list)
+  return(result_list)
 }
   
-
+temp <- get_survey_data(path_to_data)
 
 
 ##########
