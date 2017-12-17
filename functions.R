@@ -105,7 +105,7 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
 
   # Create a popup
   popper <- paste0(shp@data$NAME_2, ': ',
-                   shp@data$value)
+                   round(shp@data$value, 2))
 
   # Create map
   l <- leaflet(data = shp) %>%
