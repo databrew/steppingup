@@ -383,6 +383,7 @@ server <- function(input, output) {
                   choices = c('All', sort(unique(census$Geography))))
     }
   })
+  
   # Leaflet
   output$map_text <- renderText({
     make_map <- FALSE
