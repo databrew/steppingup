@@ -343,7 +343,10 @@ server <- function(input, output) {
                   'Choose a variable to compare',
                   choices = x)
     }
-   
+  })
+  
+  output$theme_plot <- renderPlot({
+    barplot(1:10)
   })
   
   # Reactive census object
