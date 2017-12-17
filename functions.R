@@ -14,10 +14,10 @@ library(feather)
 library(foreign)
 library(sas7bdat)
 
+path_to_data <- 'data/survey_data'
+var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
 # Define function for reading survey data
 get_survey_data <- function() {
-  path_to_data <- 'data/survey_data'
-  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
   var_names <- as.character(var_summary$variable_name)
   survey_folders <- list.files(path_to_data)
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey

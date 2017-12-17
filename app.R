@@ -173,7 +173,9 @@ ui <- dashboardPage(skin = 'blue',
                                   tabPanel(title = 'Civic engagement'),
                                   tabPanel(title = 'Diversity'),
                                   tabPanel(title = 'Communities')
-                                )),
+                                ),
+                                uiOutput('theme_var')
+                                ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
                                 br(),
@@ -288,6 +290,27 @@ ui <- dashboardPage(skin = 'blue',
 # Define server 
 server <- function(input, output) {
   
+  # reactive object for theme
+  theme_code <- reactive({
+    x <- theme_dictionary %>% filter(long_name == input$tabs)
+    x <- x$short_name
+    return(x)
+  })
+  
+  # reactive for choosing themes
+  theme_choices <- reactive({
+    x <- var_summary
+    x$theme_name <- lapply(strsplit(x$new_variable, '_'), function(x) x[1])
+    x <- x %>% filter(theme_name == theme_code())
+    x <- x$variable_name
+    names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+  })
+  
+  output$theme_var <- renderUI({
+    selectInput('theme_var',
+                'Choose a variable to explore',
+                choices = theme_choices())
+  })
   # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
