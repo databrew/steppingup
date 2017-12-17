@@ -28,7 +28,6 @@ The live application is at http://databrew.cc/youthrex.
 
 For a demonstration of the application's use, see [https://www.youtube.com/watch?v=940TuOpuJWY](https://www.youtube.com/watch?v=940TuOpuJWY) (video to be updated in future).
 
-<iframe width="854" height="480" src="https://www.youtube.com/embed/Bg3HwLnRDCk" frameborder="0" gesture="media" allow="encrypted-media" allowfullscreen></iframe>
 
 ## Developer's guide 
 
