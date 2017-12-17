@@ -440,7 +440,7 @@ plotter <- function(df, variable = NULL){
   all_nas <- FALSE
   if(length(variable) == 1){
     which_var <- which(names(df) == variable)
-    val <- as.numeric(df[,which_var])
+    val <- df[, which_var]
     if(all(is.na(val))){
       all_nas <- TRUE
     }
@@ -570,3 +570,4 @@ plotter <- function(df, variable = NULL){
     return(g)
   }
 }
+
