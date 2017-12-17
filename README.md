@@ -20,6 +20,14 @@ Survey data is stored privately at https://drive.google.com/drive/u/0/folders/1J
 
 ## The application
 
+### Location
+
+The live application is at http://databrew.cc/youthrex.
+
+### Use
+
+For a demonstration of the application's use, see [https://www.youtube.com/watch?v=940TuOpuJWY](https://www.youtube.com/watch?v=940TuOpuJWY) (video to be updated in future).
+
 ## Developer's guide 
 
 ### Task 1: Get data
