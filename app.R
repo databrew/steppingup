@@ -174,8 +174,11 @@ ui <- dashboardPage(skin = 'blue',
                                   tabPanel(title = 'Diversity'),
                                   tabPanel(title = 'Communities')
                                 ),
-                                uiOutput('theme_var'),
-                                uiOutput('theme_var_2')
+                                fluidRow(column(6,
+                                                uiOutput('theme_var')),
+                                         column(6,
+                                                uiOutput('theme_var_2')))
+                                
                                 ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
@@ -320,7 +323,7 @@ server <- function(input, output) {
     x <- var_summary
     x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
     x <- x %>% filter(variable_name == input$theme_var)
-    return(x$data_set)
+    return(x$data_set[1])
   })
   
 
@@ -329,7 +332,6 @@ server <- function(input, output) {
     x <- var_summary
     x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
     x$variable_name[x$data_set == theme_data_name()]
-    
   })
   
   
