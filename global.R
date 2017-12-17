@@ -26,23 +26,28 @@ for (i in 1:length(db_files)){
 # Source helper functions
 source('functions.R')
 
-
-path_to_data <- 'data/survey_data'
-var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
-var_names <- as.character(var_summary$variable_name)
-survey_folders <- list.files(path_to_data)
-# remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
-survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
-# create list to store results
-result_list <- list()
-# loop through each folder and read in all data in that folder (either 1 or 3)
-
-get_survey_data <- function(path_to_data) {
-  for(i in 1:length(survey_folders)) {
+get_survey_data <- function() {
+  path_to_data <- 'data/survey_data'
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  var_names <- as.character(var_summary$variable_name)
+  survey_folders <- list.files(path_to_data)
+  # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
+  survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
+  # create list to store results
+  result_list <- list()
+  # loop through each folder and read in all data in that folder (either 1 or 3)
+  
+  # for(i in 1:length(survey_folders)) {
+  for(i in c(2)){
+    message('Starting ', survey_folders[i])
+    
     temp_folder <- survey_folders[i]
     survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
     data_list <- list()
-    for(j in 1:length(survey_data)) {
+    lsd <- length(survey_data)
+    message('--- There are ', lsd, ' sub datasets')
+    for(j in 1:lsd) {
+      message('j = ', j)
       temp_data <- survey_data[j]
       if (grepl('.sav', temp_data)) {
         temp_dat <- read.spss(file = paste(path_to_data,
@@ -64,30 +69,23 @@ get_survey_data <- function(path_to_data) {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-        temp_sub <-  temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]]
-        data_list[[j]] <- as.data.frame(temp_sub)
+        data_list[[j]] <-  data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
       }
     }
     
     if(length(data_list) > 1) {
-      
-      temp_1 <- data_list[[1]]
-      temp_2 <- data_list[[2]]
-      # make colnames the same and join
-      join_key <- Reduce(intersect, list(colnames(temp_1),
-                                         colnames(temp_2)))[1]
-      # outer join temp1 and temp2
-      dat_temp <- full_join(temp_1, temp_2, by = join_key)
-      result_list[[i]] <- dat_temp
+      joined <- left_join(data_list[[2]],
+                          data_list[[1]])
+      result_list[[i]] <- joined
     } else {
       result_list[[i]] <- data_list
     }
-    print(survey_folders[i])
+    message('Done with ', survey_folders[i])
   }
   return(result_list)
 }
   
-temp <- get_survey_data(path_to_data)
+temp <- get_survey_data()
 
 
 ##########
