@@ -369,9 +369,14 @@ server <- function(input, output) {
         theme_databrew() +
           labs(title = 'Income variables are not visualizable yet.')
     } else {
-      plotter(censified())
+      if(is.null(input$variable) | length(input$variable) == 0){
+        ggplot() +
+          theme_databrew() +
+          labs(title = 'You must select a variable to plot')
+      } else {
+        plotter(censified(), variable = input$variable)
+      }
     }
-    
   })
   # Download table
   output$downloadData <- downloadHandler(
@@ -464,12 +469,24 @@ server <- function(input, output) {
     }
     if(make_map){
       df <- censified()
-      df <- data.frame(df)
-      df$value <- df[,4]
-      leaf(x = df,
-           tile = input$tile,
-           palette = input$palette,
-           show_legend = input$show_legend)
+      if(length(input$variable) == 1){
+        which_var <- which(names(df) == input$variable)
+        val <- as.numeric(df[,which_var])
+        if(all(is.na(val))){
+          return(NULL)
+        } else {
+          df <- df %>%
+            dplyr::select(geo_code)
+          df$value <- val
+          leaf(x = df,
+               tile = input$tile,
+               palette = input$palette,
+               show_legend = input$show_legend)
+        }
+      } else {
+        NULL
+      }
+      
     } else {
       NULL
       # leaflet() %>%
