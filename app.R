@@ -316,7 +316,7 @@ server <- function(input, output) {
   })
   
   # reactive data set based on the input$theme_var
-  theme_data <- reactive({
+  theme_data_name <- reactive({
     x <- var_summary
     x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
     x <- x %>% filter(variable_name == input$theme_var)
@@ -328,7 +328,7 @@ server <- function(input, output) {
   theme_choices_2 <- reactive({
     x <- var_summary
     x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    x$variable_name[x$data_set == theme_data()]
+    x$variable_name[x$data_set == theme_data_name()]
     
   })
   
@@ -347,6 +347,12 @@ server <- function(input, output) {
   
   output$theme_plot <- renderPlot({
     barplot(1:10)
+  })
+  
+  output$theme_table <- renderDataTable({
+    prettify(data.frame(a = 1:5,
+                        b = 2:6,
+                        c = 3:7))
   })
   
   # Reactive census object
