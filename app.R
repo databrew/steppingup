@@ -353,9 +353,12 @@ server <- function(input, output) {
   # Age filter
   output$age_filter <- renderUI({
     if(input$age){
+      choices <-  sort(unique(census$`Age group`))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
       selectInput('age_filter',
                   'Filter',
-                  choices = c('All', sort(unique(census$`Age group`))))
+                  choices = choices)
     }
   })
   
@@ -378,9 +381,12 @@ server <- function(input, output) {
   # Geography filter
   output$geography_filter <- renderUI({
     if(input$geography){
+      choices <-  sort(unique(census$Geography))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
       selectInput('geography_filter',
                   'Filter',
-                  choices = c('All', sort(unique(census$Geography))))
+                  choices = choices)
     }
   })
   
@@ -402,9 +408,12 @@ server <- function(input, output) {
   # Place of birth filter
   output$pob_filter <- renderUI({
     if(input$pob){
+      choices <-  sort(unique(census$`Place of birth`))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
       selectInput('pob_filter',
                   'Filter',
-                  choices = c('All', sort(unique(census$`Place of birth`))))
+                  choices = choices)
     }
   })
   # Progress box
@@ -424,9 +433,12 @@ server <- function(input, output) {
   # Sex filter
   output$sex_filter <- renderUI({
     if(input$sex){
+      choices <-  sort(unique(census$Sex))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
       selectInput('sex_filter',
                   'Filter',
-                  choices = c('All', sort(unique(census$`Sex`))))
+                  choices = choices)
     }
   })
   # Sub category UI
@@ -479,9 +491,12 @@ server <- function(input, output) {
   # Visible minority filter
   output$vm_filter <- renderUI({
     if(input$vm){
+      choices <-  sort(unique(census$`Visible minority`))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
       selectInput('vm_filter',
                   'Filter',
-                  choices = c('All', sort(unique(census$`Visible minority`))))
+                  choices = choices)
     }
   })
   # Main table
