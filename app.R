@@ -300,7 +300,7 @@ server <- function(input, output) {
   # reactive for choosing themes
   theme_choices <- reactive({
     x <- var_summary
-    x$theme_name <- lapply(strsplit(x$new_variable, '_'), function(x) x[1])
+    x$theme_name <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[1]))
     x <- x %>% filter(theme_name == theme_code())
     x <- x$variable_name
     names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
@@ -311,6 +311,16 @@ server <- function(input, output) {
                 'Choose a variable to explore',
                 choices = theme_choices())
   })
+  
+  # reactive data set based on the input$theme_var
+  theme_data <- reactive({
+    x <- var_summary
+    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+
+    
+    
+  })
+  
   # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
