@@ -37,8 +37,10 @@ get_survey_data <- function() {
   result_list <- list()
   # loop through each folder and read in all data in that folder (either 1 or 3)
   
-  # for(i in 1:length(survey_folders)) {
-  for(i in c(1, 2)){
+  dictionary_counter <- 0
+  dictionary_list <- list()
+  for(i in 1:length(survey_folders)) {
+  
     message('Starting ', i, ': ', survey_folders[i])
     
     temp_folder <- survey_folders[i]
@@ -47,7 +49,7 @@ get_survey_data <- function() {
     lsd <- length(survey_data)
     message('--- There are ', lsd, ' sub datasets')
     for(j in 1:lsd) {
-      message('------ Working on ', j, ' of lsd')
+      message('------ Working on ', j, ' of ', lsd)
       temp_data <- survey_data[j]
       if (grepl('.sav', temp_data)) {
         temp_dat <- read.spss(file = paste(path_to_data,
@@ -73,23 +75,28 @@ get_survey_data <- function() {
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
         new_names <- left_join(new_names, var_summary)
-        names(temp_sub) <- new_names$new_variable
-        data_list[[j]] <-  temp_sub
+        dictionary_counter <- dictionary_counter + 1
+        dictionary_list[[dictionary_counter]] <- new_names
+        # names(temp_sub) <- new_names$new_variable
+        # data_list[[j]] <-  temp_sub
       }
     }
     
-    if(length(data_list) > 1) {
-      joined <- left_join(data_list[[2]],
-                          data_list[[1]])
-      result_list[[i]] <- joined
-    } else {
-      result_list[[i]] <- data_list
-    }
+    # if(length(data_list) > 1) {
+    #   joined <- left_join(data_list[[2]],
+    #                       data_list[[1]])
+    #   result_list[[i]] <- joined
+    # } else {
+    #   result_list[[i]] <- data_list
+    # }
     message('Done with ', survey_folders[i])
   }
-  return(result_list)
+  # return(result_list)
+  return(bind_rows(dictionary_list))
 }
   
+dictionary <- get_survey_data()
+write_csv(dictionary, 'data/survey_data/var_summary.csv')
 temp <- get_survey_data()
 
 
