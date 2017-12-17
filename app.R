@@ -177,7 +177,8 @@ ui <- dashboardPage(skin = 'blue',
                                 fluidRow(column(6,
                                                 uiOutput('theme_var')),
                                          column(6,
-                                                uiOutput('theme_var_2')))
+                                                uiOutput('theme_var_2'))),
+                                fluidRow(plotOutput('theme_plot'))
                                 
                                 ),
                         tabItem(tabName = "download",
