@@ -26,8 +26,6 @@ get_survey_data <- function() {
   result_list <- list()
   # loop through each folder and read in all data in that folder (either 1 or 3)
   
-  dictionary_counter <- 0
-  dictionary_list <- list()
   for(i in 1:length(survey_folders)) {
     
     message('Starting ', i, ': ', survey_folders[i])
@@ -64,8 +62,6 @@ get_survey_data <- function() {
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
         new_names <- left_join(new_names, var_summary)
-        dictionary_counter <- dictionary_counter + 1
-        dictionary_list[[dictionary_counter]] <- new_names
         names(temp_sub) <- new_names$new_variable
         data_list[[j]] <-  temp_sub
       }
@@ -78,6 +74,7 @@ get_survey_data <- function() {
     } else {
       result_list[[i]] <- data_list
     }
+    names(result_list)[i] <- temp_folder
     message('Done with ', survey_folders[i])
   }
   return(result_list)

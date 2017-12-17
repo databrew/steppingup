@@ -25,8 +25,14 @@ for (i in 1:length(db_files)){
 
 # Source helper functions
 source('functions.R')
+if('processed_survey_data.RData' %in% dir('data')){
+  load('data/processed_survey_data.RData')
+} else {
+  survey <- get_survey_data()
+  save(survey,
+       file = 'data/processed_survey_data.RData')
+}
 
-survey <- get_survey_data()
 
 
 ##########
