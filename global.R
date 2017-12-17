@@ -26,6 +26,71 @@ for (i in 1:length(db_files)){
 # Source helper functions
 source('functions.R')
 
+
+path_to_data <- 'data/survey_data'
+var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+var_names <- as.character(var_summary$variable_name)
+survey_folders <- list.files(path_to_data)
+# remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
+survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
+# create list to store results
+result_list <- list()
+# loop through each folder and read in all data in that folder (either 1 or 3)
+i = 1
+j = 1
+get_survey_data <- function(path_to_data) {
+  for(i in 1:length(survey_folders)) {
+    temp_folder <- survey_folders[i]
+    survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
+    data_list <- list()
+    for(j in 1:length(survey_data)) {
+      temp_data <- survey_data[j]
+      if (grepl('.sav', temp_data)) {
+        temp_dat <- read.spss(file = paste(path_to_data,
+                                           temp_folder,
+                                           temp_data, sep = '/'),
+                              use.value.labels = T,
+                              to.data.frame = T,
+                              trim.factor.names = T,
+                              trim_values = F,
+                              use.missings = T)
+        
+        if(grepl('gss|piaac|cfcs|sduhs', temp_data)) {
+          get_year = T
+        } else {
+          get_year = F
+        }
+        
+        # get long for variable names
+        colnames(temp_dat) <- attr(temp_dat,"variable.labels")
+        # get the column names we want from are varibale list
+        temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
+        temp_sub <-  temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]]
+        data_list[[j]] <- as.data.frame(temp_sub)
+      }
+    }
+    
+    if(length(data_list) > 1) {
+      
+      list_length = length(data_list)
+      
+      temp_1 <- data_list[[1]]
+      temp_2 <- data_list[[2]]
+      # make colnames the same and join
+      join_key <- Reduce(intersect, list(colnames(temp_1),
+                                         colnames(temp_2)))[1]
+      # outer join temp1 and temp2
+      data_frame <- full_join(temp_1, temp_2, by = join_key)
+      result_list[[i]] <- data_frame
+      }
+  }
+  
+return(resutl_list)
+}
+  
+
+
+
 ##########
 # Get Canadian shapefile
 ##########
