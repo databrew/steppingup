@@ -28,6 +28,7 @@ The live application is at http://databrew.cc/youthrex.
 
 For a demonstration of the application's use, see [https://www.youtube.com/watch?v=940TuOpuJWY](https://www.youtube.com/watch?v=940TuOpuJWY) (video to be updated in future).
 
+
 ## Developer's guide 
 
 ### Task 1: Get data
@@ -42,3 +43,10 @@ Run global.R and it will save the data to your data folder (outside of census_da
 
 Now that you have the final data set with all info start a new branch to work on your app off of `global.R`. 
 
+
+Contact
+=======
+
+[Databrew](http://www.databrew.cc), empowering researchers in academia and industry to explore, understand, and communicate their data through consulting and teaching. <a href="mailto:info@databrew.cc?Subject=Hello" target="_top">info@databrew.cc</a>.
+
+<img align="center" src="logo_clear.png" alt="http://databrew.cc">
