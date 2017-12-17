@@ -38,8 +38,8 @@ get_survey_data <- function() {
   # loop through each folder and read in all data in that folder (either 1 or 3)
   
   # for(i in 1:length(survey_folders)) {
-  for(i in c(2)){
-    message('Starting ', survey_folders[i])
+  for(i in c(1, 2)){
+    message('Starting ', i, ': ', survey_folders[i])
     
     temp_folder <- survey_folders[i]
     survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
@@ -47,7 +47,7 @@ get_survey_data <- function() {
     lsd <- length(survey_data)
     message('--- There are ', lsd, ' sub datasets')
     for(j in 1:lsd) {
-      message('j = ', j)
+      message('------ Working on ', j, ' of lsd')
       temp_data <- survey_data[j]
       if (grepl('.sav', temp_data)) {
         temp_dat <- read.spss(file = paste(path_to_data,
@@ -69,7 +69,12 @@ get_survey_data <- function() {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-        data_list[[j]] <-  data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
+        temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
+        new_names <- data.frame(variable_name = names(temp_sub),
+                                data_name = temp_folder)
+        new_names <- left_join(new_names, var_summary)
+        names(temp_sub) <- new_names$new_variable
+        data_list[[j]] <-  temp_sub
       }
     }
     
