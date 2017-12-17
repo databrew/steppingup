@@ -174,7 +174,8 @@ ui <- dashboardPage(skin = 'blue',
                                   tabPanel(title = 'Diversity'),
                                   tabPanel(title = 'Communities')
                                 ),
-                                uiOutput('theme_var')
+                                uiOutput('theme_var'),
+                                uiOutput('theme_var_2')
                                 ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
@@ -303,22 +304,46 @@ server <- function(input, output) {
     x$theme_name <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[1]))
     x <- x %>% filter(theme_name == theme_code())
     x <- x$variable_name
-    names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+  x
   })
   
   output$theme_var <- renderUI({
+    x <- theme_choices()
+    names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
     selectInput('theme_var',
                 'Choose a variable to explore',
-                choices = theme_choices())
+                choices = x)
   })
   
   # reactive data set based on the input$theme_var
   theme_data <- reactive({
     x <- var_summary
     x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+    x <- x %>% filter(variable_name == input$theme_var)
+    return(x$data_set)
+  })
+  
 
+  # reactive object for second choice 
+  theme_choices_2 <- reactive({
+    x <- var_summary
+    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+    x$variable_name[x$data_set == theme_data()]
     
-    
+  })
+  
+  
+  output$theme_var_2 <- renderUI({
+    if(is.null(input$theme_var)) {
+      return(NULL)
+    } else {
+      x <- theme_choices_2()
+      names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+      selectInput('theme_var_2',
+                  'Choose a variable to compare',
+                  choices = x)
+    }
+   
   })
   
   # Reactive census object
