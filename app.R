@@ -329,12 +329,30 @@ server <- function(input, output) {
                 choices = x)
   })
   
-  # reactive data set based on the input$theme_var
+  # reactive data set NAME based on the input$theme_var
   theme_data_name <- reactive({
-    x <- var_summary
-    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    x <- x %>% filter(variable_name == input$theme_var)
-    return(x$data_set[1])
+    if(!is.null(input$theme_var)){
+      x <- var_summary
+      x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+      x <- x %>% filter(variable_name == input$theme_var)
+      return(x$data_set[1])
+    } else {
+      return(NULL)
+    }
+  })
+  
+  # reactive dataset based on the theme_data_name
+  theme_data <- reactive({
+    the_name <- theme_data_name()
+    if(is.null(the_name)){
+      NULL
+    } else {
+      full_name <- dataset_dictionary %>%
+        filter(short_name == the_name) %>%
+        .$long_name
+      x <- survey[[which(names(survey) == full_name)]]
+      x
+    }
   })
   
 
@@ -369,16 +387,16 @@ server <- function(input, output) {
   
   output$theme_table <- renderDataTable({
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
-    if(has_two){
-      prettify(data.frame(a = 1:5,
-                          b = 2:6,
-                          c = 3:7))
+    df <- theme_data()
+    if(is.null(df)){
+      return(NULL)
     } else {
-      prettify(data.frame(x = 1:5,
-                          y = 2:6,
-                          z = 3:7))
+      if(has_two){
+        prettify(head(df))
+      } else {
+        prettify(head(df))
+      }
     }
-    
   })
   
 

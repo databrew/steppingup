@@ -509,3 +509,27 @@ theme_dictionary <-
                             'ds',
                             'cc',
                             'hw'))
+
+# Make a dictionary to associate data set names in the survey list 
+# with the code in the var_summary
+dataset_dictionary <- 
+  data_frame(short_name = c('cfc',
+                            'eic',
+                            'gss10',
+                            'gss11',
+                            'gss12',
+                            'gss13',
+                            'gss14',
+                            'lfs',
+                            'osduhs',
+                            'pisa'),
+             long_name = c('2014_cananda_financial_capabilities_survey',
+                           '2014_employment_insurance_coverage_survey',
+                           '2010_general_social_survey',
+                           '2011_general_social_survey',
+                           '2012_general_social_survey',
+                           '2013_general_social_survey',
+                           '2014_general_social_survey',
+                           '1987_2015_labour_force_survey',
+                           '2015_ontario_student_drug_use_and_health_survey',
+                           '2012_program_for_international_assessment_of_adult_comptencies'))
