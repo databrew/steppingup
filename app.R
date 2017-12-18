@@ -378,7 +378,10 @@ server <- function(input, output) {
   
   output$theme_plot <- renderPlot({
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    df <- theme_data()
+    # type_1 <- class(df[,input$theme_var])
     if(has_two){
+      # type_2 <- class(df[,input$theme_var_2])
       barplot(1:2)
     } else {
       barplot(1:10)
