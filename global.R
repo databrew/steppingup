@@ -533,3 +533,17 @@ dataset_dictionary <-
                            '1987_2015_labour_force_survey',
                            '2015_ontario_student_drug_use_and_health_survey',
                            '2012_program_for_international_assessment_of_adult_comptencies'))
+
+# Clean up the var_summary (survey_dict) to make more usable
+survey_dictionary <-
+  var_summary %>%
+  mutate(data_set = unlist(lapply(strsplit(new_variable, '_'), function(x) x[2]))) %>%
+  mutate(theme_name = unlist(lapply(strsplit(new_variable, '_'), function(x) x[1]))) %>%
+    mutate(display_name = Hmisc::capitalize(gsub('_', ' ', variable_name))) %>%
+    rename(short_name = data_set) %>%
+    left_join(dataset_dictionary, by = 'short_name') %>%
+  mutate(display_name = paste0(display_name, 
+                               ' (',
+                               gsub('_', ' ', long_name),
+                               ')'))
+  

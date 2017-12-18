@@ -182,6 +182,7 @@ ui <- dashboardPage(skin = 'blue',
                                                               value = FALSE)),
                                          column(4,
                                                 uiOutput('theme_var_2'))),
+                                fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
                                   tabPanel('Table',
                                            fluidRow(column(12,
@@ -314,16 +315,19 @@ server <- function(input, output) {
   
   # reactive for choosing themes
   theme_choices <- reactive({
-    x <- var_summary
-    x$theme_name <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[1]))
+    x <- survey_dictionary
     x <- x %>% filter(theme_name == theme_code())
-    x <- x$variable_name
-  x
+    x$variable_name
+  })
+  theme_choices_labels <- reactive({
+    x <- survey_dictionary
+    x <- x %>% filter(theme_name == theme_code())
+    x$display_name
   })
   
   output$theme_var <- renderUI({
     x <- theme_choices()
-    names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+    names(x) <- theme_choices_labels()
     selectInput('theme_var',
                 'Choose a variable to explore',
                 choices = x)
@@ -332,9 +336,10 @@ server <- function(input, output) {
   # reactive data set NAME based on the input$theme_var
   theme_data_name <- reactive({
     if(!is.null(input$theme_var)){
+      var1 <- input$theme_var
       x <- var_summary
       x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-      x <- x %>% filter(variable_name == input$theme_var)
+      x <- x %>% filter(variable_name == var1)
       return(x$data_set[1])
     } else {
       return(NULL)
@@ -358,9 +363,12 @@ server <- function(input, output) {
 
   # reactive object for second choice 
   theme_choices_2 <- reactive({
-    x <- var_summary
-    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    x$variable_name[x$data_set == theme_data_name()]
+    x <- survey_dictionary
+    x <- x %>% filter(short_name == theme_data_name())
+    x$variable_name
+    # x <- var_summary
+    # x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+    # x$variable_name[x$data_set == theme_data_name()]
   })
   
   
@@ -376,9 +384,33 @@ server <- function(input, output) {
     }
   })
   
+  output$fake_text <- renderText({
+    theme_data_name()
+    # v1 <- input$theme_var
+    # v2 <- input$theme_var_2
+    # has_two <- input$want_another_var & !is.null(v2)
+    # df <- theme_data()
+    # # Subset to only include the variables we want
+    # keep_vars <- v1
+    # if(has_two){
+    #   keep_vars <- c(keep_vars, v2)
+    # }
+    # # return(paste0(keep_vars, collapse = ', '))
+    # keep_vars %in% names(df)
+  })
+  
   output$theme_plot <- renderPlot({
-    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    v1 <- input$theme_var
+    v2 <- input$theme_var_2
+    has_two <- input$want_another_var & !is.null(v2)
     df <- theme_data()
+    # Subset to only include the variables we want
+    keep_vars <- v1
+    if(has_two){
+      keep_vars <- c(keep_vars, v2)
+    }
+    # The below is failing since these variables aren't in the dataset in question
+    # df <- df[,keep_vars]
     # type_1 <- class(df[,input$theme_var])
     if(has_two){
       # type_2 <- class(df[,input$theme_var_2])
