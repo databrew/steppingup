@@ -501,56 +501,70 @@ server <- function(input, output) {
   output$theme_table <- renderDataTable({
     input$tabs # just run to refresh
     df <- theme_data()
-    head(df)
-    # if(is.null(df)){
-    #   return(NULL)
-    # } else {
-    #   v1 <- input$theme_var
-    #   v2 <- input$theme_var_2
-    #   input$tabs # just run to refresh
-    #   has_two <- input$want_another_var & !is.null(input$theme_var_2)
-    #   # Subset to only include the variables we want
-    #   keep_vars <- v1
-    #   if(has_two){
-    #     keep_vars <- c(keep_vars, v2)
-    #   }
-    #   # Keep only the relevant variables
-    #   df <- df[,names(df) %in% keep_vars]
-    #   head(df)
-    # 
-    #   if(has_two){
-    #     names(df) <- c('v1', 'v2')
-    #     type_1 <- class(df$v1)
-    #     type_2 <- class(df$v2)
-    #     type_2_numeric <- type_2 %in% c('integer', 'numeric')
-    #     type_1_numeric <- type_1 %in% c('integer', 'numeric')
-    #     if(type_1_numeric & type_2_numeric){
-    #       out <- data.frame(a = 1, b = 2)
-    #     }
-    #     if(type_1_numeric & !type_2_numeric){
-    #       out <- data.frame(a = 1, b = 2)
-    #     }
-    #     if(!type_1_numeric & type_2_numeric){
-    #       out <- data.frame(a = 1, b = 2)
-    #     }
-    #     if(!type_1_numeric & !type_2_numeric){
-    #       out <- data.frame(a = 1, b = 2)
-    #     }
-    #     names(out) <- c(v1, v2)
-    # 
-    #   } else {
-    #     df <- data.frame(v1 = df)
-    #     type_1 <- class(df$v1)
-    #     type_1_numeric <- type_1 %in% c('integer', 'numeric')
-    #     if(type_1_numeric){
-    #       out <- data.frame(z = 1)
-    #     } else {
-    #       out <- data.frame(z = 1)
-    #     }
-    #     names(out) <- v1
-    #   }
-    #   return(out)
-    # }
+    v1 <- input$theme_var
+    v2 <- input$theme_var_2
+      has_two <- input$want_another_var & !is.null(input$theme_var_2)
+      # Subset to only include the variables we want
+      keep_vars <- v1
+      if(!is.null(df)){
+        if(has_two){
+          keep_vars <- c(keep_vars, v2)
+          # Keep only the relevant variables
+          df <- df[,names(df) %in% keep_vars]  
+        }
+        if(!is.data.frame(df)){
+          return(NULL)
+        } else {
+          # All operations go here
+          v1 <- input$theme_var
+          v2 <- input$theme_var_2
+          input$tabs # just run to refresh
+          has_two <- input$want_another_var & !is.null(input$theme_var_2)
+          # Subset to only include the variables we want
+          keep_vars <- v1
+          if(has_two){
+            keep_vars <- c(keep_vars, v2)
+          }
+          # Keep only the relevant variables
+          df <- df[,names(df) %in% keep_vars]
+          head(df)
+          
+          if(has_two){
+            names(df) <- c('v1', 'v2')
+            type_1 <- class(df$v1)
+            type_2 <- class(df$v2)
+            type_2_numeric <- type_2 %in% c('integer', 'numeric')
+            type_1_numeric <- type_1 %in% c('integer', 'numeric')
+            if(type_1_numeric & type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(type_1_numeric & !type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(!type_1_numeric & type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(!type_1_numeric & !type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            names(out) <- c(v1, v2)
+            
+          } else {
+            df <- data.frame(v1 = df)
+            type_1 <- class(df$v1)
+            type_1_numeric <- type_1 %in% c('integer', 'numeric')
+            if(type_1_numeric){
+              out <- data.frame(z = 1)
+            } else {
+              out <- data.frame(z = 1)
+            }
+            names(out) <- v1
+          }
+          return(out)
+        }
+      } else{
+        NULL
+      }
   })
   
 
