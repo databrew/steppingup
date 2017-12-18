@@ -28,8 +28,16 @@ source('functions.R')
 if('processed_survey_data.RData' %in% dir('data')){
   load('data/processed_survey_data.RData')
 } else {
-  survey <- get_survey_data()
+  survey_list <- get_survey_data()
+  survey <- survey_list[[1]]
+  removals <- survey_list[[2]] # removals due to some columns which appear in dict being all NA in data
+  # Make the dictionary smaller (don't include those variables which are all NA)
+  path_to_data <- 'data/survey_data'
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  var_summary <- var_summary %>% 
+    filter(!new_variable %in% removals)
   save(survey,
+       var_summary,
        file = 'data/processed_survey_data.RData')
 }
 

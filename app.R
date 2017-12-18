@@ -434,11 +434,6 @@ server <- function(input, output) {
         return(NULL)
       } else {
         # All operations go here
-        # Subset to only include the variables we want
-        keep_vars <- v1
-        if(has_two){
-          keep_vars <- c(keep_vars, v2)
-        }
         # Keep only the relevant variables
         df <- df[,names(df) %in% keep_vars]
         

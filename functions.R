@@ -14,10 +14,13 @@ library(feather)
 library(foreign)
 library(sas7bdat)
 
-path_to_data <- 'data/survey_data'
-var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
 # Define function for reading survey data
+
 get_survey_data <- function() {
+  path_to_data <- 'data/survey_data'
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  
+  removals <- c()
   var_names <- as.character(var_summary$variable_name)
   survey_folders <- list.files(path_to_data)
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
@@ -25,7 +28,7 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
   # loop through each folder and read in all data in that folder (either 1 or 3)
-  
+
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
     temp_folder <- survey_folders[i]
@@ -81,7 +84,9 @@ get_survey_data <- function() {
     how_many_flags <- length(which(flags))
     if(how_many_flags > 0){
       message('Removing the following ', how_many_flags, ' variables since they are all NA:\n')
-      paste0('---', names(the_data)[flags], collapse = '\n')
+      these_removals <- names(the_data)[flags]
+      message(paste0('---', these_removals, collapse = '\n'))
+      removals <- c(removals, these_removals)
     }
     the_data <- the_data[,which(!flags)]
     
@@ -89,8 +94,9 @@ get_survey_data <- function() {
     names(result_list)[i] <- temp_folder
     message('Done with ', survey_folders[i])
   }
-  return(result_list)
+  return(list(result_list, removals))
 }
+
 
 # Define a function for creating a crazy looking map
 crazy_map <- function(){
