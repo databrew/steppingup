@@ -308,6 +308,7 @@ server <- function(input, output) {
   
   # reactive object for theme
   theme_code <- reactive({
+    input$tabs # just run to refresh
     x <- theme_dictionary %>% filter(long_name == input$tabs)
     x <- x$short_name
     return(x)
@@ -326,6 +327,7 @@ server <- function(input, output) {
   })
   
   output$theme_var <- renderUI({
+    input$tabs # just run to refresh
     x <- theme_choices()
     names(x) <- theme_choices_labels()
     selectInput('theme_var',
@@ -362,9 +364,16 @@ server <- function(input, output) {
   
   # reactive object for second choice 
   theme_choices_2 <- reactive({
+    input$tabs # just for refreshing
     x <- survey_dictionary
     x <- x %>% filter(short_name == theme_data_name())
-    x$new_variable
+    out <- x$new_variable
+    dd <- theme_data()
+    if(!all(out %in% names(dd))){
+      return(NULL)
+    } else{
+      return(out)
+    }
   })
 
   theme_choices_labels_2 <- reactive({
@@ -374,14 +383,20 @@ server <- function(input, output) {
   })
   
   output$theme_var_2 <- renderUI({
+    input$tabs # just run to refresh
+    input$want_another_var # just run to refresh
     if(is.null(input$theme_var) | !input$want_another_var) {
       return(NULL)
     } else {
       x <- theme_choices_2()
-      names(x) <- theme_choices_labels_2()
-      selectInput('theme_var_2',
-                  'Choose a variable to compare',
-                  choices = x)
+      if(is.null(x)){
+        return(NULL)
+      } else {
+        names(x) <- theme_choices_labels_2()
+        selectInput('theme_var_2',
+                    'Choose a variable to compare',
+                    choices = x)  
+      }
     }
   })
   
@@ -389,107 +404,141 @@ server <- function(input, output) {
     paste0('Theme data name is ', theme_data_name(), '\n',
            'var 1 is ', input$theme_var, '\n',
            'var 2 is ', input$theme_var_2)
-    # v1 <- input$theme_var
-    # v2 <- input$theme_var_2
-    # has_two <- input$want_another_var & !is.null(v2)
-    # df <- theme_data()
-    # # Subset to only include the variables we want
-    # keep_vars <- v1
-    # if(has_two){
-    #   keep_vars <- c(keep_vars, v2)
-    # }
-    # # return(paste0(keep_vars, collapse = ', '))
-    # keep_vars %in% names(df)
   })
   
   output$theme_plot <- renderPlot({
+    input$tabs # just run to refresh
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(v2)
     df <- theme_data()
-    # Subset to only include the variables we want
-    keep_vars <- v1
-    if(has_two){
-      keep_vars <- c(keep_vars, v2)
-    }
-    # Keep only the relevant variables
-    df <- df[,keep_vars]
-
-    if(has_two){
-      names(df) <- c('v1', 'v2')
-      type_1 <- class(df$v1)
-      type_2 <- class(df$v2)
-      type_2_numeric <- type_2 %in% c('integer', 'numeric')
-      type_1_numeric <- type_1 %in% c('integer', 'numeric')
-      if(type_1_numeric & type_2_numeric){
-        g <- ggplot(data = df,
-                    aes(x = v1,
-                        y = v2)) +
-          geom_point()
-      }
-      if(type_1_numeric & !type_2_numeric){
-        g <- ggplot(data = df,
-                    aes(x = v1,
-                        group = v2,
-                        fill = v2)) +
-          geom_density(alpha = 0.3)
-      }
-      if(!type_1_numeric & type_2_numeric){
-        g <- ggplot(data = df,
-                    aes(x = v1,
-                        y = v2,
-                        group = v1)) +
-          geom_jitter(alpha = 0.3) +
-          geom_violin()
-      }
-      if(!type_1_numeric & !type_2_numeric){
-      g <- ggplot(data = df,
-                  aes(x = v1,
-                      group = v2,
-                      fill = v2)) +
-        geom_bar(position = 'dodge')
-      }
-      g <- g + theme_databrew() +
-        labs(title = v1,
-             subtitle = v2,
-             x = '',
-             y = '')
-      
+    if(is.null(df)){
+      return(NULL)
     } else {
-      df <- data.frame(v1 = df)
-      type_1 <- class(df$v1)
-      type_1_numeric <- type_1 %in% c('integer', 'numeric')
-      if(type_1_numeric){
-        g <- ggplot(data = df,
-                    aes(x = v1)) +
-          geom_density(fill = 'darkorange',
-                       alpha = 0.6)
-      } else {
-        g <- ggplot(data = df,
-                    aes(x = v1)) +
-          geom_bar(fill = 'darkorange',
-                   alpha = 0.6) 
+      # Subset to only include the variables we want
+      keep_vars <- v1
+      if(has_two){
+        keep_vars <- c(keep_vars, v2)
       }
-      g <- g +
-        theme_databrew() +
-        labs(title = theme_choices_labels(),
-             x = '',
-             y = '')
+      # Keep only the relevant variables
+      df <- df[,names(df) %in% keep_vars]
+      
+      if(has_two){
+        names(df) <- c('v1', 'v2')
+        type_1 <- class(df$v1)
+        type_2 <- class(df$v2)
+        type_2_numeric <- type_2 %in% c('integer', 'numeric')
+        type_1_numeric <- type_1 %in% c('integer', 'numeric')
+        if(type_1_numeric & type_2_numeric){
+          g <- ggplot(data = df,
+                      aes(x = v1,
+                          y = v2)) +
+            geom_point()
+        }
+        if(type_1_numeric & !type_2_numeric){
+          g <- ggplot(data = df,
+                      aes(x = v1,
+                          group = v2,
+                          fill = v2)) +
+            geom_density(alpha = 0.3)
+        }
+        if(!type_1_numeric & type_2_numeric){
+          g <- ggplot(data = df,
+                      aes(x = v1,
+                          y = v2,
+                          group = v1)) +
+            geom_jitter(alpha = 0.3) +
+            geom_violin()
+        }
+        if(!type_1_numeric & !type_2_numeric){
+          g <- ggplot(data = df,
+                      aes(x = v1,
+                          group = v2,
+                          fill = v2)) +
+            geom_bar(position = 'dodge')
+        }
+        g <- g + theme_databrew() +
+          labs(title = v1,
+               subtitle = v2,
+               x = '',
+               y = '')
+        
+      } else {
+        df <- data.frame(v1 = df)
+        type_1 <- class(df$v1)
+        type_1_numeric <- type_1 %in% c('integer', 'numeric')
+        if(type_1_numeric){
+          g <- ggplot(data = df,
+                      aes(x = v1)) +
+            geom_density(fill = 'darkorange',
+                         alpha = 0.6)
+        } else {
+          g <- ggplot(data = df,
+                      aes(x = v1)) +
+            geom_bar(fill = 'darkorange',
+                     alpha = 0.6) 
+        }
+        g <- g +
+          theme_databrew() +
+          labs(title = theme_choices_labels(),
+               x = '',
+               y = '')
+      }
+      return(g)
     }
-    return(g)
   })
   
   output$theme_table <- renderDataTable({
-    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    input$tabs # just run to refresh
     df <- theme_data()
     if(is.null(df)){
       return(NULL)
     } else {
+      v1 <- input$theme_var
+      v2 <- input$theme_var_2
+      input$tabs # just run to refresh
+      has_two <- input$want_another_var & !is.null(input$theme_var_2)
+      # Subset to only include the variables we want
+      keep_vars <- v1
       if(has_two){
-        prettify(head(df))
-      } else {
-        prettify(head(df))
+        keep_vars <- c(keep_vars, v2)
       }
+      # Keep only the relevant variables
+      df <- df[,names(df) %in% keep_vars]
+      head(df)
+
+      if(has_two){
+        names(df) <- c('v1', 'v2')
+        type_1 <- class(df$v1)
+        type_2 <- class(df$v2)
+        type_2_numeric <- type_2 %in% c('integer', 'numeric')
+        type_1_numeric <- type_1 %in% c('integer', 'numeric')
+        if(type_1_numeric & type_2_numeric){
+          out <- data.frame(a = 1, b = 2)
+        }
+        if(type_1_numeric & !type_2_numeric){
+          out <- data.frame(a = 1, b = 2)
+        }
+        if(!type_1_numeric & type_2_numeric){
+          out <- data.frame(a = 1, b = 2)
+        }
+        if(!type_1_numeric & !type_2_numeric){
+          out <- data.frame(a = 1, b = 2)
+        }
+        names(out) <- c(v1, v2)
+
+      } else {
+        df <- data.frame(v1 = df)
+        type_1 <- class(df$v1)
+        type_1_numeric <- type_1 %in% c('integer', 'numeric')
+        if(type_1_numeric){
+          out <- data.frame(z = 1)
+        } else {
+          out <- data.frame(z = 1)
+        }
+        names(out) <- v1
+      }
+      return(out)
     }
   })
   
