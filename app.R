@@ -174,12 +174,22 @@ ui <- dashboardPage(skin = 'blue',
                                   tabPanel(title = 'Diversity'),
                                   tabPanel(title = 'Communities')
                                 ),
-                                fluidRow(column(6,
+                                fluidRow(column(4,
                                                 uiOutput('theme_var')),
-                                         column(6,
+                                         column(2,
+                                                checkboxInput('want_another_var',
+                                                              'Compare with a second variable?',
+                                                              value = FALSE)),
+                                         column(4,
                                                 uiOutput('theme_var_2'))),
-                                fluidRow(plotOutput('theme_plot'))
-                                
+                                tabsetPanel(
+                                  tabPanel('Table',
+                                           fluidRow(column(12,
+                                                           DT::dataTableOutput('theme_table')
+                                           ))),
+                                  tabPanel('Plot',
+                                           fluidRow(column(12,
+                                                           plotOutput('theme_plot')))))
                                 ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
@@ -337,7 +347,7 @@ server <- function(input, output) {
   
   
   output$theme_var_2 <- renderUI({
-    if(is.null(input$theme_var)) {
+    if(is.null(input$theme_var) | !input$want_another_var) {
       return(NULL)
     } else {
       x <- theme_choices_2()
@@ -349,15 +359,29 @@ server <- function(input, output) {
   })
   
   output$theme_plot <- renderPlot({
-    barplot(1:10)
+    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    if(has_two){
+      barplot(1:2)
+    } else {
+      barplot(1:10)
+    }
   })
   
   output$theme_table <- renderDataTable({
-    prettify(data.frame(a = 1:5,
-                        b = 2:6,
-                        c = 3:7))
+    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    if(has_two){
+      prettify(data.frame(a = 1:5,
+                          b = 2:6,
+                          c = 3:7))
+    } else {
+      prettify(data.frame(x = 1:5,
+                          y = 2:6,
+                          z = 3:7))
+    }
+    
   })
   
+
   # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
