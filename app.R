@@ -182,7 +182,7 @@ ui <- dashboardPage(skin = 'blue',
                                                 checkboxInput('want_another_var',
                                                               'Compare with a second variable?',
                                                               value = FALSE))),
-                                fluidRow(textOutput('fake_text')),
+                                # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
                                   tabPanel('Table',
                                            fluidRow(column(12,
@@ -410,11 +410,11 @@ server <- function(input, output) {
     }
   })
   
-  output$fake_text <- renderText({
-    paste0('Theme data name is ', theme_data_name(), '\n',
-           'var 1 is ', input$theme_var, '\n',
-           'var 2 is ', input$theme_var_2)
-  })
+  # output$fake_text <- renderText({
+  #   paste0('Theme data name is ', theme_data_name(), '\n',
+  #          'var 1 is ', input$theme_var, '\n',
+  #          'var 2 is ', input$theme_var_2)
+  # })
   
   output$theme_plot <- renderPlot({
     input$tabs # just run to refresh
