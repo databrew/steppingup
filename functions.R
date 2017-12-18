@@ -72,7 +72,7 @@ get_survey_data <- function() {
                           data_list[[1]])
       result_list[[i]] <- joined
     } else {
-      result_list[[i]] <- data_list
+      result_list[[i]] <- data_list[[1]]
     }
     names(result_list)[i] <- temp_folder
     message('Done with ', survey_folders[i])
