@@ -418,83 +418,96 @@ server <- function(input, output) {
   
   output$theme_plot <- renderPlot({
     input$tabs # just run to refresh
+    df <- theme_data()
     v1 <- input$theme_var
     v2 <- input$theme_var_2
-    has_two <- input$want_another_var & !is.null(v2)
-    df <- theme_data()
-    if(is.null(df)){
-      return(NULL)
-    } else {
-      # Subset to only include the variables we want
-      keep_vars <- v1
+    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    # Subset to only include the variables we want
+    keep_vars <- v1
+    if(!is.null(df)){
       if(has_two){
         keep_vars <- c(keep_vars, v2)
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]  
       }
-      # Keep only the relevant variables
-      df <- df[,names(df) %in% keep_vars]
-      
-      if(has_two){
-        names(df) <- c('v1', 'v2')
-        type_1 <- class(df$v1)
-        type_2 <- class(df$v2)
-        type_2_numeric <- type_2 %in% c('integer', 'numeric')
-        type_1_numeric <- type_1 %in% c('integer', 'numeric')
-        if(type_1_numeric & type_2_numeric){
-          g <- ggplot(data = df,
-                      aes(x = v1,
-                          y = v2)) +
-            geom_point()
-        }
-        if(type_1_numeric & !type_2_numeric){
-          g <- ggplot(data = df,
-                      aes(x = v1,
-                          group = v2,
-                          fill = v2)) +
-            geom_density(alpha = 0.3)
-        }
-        if(!type_1_numeric & type_2_numeric){
-          g <- ggplot(data = df,
-                      aes(x = v1,
-                          y = v2,
-                          group = v1)) +
-            geom_jitter(alpha = 0.3) +
-            geom_violin()
-        }
-        if(!type_1_numeric & !type_2_numeric){
-          g <- ggplot(data = df,
-                      aes(x = v1,
-                          group = v2,
-                          fill = v2)) +
-            geom_bar(position = 'dodge')
-        }
-        g <- g + theme_databrew() +
-          labs(title = v1,
-               subtitle = v2,
-               x = '',
-               y = '')
-        
+      if(!is.data.frame(df)){
+        return(NULL)
       } else {
-        df <- data.frame(v1 = df)
-        type_1 <- class(df$v1)
-        type_1_numeric <- type_1 %in% c('integer', 'numeric')
-        if(type_1_numeric){
-          g <- ggplot(data = df,
-                      aes(x = v1)) +
-            geom_density(fill = 'darkorange',
-                         alpha = 0.6)
-        } else {
-          g <- ggplot(data = df,
-                      aes(x = v1)) +
-            geom_bar(fill = 'darkorange',
-                     alpha = 0.6) 
+        # All operations go here
+        # Subset to only include the variables we want
+        keep_vars <- v1
+        if(has_two){
+          keep_vars <- c(keep_vars, v2)
         }
-        g <- g +
-          theme_databrew() +
-          labs(title = theme_choices_labels(),
-               x = '',
-               y = '')
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]
+        
+        if(has_two){
+          names(df) <- c('v1', 'v2')
+          type_1 <- class(df$v1)
+          type_2 <- class(df$v2)
+          type_2_numeric <- type_2 %in% c('integer', 'numeric')
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric & type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            y = v2)) +
+              geom_point()
+          }
+          if(type_1_numeric & !type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            group = v2,
+                            fill = v2)) +
+              geom_density(alpha = 0.3)
+          }
+          if(!type_1_numeric & type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            y = v2,
+                            group = v1)) +
+              geom_jitter(alpha = 0.3) +
+              geom_violin()
+          }
+          if(!type_1_numeric & !type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            group = v2,
+                            fill = v2)) +
+              geom_bar(position = 'dodge')
+          }
+          g <- g + theme_databrew() +
+            labs(title = v1,
+                 subtitle = v2,
+                 x = '',
+                 y = '')
+          
+        } else {
+          df <- data.frame(v1 = df)
+          type_1 <- class(df$v1)
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1)) +
+              geom_density(fill = 'darkorange',
+                           alpha = 0.6)
+          } else {
+            g <- ggplot(data = df,
+                        aes(x = v1)) +
+              geom_bar(fill = 'darkorange',
+                       alpha = 0.6) 
+          }
+          g <- g +
+            theme_databrew() +
+            labs(title = theme_choices_labels(),
+                 x = '',
+                 y = '')
+        }
+        return(g)
+        
       }
-      return(g)
+    } else{
+      NULL
     }
   })
   
