@@ -317,7 +317,7 @@ server <- function(input, output) {
   theme_choices <- reactive({
     x <- survey_dictionary
     x <- x %>% filter(theme_name == theme_code())
-    x$variable_name
+    x$new_variable
   })
   theme_choices_labels <- reactive({
     x <- survey_dictionary
@@ -339,7 +339,7 @@ server <- function(input, output) {
       var1 <- input$theme_var
       x <- var_summary
       x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-      x <- x %>% filter(variable_name == var1)
+      x <- x %>% filter(new_variable == var1)
       return(x$data_set[1])
     } else {
       return(NULL)
@@ -360,24 +360,25 @@ server <- function(input, output) {
     }
   })
   
-
   # reactive object for second choice 
   theme_choices_2 <- reactive({
     x <- survey_dictionary
     x <- x %>% filter(short_name == theme_data_name())
-    x$variable_name
-    # x <- var_summary
-    # x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    # x$variable_name[x$data_set == theme_data_name()]
+    x$new_variable
   })
-  
+
+  theme_choices_labels_2 <- reactive({
+    x <- survey_dictionary
+    x <- x %>% filter(short_name == theme_data_name())
+    x$display_name
+  })
   
   output$theme_var_2 <- renderUI({
     if(is.null(input$theme_var) | !input$want_another_var) {
       return(NULL)
     } else {
       x <- theme_choices_2()
-      names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+      names(x) <- theme_choices_labels_2()
       selectInput('theme_var_2',
                   'Choose a variable to compare',
                   choices = x)
@@ -385,7 +386,9 @@ server <- function(input, output) {
   })
   
   output$fake_text <- renderText({
-    theme_data_name()
+    paste0('Theme data name is ', theme_data_name(), '\n',
+           'var 1 is ', input$theme_var, '\n',
+           'var 2 is ', input$theme_var_2)
     # v1 <- input$theme_var
     # v2 <- input$theme_var_2
     # has_two <- input$want_another_var & !is.null(v2)
@@ -409,15 +412,71 @@ server <- function(input, output) {
     if(has_two){
       keep_vars <- c(keep_vars, v2)
     }
-    # The below is failing since these variables aren't in the dataset in question
-    # df <- df[,keep_vars]
-    # type_1 <- class(df[,input$theme_var])
+    # Keep only the relevant variables
+    df <- df[,keep_vars]
+
     if(has_two){
-      # type_2 <- class(df[,input$theme_var_2])
-      barplot(1:2)
+      names(df) <- c('v1', 'v2')
+      type_1 <- class(df$v1)
+      type_2 <- class(df$v2)
+      type_2_numeric <- type_2 %in% c('integer', 'numeric')
+      type_1_numeric <- type_1 %in% c('integer', 'numeric')
+      if(type_1_numeric & type_2_numeric){
+        g <- ggplot(data = df,
+                    aes(x = v1,
+                        y = v2)) +
+          geom_point()
+      }
+      if(type_1_numeric & !type_2_numeric){
+        g <- ggplot(data = df,
+                    aes(x = v1,
+                        group = v2,
+                        fill = v2)) +
+          geom_density(alpha = 0.3)
+      }
+      if(!type_1_numeric & type_2_numeric){
+        g <- ggplot(data = df,
+                    aes(x = v1,
+                        y = v2,
+                        group = v1)) +
+          geom_jitter(alpha = 0.3) +
+          geom_violin()
+      }
+      if(!type_1_numeric & !type_2_numeric){
+      g <- ggplot(data = df,
+                  aes(x = v1,
+                      group = v2,
+                      fill = v2)) +
+        geom_bar(position = 'dodge')
+      }
+      g <- g + theme_databrew() +
+        labs(title = v1,
+             subtitle = v2,
+             x = '',
+             y = '')
+      
     } else {
-      barplot(1:10)
+      df <- data.frame(v1 = df)
+      type_1 <- class(df$v1)
+      type_1_numeric <- type_1 %in% c('integer', 'numeric')
+      if(type_1_numeric){
+        g <- ggplot(data = df,
+                    aes(x = v1)) +
+          geom_density(fill = 'darkorange',
+                       alpha = 0.6)
+      } else {
+        g <- ggplot(data = df,
+                    aes(x = v1)) +
+          geom_bar(fill = 'darkorange',
+                   alpha = 0.6) 
+      }
+      g <- g +
+        theme_databrew() +
+        labs(title = theme_choices_labels(),
+             x = '',
+             y = '')
     }
+    return(g)
   })
   
   output$theme_table <- renderDataTable({
