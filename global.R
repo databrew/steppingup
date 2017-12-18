@@ -28,8 +28,16 @@ source('functions.R')
 if('processed_survey_data.RData' %in% dir('data')){
   load('data/processed_survey_data.RData')
 } else {
-  survey <- get_survey_data()
+  survey_list <- get_survey_data()
+  survey <- survey_list[[1]]
+  removals <- survey_list[[2]] # removals due to some columns which appear in dict being all NA in data
+  # Make the dictionary smaller (don't include those variables which are all NA)
+  path_to_data <- 'data/survey_data'
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  var_summary <- var_summary %>% 
+    filter(!new_variable %in% removals)
   save(survey,
+       var_summary,
        file = 'data/processed_survey_data.RData')
 }
 
@@ -509,3 +517,41 @@ theme_dictionary <-
                             'ds',
                             'cc',
                             'hw'))
+
+# Make a dictionary to associate data set names in the survey list 
+# with the code in the var_summary
+dataset_dictionary <- 
+  data_frame(short_name = c('cfc',
+                            'eic',
+                            'gss10',
+                            'gss11',
+                            'gss12',
+                            'gss13',
+                            'gss14',
+                            'lfs',
+                            'osduhs',
+                            'pisa'),
+             long_name = c('2014_cananda_financial_capabilities_survey',
+                           '2014_employment_insurance_coverage_survey',
+                           '2010_general_social_survey',
+                           '2011_general_social_survey',
+                           '2012_general_social_survey',
+                           '2013_general_social_survey',
+                           '2014_general_social_survey',
+                           '1987_2015_labour_force_survey',
+                           '2015_ontario_student_drug_use_and_health_survey',
+                           '2012_program_for_international_assessment_of_adult_comptencies'))
+
+# Clean up the var_summary (survey_dict) to make more usable
+survey_dictionary <-
+  var_summary %>%
+  mutate(data_set = unlist(lapply(strsplit(new_variable, '_'), function(x) x[2]))) %>%
+  mutate(theme_name = unlist(lapply(strsplit(new_variable, '_'), function(x) x[1]))) %>%
+    mutate(display_name = Hmisc::capitalize(gsub('_', ' ', variable_name))) %>%
+    rename(short_name = data_set) %>%
+    left_join(dataset_dictionary, by = 'short_name') %>%
+  mutate(display_name = paste0(display_name, 
+                               ' (',
+                               gsub('_', ' ', long_name),
+                               ')'))
+  

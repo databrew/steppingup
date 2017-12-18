@@ -14,10 +14,13 @@ library(feather)
 library(foreign)
 library(sas7bdat)
 
-path_to_data <- 'data/survey_data'
-var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
 # Define function for reading survey data
+
 get_survey_data <- function() {
+  path_to_data <- 'data/survey_data'
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  
+  removals <- c()
   var_names <- as.character(var_summary$variable_name)
   survey_folders <- list.files(path_to_data)
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
@@ -25,11 +28,9 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
   # loop through each folder and read in all data in that folder (either 1 or 3)
-  
+
   for(i in 1:length(survey_folders)) {
-    
     message('Starting ', i, ': ', survey_folders[i])
-    
     temp_folder <- survey_folders[i]
     survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
     data_list <- list()
@@ -68,17 +69,34 @@ get_survey_data <- function() {
     }
     
     if(length(data_list) > 1) {
-      joined <- left_join(data_list[[2]],
+      the_data <- left_join(data_list[[2]],
                           data_list[[1]])
-      result_list[[i]] <- joined
     } else {
-      result_list[[i]] <- data_list
+      the_data <- data_list[[1]]
     }
+    
+    # Remove any variables which are 100% NA
+    flags <- rep(FALSE, ncol(the_data))
+    for(j in 1:length(flags)){
+      all_na <- length(which(is.na(the_data[,j]))) == nrow(the_data)
+      flags[j] <- all_na
+    }
+    how_many_flags <- length(which(flags))
+    if(how_many_flags > 0){
+      message('Removing the following ', how_many_flags, ' variables since they are all NA:\n')
+      these_removals <- names(the_data)[flags]
+      message(paste0('---', these_removals, collapse = '\n'))
+      removals <- c(removals, these_removals)
+    }
+    the_data <- the_data[,which(!flags)]
+    
+    result_list[[i]] <- the_data
     names(result_list)[i] <- temp_folder
     message('Done with ', survey_folders[i])
   }
-  return(result_list)
+  return(list(result_list, removals))
 }
+
 
 # Define a function for creating a crazy looking map
 crazy_map <- function(){

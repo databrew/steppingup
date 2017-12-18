@@ -178,8 +178,19 @@ ui <- dashboardPage(skin = 'blue',
                                                 uiOutput('theme_var')),
                                          column(6,
                                                 uiOutput('theme_var_2'))),
-                                fluidRow(plotOutput('theme_plot'))
-                                
+                                fluidRow(column(12,
+                                                checkboxInput('want_another_var',
+                                                              'Compare with a second variable?',
+                                                              value = FALSE))),
+                                # fluidRow(textOutput('fake_text')),
+                                tabsetPanel(
+                                  tabPanel('Table',
+                                           fluidRow(column(12,
+                                                           DT::dataTableOutput('theme_table')
+                                           ))),
+                                  tabPanel('Plot',
+                                           fluidRow(column(12,
+                                                           plotOutput('theme_plot')))))
                                 ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
@@ -297,6 +308,7 @@ server <- function(input, output) {
   
   # reactive object for theme
   theme_code <- reactive({
+    input$tabs # just run to refresh
     x <- theme_dictionary %>% filter(long_name == input$tabs)
     x <- x$short_name
     return(x)
@@ -304,60 +316,266 @@ server <- function(input, output) {
   
   # reactive for choosing themes
   theme_choices <- reactive({
-    x <- var_summary
-    x$theme_name <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[1]))
+    x <- survey_dictionary
     x <- x %>% filter(theme_name == theme_code())
-    x <- x$variable_name
-  x
+    x$new_variable
+  })
+  theme_choices_labels <- reactive({
+    x <- survey_dictionary
+    x <- x %>% filter(theme_name == theme_code())
+    x$display_name
   })
   
   output$theme_var <- renderUI({
+    input$tabs # just run to refresh
     x <- theme_choices()
-    names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
+    names(x) <- theme_choices_labels()
     selectInput('theme_var',
                 'Choose a variable to explore',
                 choices = x)
   })
   
-  # reactive data set based on the input$theme_var
+  # reactive data set NAME based on the input$theme_var
   theme_data_name <- reactive({
-    x <- var_summary
-    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    x <- x %>% filter(variable_name == input$theme_var)
-    return(x$data_set[1])
-  })
-  
-
-  # reactive object for second choice 
-  theme_choices_2 <- reactive({
-    x <- var_summary
-    x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
-    x$variable_name[x$data_set == theme_data_name()]
-  })
-  
-  
-  output$theme_var_2 <- renderUI({
-    if(is.null(input$theme_var)) {
-      return(NULL)
+    if(!is.null(input$theme_var)){
+      var1 <- input$theme_var
+      x <- var_summary
+      x$data_set <- unlist(lapply(strsplit(x$new_variable, '_'), function(x) x[2]))
+      x <- x %>% filter(new_variable == var1)
+      return(x$data_set[1])
     } else {
-      x <- theme_choices_2()
-      names(x) <- Hmisc::capitalize(gsub('_', ' ', x))
-      selectInput('theme_var_2',
-                  'Choose a variable to compare',
-                  choices = x)
+      return(NULL)
     }
   })
   
+  # reactive dataset based on the theme_data_name
+  theme_data <- reactive({
+    the_name <- theme_data_name()
+    if(is.null(the_name)){
+      NULL
+    } else {
+      full_name <- dataset_dictionary %>%
+        filter(short_name == the_name) %>%
+        .$long_name
+      x <- survey[[which(names(survey) == full_name)]]
+      x
+    }
+  })
+  
+  # reactive object for second choice 
+  theme_choices_2 <- reactive({
+    input$tabs # just for refreshing
+    x <- survey_dictionary
+    x <- x %>% filter(short_name == theme_data_name())
+    out <- x$new_variable
+    dd <- theme_data()
+    out <- out[out %in% names(dd)]
+    
+    if(length(out) == 0){
+      return(NULL)
+    } else{
+      return(out)
+    }
+  })
+
+  theme_choices_labels_2 <- reactive({
+    x <- survey_dictionary
+    x <- x %>% filter(short_name == theme_data_name())
+    out <- x$display_name
+    original_var_name <- x$new_variable
+    dd <- theme_data()
+    out <- out[original_var_name %in% names(dd)]
+    if(length(out) == 0){
+      return(NULL)
+    } else{
+      return(out)
+    }
+  })
+  
+  output$theme_var_2 <- renderUI({
+    input$tabs # just run to refresh
+    input$want_another_var # just run to refresh
+    if(is.null(input$theme_var) | !input$want_another_var) {
+      return(NULL)
+    } else {
+      x <- theme_choices_2()
+      if(is.null(x)){
+        return(NULL)
+      } else {
+        names(x) <- theme_choices_labels_2()
+        selectInput('theme_var_2',
+                    'Choose a variable to compare',
+                    choices = x)  
+      }
+    }
+  })
+  
+  # output$fake_text <- renderText({
+  #   paste0('Theme data name is ', theme_data_name(), '\n',
+  #          'var 1 is ', input$theme_var, '\n',
+  #          'var 2 is ', input$theme_var_2)
+  # })
+  
   output$theme_plot <- renderPlot({
-    barplot(1:10)
+    input$tabs # just run to refresh
+    df <- theme_data()
+    v1 <- input$theme_var
+    v2 <- input$theme_var_2
+    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    # Subset to only include the variables we want
+    keep_vars <- v1
+    if(!is.null(df)){
+      if(has_two){
+        keep_vars <- c(keep_vars, v2)
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]  
+      }
+      if(!is.data.frame(df)){
+        return(NULL)
+      } else {
+        # All operations go here
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]
+        
+        if(has_two){
+          names(df) <- c('v1', 'v2')
+          type_1 <- class(df$v1)
+          type_2 <- class(df$v2)
+          type_2_numeric <- type_2 %in% c('integer', 'numeric')
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric & type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            y = v2)) +
+              geom_point()
+          }
+          if(type_1_numeric & !type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            group = v2,
+                            fill = v2)) +
+              geom_density(alpha = 0.3)
+          }
+          if(!type_1_numeric & type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            y = v2,
+                            group = v1)) +
+              geom_jitter(alpha = 0.3) +
+              geom_violin()
+          }
+          if(!type_1_numeric & !type_2_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1,
+                            group = v2,
+                            fill = v2)) +
+              geom_bar(position = 'dodge')
+          }
+          g <- g + theme_databrew() +
+            labs(title = v1,
+                 subtitle = v2,
+                 x = '',
+                 y = '')
+          
+        } else {
+          df <- data.frame(v1 = df)
+          type_1 <- class(df$v1)
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric){
+            g <- ggplot(data = df,
+                        aes(x = v1)) +
+              geom_density(fill = 'darkorange',
+                           alpha = 0.6)
+          } else {
+            g <- ggplot(data = df,
+                        aes(x = v1)) +
+              geom_bar(fill = 'darkorange',
+                       alpha = 0.6) 
+          }
+          g <- g +
+            theme_databrew() +
+            labs(title = theme_choices_labels(),
+                 x = '',
+                 y = '')
+        }
+        return(g)
+        
+      }
+    } else{
+      NULL
+    }
   })
   
   output$theme_table <- renderDataTable({
-    prettify(data.frame(a = 1:5,
-                        b = 2:6,
-                        c = 3:7))
+    input$tabs # just run to refresh
+    df <- theme_data()
+    v1 <- input$theme_var
+    v2 <- input$theme_var_2
+      has_two <- input$want_another_var & !is.null(input$theme_var_2)
+      # Subset to only include the variables we want
+      keep_vars <- v1
+      if(!is.null(df)){
+        if(has_two){
+          keep_vars <- c(keep_vars, v2)
+          # Keep only the relevant variables
+          df <- df[,names(df) %in% keep_vars]  
+        }
+        if(!is.data.frame(df)){
+          return(NULL)
+        } else {
+          # All operations go here
+          v1 <- input$theme_var
+          v2 <- input$theme_var_2
+          input$tabs # just run to refresh
+          has_two <- input$want_another_var & !is.null(input$theme_var_2)
+          # Subset to only include the variables we want
+          keep_vars <- v1
+          if(has_two){
+            keep_vars <- c(keep_vars, v2)
+          }
+          # Keep only the relevant variables
+          df <- df[,names(df) %in% keep_vars]
+          head(df)
+          
+          if(has_two){
+            names(df) <- c('v1', 'v2')
+            type_1 <- class(df$v1)
+            type_2 <- class(df$v2)
+            type_2_numeric <- type_2 %in% c('integer', 'numeric')
+            type_1_numeric <- type_1 %in% c('integer', 'numeric')
+            if(type_1_numeric & type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(type_1_numeric & !type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(!type_1_numeric & type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            if(!type_1_numeric & !type_2_numeric){
+              out <- data.frame(a = 1, b = 2)
+            }
+            names(out) <- c(v1, v2)
+            
+          } else {
+            df <- data.frame(v1 = df)
+            type_1 <- class(df$v1)
+            type_1_numeric <- type_1 %in% c('integer', 'numeric')
+            if(type_1_numeric){
+              out <- data.frame(z = 1)
+            } else {
+              out <- data.frame(z = 1)
+            }
+            names(out) <- v1
+          }
+          return(out)
+        }
+      } else{
+        NULL
+      }
   })
   
+
   # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
