@@ -193,7 +193,8 @@ leaf_basic <- function(shp = ont2){
 leaf <- function(x, 
                  tile = 'OpenStreetMap.Mapnik', 
                  palette = 'Purples',
-                 show_legend = TRUE){
+                 show_legend = TRUE,
+                 title = NULL){
   require(dplyr)
   require(leaflet)
   require(RColorBrewer)
@@ -214,7 +215,8 @@ leaf <- function(x,
   # pal <- colorQuantile("Blues", NULL, n = 9)
   # bins <- round(c(quantile(shp@data$value, na.rm = TRUE), Inf))
   bins <- unique(round(c(quantile(shp@data$value, na.rm = TRUE, c(seq(0, 1, 0.15), 1)))))
-  pal <- colorBin(palette, domain = shp@data$value, bins = bins)
+  pal <- colorBin(palette, domain = shp@data$value, bins = bins,
+                  na.color = NA)
 
   # Create a popup
   popper <- paste0(shp@data$NAME_2, ': ',
@@ -226,8 +228,9 @@ leaf <- function(x,
   #   addProviderTiles(tile)
   if(show_legend){
     l <- l %>%
-      addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,
-                position = "bottomleft")
+      addLegend(pal = pal, values = ~value, opacity = 0.7, 
+                position = "bottomleft",
+                title = title)
   }
   l <- l %>%
     addPolygons(fillColor = ~pal(value),

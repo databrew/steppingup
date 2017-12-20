@@ -44,9 +44,9 @@ ui <- dashboardPage(skin = 'blue',
                                                 badgeLabel = "placeholder",
                                                 badgeColor = "green"))),
                     dashboardBody(
-                        # tags$head(
-                        #   tags$link(rel = "stylesheet", type = "text/css", href = "assets/css/main.css")
-                        # ),
+                      # tags$head(
+                      #   tags$link(rel = "stylesheet", type = "text/css", href = "assets/css/main.css")
+                      # ),
                       tabItems(
                         tabItem(tabName = 'welcome',
                                 jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
@@ -85,7 +85,8 @@ ui <- dashboardPage(skin = 'blue',
                                          column(3, 
                                                 uiOutput("sub_category")),
                                          column(6,
-                                                uiOutput("variable"))),
+                                                uiOutput("variable"),
+                                                h4(strong(textOutput('variable_text'))))),
                                 fluidRow(column(3,
                                                 radioButtons('percent',
                                                              'View as percentage or raw number',
@@ -135,43 +136,44 @@ ui <- dashboardPage(skin = 'blue',
                                            ))),
                                   tabPanel('Map',
                                            textOutput('map_text'),
-                                           fluidRow(column(3,
-                                                           checkboxInput('show_legend',
-                                                                         'Show legend?'))),
-                                                    # column(4,
-                                                    #        selectInput('palette', 'Palette',
-                                                    #                    choices = c('Yellow-red' = 'YlOrRd',
-                                                    #                                'Spectral' = 'Spectral',
-                                                    #                                'Blues' = 'Blues',
-                                                    #                                'Greens' = 'Greens',
-                                                    #                                'Purples' = 'Purples',
-                                                    #                                'Reds' = 'Reds',
-                                                    #                                'Black and white' = 'Greys'))),
-                                                    # column(5,
-                                                    #        selectInput('tile',
-                                                    #                    'Background',
-                                                    #                    choices = c('OSM - Mapnik' = 'OpenStreetMap.Mapnik',
-                                                    #                                'OSM - TopoMap' = 'OpenTopoMap',
-                                                    #                                'Stamen - Simple BW' = 'Stamen.Toner',
-                                                    #                                'Stamen - Watercolor' = 'Stamen.Watercolor',
-                                                    #                                'Stamen - Terrain' = 'Stamen.Terrain',
-                                                    #                                'ESRI - Satellite' = 'Esri.WorldImagery',
-                                                    #                                'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap')))),
+                                           # fluidRow(column(3,
+                                           #                 checkboxInput('show_legend',
+                                           #                               'Show legend?'))),
+                                           # column(4,
+                                           #        selectInput('palette', 'Palette',
+                                           #                    choices = c('Yellow-red' = 'YlOrRd',
+                                           #                                'Spectral' = 'Spectral',
+                                           #                                'Blues' = 'Blues',
+                                           #                                'Greens' = 'Greens',
+                                           #                                'Purples' = 'Purples',
+                                           #                                'Reds' = 'Reds',
+                                           #                                'Black and white' = 'Greys'))),
+                                           # column(5,
+                                           #        selectInput('tile',
+                                           #                    'Background',
+                                           #                    choices = c('OSM - Mapnik' = 'OpenStreetMap.Mapnik',
+                                           #                                'OSM - TopoMap' = 'OpenTopoMap',
+                                           #                                'Stamen - Simple BW' = 'Stamen.Toner',
+                                           #                                'Stamen - Watercolor' = 'Stamen.Watercolor',
+                                           #                                'Stamen - Terrain' = 'Stamen.Terrain',
+                                           #                                'ESRI - Satellite' = 'Esri.WorldImagery',
+                                           #                                'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap')))),
+                                           h3(textOutput('map_title')),
                                            leafletOutput('the_map')),
                                   tabPanel('Plot', 
-                                            plotOutput('bar_plot')))),
+                                           plotOutput('bar_plot')))),
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
                                 p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
                                 p('You can explore various data sets under each of the Stepping Up themes below.'),
                                 tabsetPanel(id = "tabs",
-                                  tabPanel(title = 'Health and wellness'),
-                                  tabPanel(title = 'Supportive families'),
-                                  tabPanel(title = 'Education'),
-                                  tabPanel(title = 'Employment'),
-                                  tabPanel(title = 'Civic engagement'),
-                                  tabPanel(title = 'Diversity'),
-                                  tabPanel(title = 'Communities')
+                                            tabPanel(title = 'Health and wellness'),
+                                            tabPanel(title = 'Supportive families'),
+                                            tabPanel(title = 'Education'),
+                                            tabPanel(title = 'Employment'),
+                                            tabPanel(title = 'Civic engagement'),
+                                            tabPanel(title = 'Diversity'),
+                                            tabPanel(title = 'Communities')
                                 ),
                                 fluidRow(column(6,
                                                 uiOutput('theme_var')),
@@ -190,7 +192,7 @@ ui <- dashboardPage(skin = 'blue',
                                   tabPanel('Plot',
                                            fluidRow(column(12,
                                                            plotOutput('theme_plot')))))
-                                ),
+                        ),
                         tabItem(tabName = "download",
                                 h2("Data download"),
                                 br(),
@@ -376,7 +378,7 @@ server <- function(input, output) {
       return(out)
     }
   })
-
+  
   theme_choices_labels_2 <- reactive({
     x <- survey_dictionary
     x <- x %>% filter(short_name == theme_data_name())
@@ -510,71 +512,71 @@ server <- function(input, output) {
     df <- theme_data()
     v1 <- input$theme_var
     v2 <- input$theme_var_2
-      has_two <- input$want_another_var & !is.null(input$theme_var_2)
-      # Subset to only include the variables we want
-      keep_vars <- v1
-      if(!is.null(df)){
+    has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    # Subset to only include the variables we want
+    keep_vars <- v1
+    if(!is.null(df)){
+      if(has_two){
+        keep_vars <- c(keep_vars, v2)
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]  
+      }
+      if(!is.data.frame(df)){
+        return(NULL)
+      } else {
+        # All operations go here
+        v1 <- input$theme_var
+        v2 <- input$theme_var_2
+        input$tabs # just run to refresh
+        has_two <- input$want_another_var & !is.null(input$theme_var_2)
+        # Subset to only include the variables we want
+        keep_vars <- v1
         if(has_two){
           keep_vars <- c(keep_vars, v2)
-          # Keep only the relevant variables
-          df <- df[,names(df) %in% keep_vars]  
         }
-        if(!is.data.frame(df)){
-          return(NULL)
-        } else {
-          # All operations go here
-          v1 <- input$theme_var
-          v2 <- input$theme_var_2
-          input$tabs # just run to refresh
-          has_two <- input$want_another_var & !is.null(input$theme_var_2)
-          # Subset to only include the variables we want
-          keep_vars <- v1
-          if(has_two){
-            keep_vars <- c(keep_vars, v2)
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% keep_vars]
+        head(df)
+        
+        if(has_two){
+          names(df) <- c('v1', 'v2')
+          type_1 <- class(df$v1)
+          type_2 <- class(df$v2)
+          type_2_numeric <- type_2 %in% c('integer', 'numeric')
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric & type_2_numeric){
+            out <- data.frame(a = 1, b = 2)
           }
-          # Keep only the relevant variables
-          df <- df[,names(df) %in% keep_vars]
-          head(df)
+          if(type_1_numeric & !type_2_numeric){
+            out <- data.frame(a = 1, b = 2)
+          }
+          if(!type_1_numeric & type_2_numeric){
+            out <- data.frame(a = 1, b = 2)
+          }
+          if(!type_1_numeric & !type_2_numeric){
+            out <- data.frame(a = 1, b = 2)
+          }
+          names(out) <- c(v1, v2)
           
-          if(has_two){
-            names(df) <- c('v1', 'v2')
-            type_1 <- class(df$v1)
-            type_2 <- class(df$v2)
-            type_2_numeric <- type_2 %in% c('integer', 'numeric')
-            type_1_numeric <- type_1 %in% c('integer', 'numeric')
-            if(type_1_numeric & type_2_numeric){
-              out <- data.frame(a = 1, b = 2)
-            }
-            if(type_1_numeric & !type_2_numeric){
-              out <- data.frame(a = 1, b = 2)
-            }
-            if(!type_1_numeric & type_2_numeric){
-              out <- data.frame(a = 1, b = 2)
-            }
-            if(!type_1_numeric & !type_2_numeric){
-              out <- data.frame(a = 1, b = 2)
-            }
-            names(out) <- c(v1, v2)
-            
+        } else {
+          df <- data.frame(v1 = df)
+          type_1 <- class(df$v1)
+          type_1_numeric <- type_1 %in% c('integer', 'numeric')
+          if(type_1_numeric){
+            out <- data.frame(z = 1)
           } else {
-            df <- data.frame(v1 = df)
-            type_1 <- class(df$v1)
-            type_1_numeric <- type_1 %in% c('integer', 'numeric')
-            if(type_1_numeric){
-              out <- data.frame(z = 1)
-            } else {
-              out <- data.frame(z = 1)
-            }
-            names(out) <- v1
+            out <- data.frame(z = 1)
           }
-          return(out)
+          names(out) <- v1
         }
-      } else{
-        NULL
+        return(out)
       }
+    } else{
+      NULL
+    }
   })
   
-
+  
   # Reactive census object
   censified <- reactive({
     choices <- unique(census_dict$sub_category[census_dict$category == input$category])
@@ -586,14 +588,14 @@ server <- function(input, output) {
     }
     
     x <- censify(df = census, dict = census_dict, 
-            age = input$age, 
-            sex = input$sex,
-            pob = input$pob,
-            vm = input$vm,
-            geo_code = input$geography,
-            years = input$years,
-            sc = sc,
-            percent = input$percent)
+                 age = input$age, 
+                 sex = input$sex,
+                 pob = input$pob,
+                 vm = input$vm,
+                 geo_code = input$geography,
+                 years = input$years,
+                 sc = sc,
+                 percent = input$percent)
     
     if(input$age & !is.null(input$age_filter)) {
       if(input$age_filter != 'All') {
@@ -658,7 +660,7 @@ server <- function(input, output) {
     if(input$category == 'income'){
       ggplot() +
         theme_databrew() +
-          labs(title = 'Income variables are not visualizable yet.')
+        labs(title = 'Income variables are not visualizable yet.')
     } else {
       if(is.null(input$variable) | length(input$variable) == 0){
         ggplot() +
@@ -756,7 +758,7 @@ server <- function(input, output) {
                    choices = choices,
                    selected = choices[1])}})
   
-  output$the_map <- renderLeaflet({
+  make_the_map <- reactive({
     make_map <- FALSE
     if(input$geography &
        !input$age &
@@ -768,35 +770,58 @@ server <- function(input, output) {
     }
     if(make_map){
       df <- censified()
-        
+      
       if(length(input$variable) == 1){
         which_var <- which(names(df) == input$variable)
         val <- as.numeric(unlist(df %>% dplyr::select_(which_var)))
         if(all(is.na(val))){
-          return(NULL)
+          make_map <- FALSE
         } else {
-          n <- 3
-          withProgress(message = 'Making map', value = 0, {
-            incProgress(1/n, detail = paste("Doing part", i))
-            df <- df %>%
-              dplyr::select(geo_code)
-            incProgress(1/n, detail = paste("Doing part", i))
-            df$value <- val
-            leaf(x = df,
-                 # tile = input$tile,
-                 # palette = input$palette,
-                 show_legend = input$show_legend)
-          })
+          make_map <- TRUE
           
         }
       } else {
-        NULL
+        make_map <- FALSE
       }
       
     } else {
+      make_map <- FALSE
+    }
+    return(make_map)
+  })
+  
+  output$map_title <- renderText({
+    make_it <- make_the_map()
+    if(make_it){
+      paste0('Map of ', tolower(input$variable))
+    } else {
       NULL
-      # leaflet() %>%
-      #   addTiles()
+    }
+  })
+  
+  output$the_map <- renderLeaflet({
+    make_it <- make_the_map()
+    if(make_it){
+      n <- 3
+      the_title <- input$variable
+      withProgress(message = 'Making map', value = 0, {
+        incProgress(1/n, detail = paste("Doing part", i))
+        df <- censified()
+        incProgress(1/n, detail = paste("Doing part", i))
+        which_var <- which(names(df) == input$variable)
+        val <- as.numeric(unlist(df %>% dplyr::select_(which_var)))
+        df <- df %>%
+          dplyr::select(geo_code)
+        incProgress(1/n, detail = paste("Doing part", i))
+        df$value <- val
+        leaf(x = df)#,
+             # tile = input$tile,
+             # palette = input$palette,
+             # show_legend = input$show_legend)
+      })
+    } else {
+      # NULL
+      leaf_basic()
     }
   })
   # Variable selection
@@ -824,6 +849,14 @@ server <- function(input, output) {
                 selected = variable_choices(),
                 # selected = x[1],
                 multiple = TRUE)
+  })
+  # Variable reactive text
+  output$variable_text <- renderText({
+    if(is.null(input$variable) | length(input$variable) == 0){
+      '(Pick at least one variable)'
+    } else {
+      NULL
+    }
   })
   # Visible minority filter
   output$vm_filter <- renderUI({
