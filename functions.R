@@ -178,7 +178,21 @@ ontario_map <- function(x){
 # ontario_map(x = df)
 
 # Define function for generating a leaflet plot
-leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
+
+# Create a basic leaflet with nothing else on it
+leaf_basic <- function(shp = ont2){
+  tile = 'OpenStreetMap.Mapnik'
+  palette = 'Purples'
+  l <- leaflet(data = shp) %>%
+    addPolylines(color = NA, opacity = 0.5, weight = 0.2) %>%
+    addProviderTiles(tile,
+                     options = providerTileOptions(minZoom = 4, maxZoom = 10)) 
+  return(l)
+}
+
+leaf <- function(x, 
+                 tile = 'OpenStreetMap.Mapnik', 
+                 palette = 'Purples',
                  show_legend = TRUE){
   require(dplyr)
   require(leaflet)
@@ -207,8 +221,9 @@ leaf <- function(x, tile = 'Stamen.Toner', palette = 'YlOrRd',
                    round(shp@data$value, 2))
 
   # Create map
-  l <- leaflet(data = shp) %>%
-    addProviderTiles(tile)
+  l <- leaf_basic(shp = shp)
+  # l <- leaflet(data = shp) %>%
+  #   addProviderTiles(tile)
   if(show_legend){
     l <- l %>%
       addLegend(pal = pal, values = ~value, opacity = 0.7, title = NULL,

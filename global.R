@@ -13,6 +13,7 @@ library(broom)
 library(feather)
 library(foreign)
 library(sas7bdat)
+library(rmapshaper)
 
 
 ##########
@@ -55,6 +56,7 @@ if('map_data.RData' %in% dir('data/geo')){
   can2 <- raster::getData(name = 'GADM', country = 'CAN', level = 2)
   # Subset to just Toronto
   ont2 <- can2[can2@data$NAME_1 == 'Ontario',]
+  ont2 <- rmapshaper::ms_simplify(ont2)
   # Create a crazy-ass looking version
   ont_crazy <- thinnedSpatialPoly(SP = ont2,
                                   minarea = 0,
