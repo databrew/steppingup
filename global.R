@@ -251,6 +251,31 @@ get_census_data <- function() {
   # Clean up geography
   census$Geography <- unlist(lapply(strsplit(census$Geography, ','), function(x){x[1]}))
   
+  # Add a population column
+  census <- census %>%
+    dplyr::mutate(Population = `Total - School attendance`) %>%
+    dplyr::mutate(`Total - Population` = Population) 
+  
+  # Add an aboriginal identity column
+  new_rows <- 
+    census %>%
+    filter(`Visible minority` %in% c('Aboriginal identity',
+                                     'Non-Aboriginal identity')) %>%
+    rename(`Aboriginal identity` = `Visible minority`) %>%
+    mutate(`Visible minority` = "Total - Population by visible minority") 
+  ordered_columns <- unique(c('Geography', 'geo_code',
+                              'year', 'Age group',
+                              'Sex', 'Place of birth',
+                              'Visible minority',
+                              'Aboriginal identity',
+                              names(new_rows)))
+  new_rows <- new_rows[,ordered_columns]
+  old_rows <- census %>%
+    filter(!`Visible minority` %in% c('Aboriginal identity',
+                                      'Non-Aboriginal identity')) %>%
+    mutate(`Aboriginal identity` = 'Total - Population by aboriginal identity')
+  old_rows <- old_rows[,ordered_columns]
+  census <- bind_rows(new_rows, old_rows)
 
   return(census)
 }
@@ -492,17 +517,13 @@ if('census.feather' %in% dir('data')){
   # save(census, file = 'data/census.RData')
   write_feather(census, 'data/census.feather')
 }
-# Add a population column
-census <- census %>%
-  dplyr::mutate(Population = `Total - School attendance`) %>%
-  dplyr::mutate(`Total - Population` = Population) 
 
 # define input cateogry choices
 category_choices <- sort(unique(census_dict$category))
 category_choices <- category_choices[!category_choices %in% c('demographic', 'geo_code', 'year')]
 names(category_choices) <- Hmisc::capitalize(category_choices)
 
-head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority', 'Total')
+head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority', 'Aboriginal identity', 'Total')
 
 # Eliminate everywhere references to 15 and over
 names(census) <- gsub(' 15 and over', '', names(census))

@@ -6,6 +6,7 @@ Age group,demographic,demographic
 Sex,demographic,demographic
 Place of birth,demographic,demographic
 Visible minority,demographic,demographic
+Aboriginal identity,demographic,demographic
 Total - Population 15 years and over by legal marital status,marriage,marriage
 Never married (single) 15 years and over,marriage,marriage
 Legally married and not separated,marriage,marriage

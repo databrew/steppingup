@@ -114,6 +114,9 @@ ui <- dashboardPage(skin = 'blue',
                                                 checkboxInput('vm',
                                                               'Visible minority')),
                                          column(2,
+                                                checkboxInput('ai',
+                                                              'Aboriginal identity')),
+                                         column(2,
                                                 checkboxInput('geography',
                                                               'Geography')),
                                          column(2)),
@@ -125,6 +128,8 @@ ui <- dashboardPage(skin = 'blue',
                                                 uiOutput('pob_filter')),
                                          column(2,
                                                 uiOutput('vm_filter')),
+                                         column(2,
+                                                uiOutput('ai_filter')),
                                          column(2,
                                                 uiOutput('geography_filter'))),
                                 
@@ -595,6 +600,7 @@ server <- function(input, output) {
                  sex = input$sex,
                  pob = input$pob,
                  vm = input$vm,
+                 ai = input$ai,
                  geo_code = input$geography,
                  years = input$years,
                  sc = sc,
@@ -621,6 +627,12 @@ server <- function(input, output) {
     if(input$vm & !is.null(input$vm_filter)) {
       if(input$vm_filter != 'All') {
         x <- x %>% filter(`Visible minority` == input$vm_filter)
+      }
+    }
+    
+    if(input$ai & !is.null(input$ai_filter)) {
+      if(input$ai_filter != 'All') {
+        x <- x %>% filter(`Aboriginal identity` == input$ai_filter)
       }
     }
     
@@ -868,6 +880,17 @@ server <- function(input, output) {
       choices <- c('All', choices)
       choices <- choices[!grepl('Total', choices)]
       selectInput('vm_filter',
+                  'Filter',
+                  choices = choices)
+    }
+  })
+  # Aboriginal identity filter
+  output$ai_filter <- renderUI({
+    if(input$ai){
+      choices <-  sort(unique(census$`Aboriginal identity`))
+      choices <- c('All', choices)
+      choices <- choices[!grepl('Total', choices)]
+      selectInput('ai_filter',
                   'Filter',
                   choices = choices)
     }
