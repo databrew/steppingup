@@ -545,7 +545,7 @@ censify <- function(df = census,
 }
 
 # Define function for plotting between 1 and 3 variables
-plotter <- function(df, variable = NULL){
+plotter <- function(df, variable = NULL, show_labels = TRUE){
   # Skim down the columns to only keep the grouper ones and the plotting variable
   df <- df[,names(df) %in% c(head_vector, variable)]
   no_year <- FALSE
@@ -631,7 +631,12 @@ plotter <- function(df, variable = NULL){
                       y = y)) +
         geom_bar(stat = 'identity',
                  fill = 'darkorange',
-                 alpha = 0.6)
+                 alpha = 0.6) 
+      if(show_labels){
+        g <- g +
+          geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
+                    position = position_dodge(width = 1))
+      }
       if(plot_variables == 2){
         cols <- colorRampPalette(brewer.pal(n = 9, 'Spectral'))(length(unique(df$var2)))
         if(length(cols) == 2){
@@ -642,9 +647,14 @@ plotter <- function(df, variable = NULL){
                         y = y, 
                         group = var2,
                         fill = var2)) +
-          geom_bar(stat = 'identity', position = 'dodge') +
+          geom_bar(stat = 'identity', position = 'dodge')  +
           scale_fill_manual(name = '',
                             values = cols) 
+        if(show_labels){
+          g <- g +
+            geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
+                      position = position_dodge(width = 1))
+        }
       }
       if(plot_variables == 3){
         cols <- colorRampPalette(brewer.pal(n = 9, 'Spectral'))(length(unique(df$var3)))
@@ -660,12 +670,17 @@ plotter <- function(df, variable = NULL){
           scale_fill_manual(name = '',
                             values = cols) +
           facet_wrap(~var2)
+        if(show_labels){
+          g <- g +
+            geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
+                      position = position_dodge(width = 1))
+        }
       }
     }
     g <- g +
       theme_databrew() +
       theme(axis.text.x = element_text(angle = 45,
-                                       hjust = 1))
+                                       hjust = 1)) 
     title <- paste0(original_y, ' by ', original_var_names[1])
     if(plot_variables == 2){
       title <- paste0(title, ' and ', original_var_names[2])

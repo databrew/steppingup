@@ -161,6 +161,9 @@ ui <- dashboardPage(skin = 'blue',
                                            h3(textOutput('map_title')),
                                            leafletOutput('the_map')),
                                   tabPanel('Plot', 
+                                           checkboxInput('show_labels',
+                                                        'Show values on charts?',
+                                                        TRUE),
                                            plotOutput('bar_plot')))),
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
@@ -470,7 +473,7 @@ server <- function(input, output) {
                         aes(x = v1,
                             group = v2,
                             fill = v2)) +
-              geom_bar(position = 'dodge')
+              geom_bar(position = 'dodge') 
           }
           g <- g + theme_databrew() +
             labs(title = v1,
@@ -667,7 +670,7 @@ server <- function(input, output) {
           theme_databrew() +
           labs(title = 'You must select a variable to plot')
       } else {
-        plotter(censified(), variable = input$variable)
+        plotter(censified(), variable = input$variable, show_labels = input$show_labels)
       }
     }
   })
