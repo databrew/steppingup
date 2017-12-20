@@ -794,6 +794,19 @@ server <- function(input, output) {
     }
   })
   # Variable selection
+  variable_choices <- reactive({
+    x <- censified()
+    out <- input$variable
+    x <- names(x)
+    x <- x[!x %in% head_vector]
+    x <- x[!grepl('Total', x)]
+    if(all(out %in% x)){
+      out <- out
+    } else {
+      out <- x[1]
+    }
+    return(out)
+  })
   output$variable <- renderUI({
     x <- censified()
     x <- names(x)
@@ -802,7 +815,8 @@ server <- function(input, output) {
     selectInput('variable', 
                 'Variable',
                 choices = x,
-                selected = x[1],
+                selected = variable_choices(),
+                # selected = x[1],
                 multiple = TRUE)
   })
   # Visible minority filter
