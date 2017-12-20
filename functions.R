@@ -437,6 +437,7 @@ censify <- function(df = census,
                     sex = FALSE,
                     pob = FALSE,
                     vm = FALSE, 
+                    ai = FALSE,
                     geo_code = FALSE,
                     years = 2001,
                     sc = NULL,
@@ -491,6 +492,16 @@ censify <- function(df = census,
     df <- df %>%
       filter(grepl('Total',  `Visible minority`))
     df$`Visible minority` <- NULL
+  }
+  
+  # ai
+  if(ai){
+    df <- df %>%
+      filter(!grepl('Total', `Aboriginal identity`))
+  } else {
+    df <- df %>%
+      filter(grepl('Total',  `Aboriginal identity`))
+    df$`Aboriginal identity` <- NULL
   }
   
   # geo_code
