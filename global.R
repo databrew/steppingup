@@ -487,7 +487,10 @@ if('census.feather' %in% dir('data')){
   # save(census, file = 'data/census.RData')
   write_feather(census, 'data/census.feather')
 }
-
+# Add a population column
+census <- census %>%
+  dplyr::mutate(Population = `Total - School attendance`) %>%
+  dplyr::mutate(`Total - Population` = Population) 
 
 # define input cateogry choices
 category_choices <- sort(unique(census_dict$category))
