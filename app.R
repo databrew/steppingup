@@ -756,6 +756,7 @@ server <- function(input, output) {
                    'Sub Category',
                    choices = choices,
                    selected = choices[1])}})
+  
   output$the_map <- renderLeaflet({
     make_map <- FALSE
     if(input$geography &
@@ -770,7 +771,7 @@ server <- function(input, output) {
       df <- censified()
       if(length(input$variable) == 1){
         which_var <- which(names(df) == input$variable)
-        val <- as.numeric(df[,which_var])
+        val <- as.numeric(unlist(df %>% dplyr::select_(which_var)))
         if(all(is.na(val))){
           return(NULL)
         } else {

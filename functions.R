@@ -498,7 +498,7 @@ censify <- function(df = census,
     if(is.null(sc)) {
       warning("Choose a sub category to generate percentages")
     } else {
-      if(!sc == 'income'){
+      if(!sc %in% c('income', 'population')){
         denom_column <- which(grepl('Total', names(df)))
         denom <- df[, denom_column]
         names(denom) <- 'x'
