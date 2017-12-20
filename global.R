@@ -248,6 +248,9 @@ get_census_data <- function() {
   total_rows <- census %>% dplyr::select(-`Age group`) %>% group_by(Geography, geo_code, year, Sex, `Place of birth`, `Visible minority`) %>% summarise_all(.funs = sum) %>% mutate(`Age group` = 'Total - 15 to 29 years')
   census <- bind_rows(census,
                       total_rows)
+  # Clean up geography
+  census$Geography <- unlist(lapply(strsplit(census$Geography, ','), function(x){x[1]}))
+  
 
   return(census)
 }
@@ -560,3 +563,4 @@ survey_dictionary <-
                                gsub('_', ' ', long_name),
                                ')'))
   
+
