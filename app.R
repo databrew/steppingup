@@ -768,19 +768,26 @@ server <- function(input, output) {
     }
     if(make_map){
       df <- censified()
+        
       if(length(input$variable) == 1){
         which_var <- which(names(df) == input$variable)
         val <- as.numeric(unlist(df %>% dplyr::select_(which_var)))
         if(all(is.na(val))){
           return(NULL)
         } else {
-          df <- df %>%
-            dplyr::select(geo_code)
-          df$value <- val
-          leaf(x = df,
-               # tile = input$tile,
-               # palette = input$palette,
-               show_legend = input$show_legend)
+          n <- 3
+          withProgress(message = 'Making map', value = 0, {
+            incProgress(1/n, detail = paste("Doing part", i))
+            df <- df %>%
+              dplyr::select(geo_code)
+            incProgress(1/n, detail = paste("Doing part", i))
+            df$value <- val
+            leaf(x = df,
+                 # tile = input$tile,
+                 # palette = input$palette,
+                 show_legend = input$show_legend)
+          })
+          
         }
       } else {
         NULL
