@@ -198,7 +198,7 @@ a:active,a:focus,a:hover {
     top: 9px;
     right: 7px;
     text-align: center;
-    font-size: 9px;
+    font-size: 14px;
     padding: 2px 3px;
     line-height: .9}
 .main-header .logo {
@@ -208,13 +208,13 @@ a:active,a:focus,a:hover {
     display: block;
     float: left;
     height: 50px;
-    font-size: 20px;
+    font-size: 18px;
     line-height: 50px;
     text-align: center;
     width: 230px;
     font-family: "Lato",Lato,Lato,sans-serif;
     padding: 0 15px;
-    font-weight: 300;
+    font-weight: 400;
     overflow: hidden}
 .main-header .logo .logo-lg {
     display: block}
@@ -371,7 +371,7 @@ a:active,a:focus,a:hover {
 .user-panel>.info>a>.fa,.user-panel>.info>a>.glyphicon,.user-panel>.info>a>.ion {
     margin-right: 3px}
 .sidebar-menu {
-    font-size: 15px;
+    font-size: 16px;
     font-family: Lato;
     list-style: none;
     margin: 0;
@@ -391,7 +391,7 @@ a:active,a:focus,a:hover {
     margin-top: 3px}
 .sidebar-menu li.header {
     padding: 10px 25px 10px 15px;
-    font-size: 12px}
+    font-size: 14px}
 .sidebar-menu li>a>.fa-angle-left,.sidebar-menu li>a>.pull-right-container>.fa-angle-left {
     width: auto;
     height: auto;
@@ -590,7 +590,7 @@ a:active,a:focus,a:hover {
     margin: 0}
 .control-sidebar-menu .menu-info>p {
     margin: 0;
-    font-size: 11px}
+    font-size: 14px}
 .control-sidebar-menu .progress {
     margin: 0}
 .control-sidebar-dark {
@@ -678,7 +678,7 @@ a:active,a:focus,a:hover {
     border-top-right-radius: 0;
     border-bottom-right-radius: 4px;
     border-bottom-left-radius: 4px;
-    font-size: 12px;
+    font-size: 14px;
     background-color: #fff;
     padding: 7px 10px;
     border-bottom: 1px solid #eee;
@@ -727,13 +727,13 @@ a:active,a:focus,a:hover {
     position: relative}
 .navbar-nav>.messages-menu>.dropdown-menu>li .menu>li>a>h4>small {
     color: #999;
-    font-size: 10px;
+    font-size: 12px;
     position: absolute;
     top: 0;
     right: 0}
 .navbar-nav>.messages-menu>.dropdown-menu>li .menu>li>a>p {
     margin: 0 0 0 45px;
-    font-size: 12px;
+    font-size: 14px;
     color: #888}
 .navbar-nav>.messages-menu>.dropdown-menu>li .menu>li>a:after,.navbar-nav>.messages-menu>.dropdown-menu>li .menu>li>a:before {
     content: " ";
@@ -778,7 +778,7 @@ a:active,a:focus,a:hover {
     margin-top: 10px}
 .navbar-nav>.user-menu>.dropdown-menu>li.user-header>p>small {
     display: block;
-    font-size: 12px}
+    font-size: 14px}
 .navbar-nav>.user-menu>.dropdown-menu>.user-body {
     padding: 15px;
     border-bottom: 1px solid #f4f4f4;
@@ -1028,7 +1028,7 @@ a:active,a:focus,a:hover {
 .small-box p>small {
     display: block;
     color: #f9f9f9;
-    font-size: 13px;
+    font-size: 14px;
     margin-top: 5px}
 .small-box h3,.small-box p {
     z-index: 5}
@@ -1053,7 +1053,7 @@ a:active,a:focus,a:hover {
 .small-box .icon {
     display: none}
 .small-box p {
-    font-size: 12px}
+    font-size: 14px}
 }
 .box {
     position: relative;
@@ -1210,7 +1210,7 @@ a:active,a:focus,a:hover {
     color: #444!important}
 .btn-box-tool {
     padding: 5px;
-    font-size: 12px;
+    font-size: 14px;
     background: 0 0;
     color: #97a0b3}
 .btn-box-tool:hover,.open .btn-box-tool {
@@ -1284,7 +1284,7 @@ a:active,a:focus,a:hover {
     font-weight: 600}
 .box-comments .text-muted {
     font-weight: 400;
-    font-size: 12px}
+    font-size: 14px}
 .todo-list {
     margin: 0;
     padding: 0;
@@ -1604,7 +1604,7 @@ a:active,a:focus,a:hover {
     color: #666;
     border: 1px solid #ddd;
     background-color: #f4f4f4;
-    font-size: 12px}
+    font-size: 14px}
 .btn-app>.fa,.btn-app>.glyphicon,.btn-app>.ion {
     font-size: 20px;
     display: block}
@@ -1620,7 +1620,7 @@ a:active,a:focus,a:hover {
     position: absolute;
     top: -3px;
     right: -10px;
-    font-size: 10px;
+    font-size: 14px;
     font-weight: 400}
 .callout {
     border-radius: 3px;
@@ -1915,7 +1915,7 @@ table.text-center,table.text-center td,table.text-center th {
 .direct-chat-info {
     display: block;
     margin-bottom: 2px;
-    font-size: 12px}
+    font-size: 16px}
 .direct-chat-name {
     font-weight: 600}
 .direct-chat-timestamp {
@@ -3080,7 +3080,7 @@ table.text-center,table.text-center td,table.text-center th {
 .text-bold,.text-bold.table td,.text-bold.table th {
     font-weight: 700}
 .text-sm {
-    font-size: 12px}
+    font-size: 16px}
 .jqstooltip {
     padding: 5px!important;
     width: auto!important;
