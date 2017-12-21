@@ -49,7 +49,7 @@ get_survey_data <- function() {
                               trim_values = F,
                               use.missings = T)
         
-        if(grepl('gss|piaac|cfcs|sduhs', temp_data)) {
+        if(grepl('gss|piaac|cfcs', temp_data)) {
           get_year = T
         } else {
           get_year = F
@@ -721,5 +721,24 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
     }
     return(g)
   }
+}
+
+get_date_osduhs <- function(column_var) {
+  var_store <- list()
+  temp_cols <- as.character(column_var)
+  temp_cols <- trimws(temp_cols, 'both')
+  for(i in 1:length(temp_cols)){
+    temp <- temp_cols[i]
+    if(nchar(temp) == 7) {
+      temp <- gsub('^(.{1})(.*)$', '\\1-\\2', temp)
+      temp <- gsub('^(.{4})(.*)$', '\\1-\\2', temp)
+    } else {
+      temp <- gsub('^(.{2})(.*)$', '\\1-\\2', temp)
+      temp <- gsub('^(.{5})(.*)$', '\\1-\\2', temp)
+    }
+   temp_cols[i] <- temp
+  }
+  date_cols <- as.Date(temp_cols, format='%d-%m-%Y')
+  return(date_cols)
 }
 
