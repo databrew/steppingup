@@ -136,33 +136,12 @@ ui <- dashboardPage(skin = 'blue',
                                 tabsetPanel(
                                   tabPanel('Table',
                                            fluidRow(column(12,
-                                                           # tableOutput('test')
+                                                           textOutput('xing_text'),
                                                            DT::dataTableOutput('xing_table')
                                            ))),
                                   tabPanel('Map',
                                            textOutput('map_text'),
-                                           # fluidRow(column(3,
-                                           #                 checkboxInput('show_legend',
-                                           #                               'Show legend?'))),
-                                           # column(4,
-                                           #        selectInput('palette', 'Palette',
-                                           #                    choices = c('Yellow-red' = 'YlOrRd',
-                                           #                                'Spectral' = 'Spectral',
-                                           #                                'Blues' = 'Blues',
-                                           #                                'Greens' = 'Greens',
-                                           #                                'Purples' = 'Purples',
-                                           #                                'Reds' = 'Reds',
-                                           #                                'Black and white' = 'Greys'))),
-                                           # column(5,
-                                           #        selectInput('tile',
-                                           #                    'Background',
-                                           #                    choices = c('OSM - Mapnik' = 'OpenStreetMap.Mapnik',
-                                           #                                'OSM - TopoMap' = 'OpenTopoMap',
-                                           #                                'Stamen - Simple BW' = 'Stamen.Toner',
-                                           #                                'Stamen - Watercolor' = 'Stamen.Watercolor',
-                                           #                                'Stamen - Terrain' = 'Stamen.Terrain',
-                                           #                                'ESRI - Satellite' = 'Esri.WorldImagery',
-                                           #                                'ESRI - Nat Geo' = 'Esri.NatGeoWorldMap')))),
+                                          
                                            h3(textOutput('map_title')),
                                            leafletOutput('the_map')),
                                   tabPanel('Plot', 
@@ -722,7 +701,7 @@ server <- function(input, output) {
       make_map <- TRUE
     }
     if(!make_map){
-      paste0('To generate a map, check the "geography" box above, select only one year, and uncheck all the others.')
+      paste0('To generate a map with data, check the "geography" box above, select only one year, and uncheck all the others.')
     }
   })
   # Place of birth filter
@@ -896,11 +875,35 @@ server <- function(input, output) {
     }
   })
   # Main table
-  output$xing_table <- renderDataTable({
+  no_go <- reactive({
+    no_go <- FALSE
     x <- censified()
     x <- x[, names(x) %in% c(head_vector, input$variable)]
-    if(length(input$variable) == 0) {
-      DT::datatable(data_frame())
+    if(is.null(input$variable)){
+      no_go <- TRUE
+    } else {
+      non_head <- x[,!names(x) %in% head_vector]
+      if(all(is.na(non_head))){
+        no_go <- TRUE
+      }
+    }
+    return(no_go)
+  })
+  output$xing_text <- renderText({
+    ng <- no_go()
+    if(ng){
+      'No data available for the parameters chosen.'
+    } else {
+      NULL
+    }
+  })
+  output$xing_table <- renderDataTable({
+    out <- DT::datatable(data_frame())
+    x <- censified()
+    ng <- no_go()
+    x <- x[, names(x) %in% c(head_vector, input$variable)]
+    if(length(input$variable) == 0 | ng) {
+      out
     } else {
       prettify(x, download_options = TRUE) 
     }
