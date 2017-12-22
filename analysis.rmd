@@ -9,6 +9,7 @@ output: html_document
 
 library(tidyverse)
 library(glmnet)
+library(broom)
 
 # source
 # source('global.R')
@@ -42,9 +43,33 @@ dat$hw_osduhs_ids <- dat$hw_osduhs_ids.1 <- dat$demo_osduhs_date <- dat$demo_osd
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
-# function that takes an column and groups by to get sums and percentages 
-get_glm <- function(outcome) {
+# function that takes an column and groups by to get sums and percentages
+model_data <- dat
+
+weights <- NULL
+
+get_glm <- function(model_data = dat, weights = FALSE) {
+
+  # remove NAS
+  model_data <- as.data.frame(model_data[complete.cases(model_data),])
+    
+  # loop through variables (exlude demo and a few others) and estimate logit with every other relevant variable
+  # start at 8, becayse the first 7 are more demographic
+  for(i in 8:colnames(model_data)){
+    # remove variables that cannot be modeled
+    y_outcome <- model_data[,i]
+    # loop though colnames (without demo) and estimate logit
+    logit_mod <- glm(y_outcome~. , family = 'binomial', weights = weights, data = model_data)
+    model_result <- cbind(tidy(logit_mod), odds_ratio = tidy(exp(coef(logit_mod))))
+    model_result$odds_ratio.names <- NULL
   
+  }
+
+}
+
+function(y, x, dataset, weights){
+  f <- substitute(glm(y~x, data=dataset, weights=weights, family=binomial))
+  logLik(eval(f))
 }
 
 ```
