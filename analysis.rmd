@@ -25,6 +25,35 @@ dat$demo_osduhs_date <- get_date_osduhs(dat$demo_osduhs_date)
 # recode dat$hw_osduhs_used_cannabis_past_12_months.1
 colnames(dat) <- ifelse(grepl('months.1', colnames(dat), fixed = TRUE), 'hw_osduhs_used_cannabis_ever', colnames(dat))
 
+# recode dat$demo_osduhs_sex_male
+colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRUE), 'demo_osduhs_sex', colnames(dat))
 
+# recode hw_osduhs_drank_alcohol_past_12_months
+dat$hw_osduhs_drank_alcohol_past_12_months <- as.factor(ifelse(grepl('no',dat$hw_osduhs_drank_alcohol_past_12_months), 
+                                                     'no', ifelse(grepl('yes', dat$hw_osduhs_drank_alcohol_past_12_months), 'yes', dat$hw_osduhs_drank_alcohol_past_12_months)))
+
+# recode used_cannabis_ever
+dat$hw_osduhs_used_cannabis_ever <- as.factor(ifelse(grepl('never', dat$hw_osduhs_used_cannabis_ever), 
+                                                     'no', ifelse(grepl('lifetime', dat$hw_osduhs_used_cannabis_ever), 'yes', dat$hw_osduhs_used_cannabis_ever)))
+
+# remove ids 
+dat$hw_osduhs_ids <- dat$hw_osduhs_ids.1 <- dat$demo_osduhs_date <- dat$demo_osduhs_sex_female <-  NULL
+
+```
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+# function that takes an column and groups by to get sums and percentages 
+get_glm <- function(outcome) {
+  
+}
+
+```
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+# function that takes an column and groups by to get sums and percentages 
+get_variable_groups <- function(column_name) {
+  
+}
 
 ```
