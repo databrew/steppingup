@@ -22,5 +22,9 @@ dat <- survey[[10]]
 # convert date to date object 
 dat$demo_osduhs_date <- get_date_osduhs(dat$demo_osduhs_date)
 
+# recode dat$hw_osduhs_used_cannabis_past_12_months.1
+colnames(dat) <- ifelse(grepl('months.1', colnames(dat), fixed = TRUE), 'hw_osduhs_used_cannabis_ever', colnames(dat))
+
+
 
 ```
