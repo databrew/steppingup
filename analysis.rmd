@@ -23,8 +23,16 @@ dat <- survey[[10]]
 # convert date to date object 
 dat$demo_osduhs_date <- get_date_osduhs(dat$demo_osduhs_date)
 
-# recode dat$hw_osduhs_used_cannabis_past_12_months.1
-colnames(dat) <- ifelse(grepl('months.1', colnames(dat), fixed = TRUE), 'hw_osduhs_used_cannabis_ever', colnames(dat))
+# for the time being flag and remove any column with over 1000 NA entries (talk to joe about this)
+dat <- dat[, apply(dat, 2, function(x) length(which(is.na(x))) < 1000)]
+
+# questionnaire_ease, head_injury_lifetime_freq, hw_osduhs_weight, hw_osduhs_height
+# hw_osduhs_last_week_energy_drinks, hw_osduhs_last_week_hours_day_tv_video_games, 
+# hw_osduhs_last_week_phy_activity_60minutes, hw_osduhs_12_months_pain_pill_without_prescription, 
+# hw_osduhs_12_months_used_cannabis ,
+
+# for the time being remove any factors that have more than 4 levels (ill clean them later, just rushed to get this to xing)
+dat <- dat[, apply(dat, 2, function(x) length(unique(x)) < 5)]
 
 # recode dat$demo_osduhs_sex_male
 colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRUE), 'demo_osduhs_sex', colnames(dat))
@@ -33,17 +41,13 @@ colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRU
 dat$hw_osduhs_drank_alcohol_past_12_months <- as.factor(ifelse(grepl('no',dat$hw_osduhs_drank_alcohol_past_12_months), 
                                                      'no', ifelse(grepl('yes', dat$hw_osduhs_drank_alcohol_past_12_months), 'yes', dat$hw_osduhs_drank_alcohol_past_12_months)))
 
-# recode used_cannabis_ever
-dat$hw_osduhs_used_cannabis_ever <- as.factor(ifelse(grepl('never', dat$hw_osduhs_used_cannabis_ever), 
-                                                     'no', ifelse(grepl('lifetime', dat$hw_osduhs_used_cannabis_ever), 'yes', dat$hw_osduhs_used_cannabis_ever)))
-
-# remove ids 
-dat$hw_osduhs_ids <- dat$hw_osduhs_ids.1 <- dat$demo_osduhs_date <- dat$demo_osduhs_sex_female <-  NULL
+# remove other sex variable because it is same as sex_male 
+dat$demo_osduhs_sex_female <-  NULL
 
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
-# function that takes an column and groups by to get sums and percentages
+# function that takes an outcome (any variable by demo) and regresses on all demo variables
 model_data <- dat
 
 weights <- NULL
@@ -52,10 +56,13 @@ get_glm <- function(model_data = dat, weights = FALSE) {
 
   # remove NAS
   model_data <- as.data.frame(model_data[complete.cases(model_data),])
-    
-  # loop through variables (exlude demo and a few others) and estimate logit with every other relevant variable
-  # start at 8, becayse the first 7 are more demographic
-  for(i in 8:colnames(model_data)){
+  
+  # get feature matrix 
+  feat_data <- dat[, grepl('^hw', colnames(dat))]
+  outcome_data <- dat[, !grepl('^hw', colnames(dat))]
+  
+  # loop through outcome_dat and bind each outcome variable with feature dat
+  for(i in 1:colnames(outcome_data)){
     # remove variables that cannot be modeled
     y_outcome <- model_data[,i]
     # loop though colnames (without demo) and estimate logit
