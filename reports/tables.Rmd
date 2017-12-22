@@ -1,0 +1,220 @@
+---
+title: YouthREX tables
+author: www.databrew.cc
+fig_height: 2.6
+fig_width: 4
+output:
+  html_document:
+    pandoc_args: [
+      "+RTS", "-K16000m",
+      "-RTS"
+    ]
+    toc: true
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
+    theme: yeti
+---
+
+
+<style type="text/css">
+
+body{ /* Normal  */
+      font-size: 12px;
+      font-family: lato, sans-serif;
+  }
+td {  /* Table  */
+  font-size: 10px;
+}
+h1.title {
+  font-weight: bold;
+  font-size: 40px;
+  font-family: lato, sans-serif;
+}
+h1 { /* Header 1 */
+  font-size: 36px;
+  text-decoration: underline;
+  font-weight: bold;
+  font-family: lato, sans-serif;
+}
+h2 { /* Header 2 */
+  font-size: 32px;
+  font-weight: bold;
+  font-family: lato, sans-serif;
+}
+h3 { /* Header 3 */
+  font-size: 24px;
+  font-weight: bold;
+  font-family: lato, sans-serif;
+}
+
+h4 { /* Header 4 */
+  font-size: 20px;
+  font-weight: bold;
+  font-family: lato, sans-serif;
+}
+
+h5 { /* Header 5 */
+  font-size: 18px;
+  font-family: lato, sans-serif;
+}
+
+h6 { /* Header 6 */
+  font-size: 15px;
+  font-family: lato, sans-serif;
+}
+
+code.r{ /* Code block */
+    font-size: 14px;
+}
+pre { /* Code block - determines code spacing between lines */
+    font-size: 14px;
+}
+</style>
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE, cache = F}
+# No scientific notation
+options(scipen=999)
+
+# Packages (load child-specific packages in their respective files)
+library(raster)
+library(stringr)
+library(xtable)
+library(knitr)
+library(Hmisc)
+library(ggmap)
+library(dplyr)
+library(maptools)
+library(gpclib)
+library(ggplot2)
+library(DT)
+library(printr)
+library(RColorBrewer)
+# install the above via:
+# install.packages(
+#   'printr',
+#   type = 'source',
+#   repos = c('http://yihui.name/xran', 'http://cran.rstudio.com')
+# )
+library(raster)
+library(stringr)
+library(tidyr)
+library(highcharter)
+library(rstan)
+library(rstanarm)
+library(tidyr)
+library(ggplot2)
+library(highcharter)
+library(htmlwidgets)
+library(sparkline)
+library(zoo)
+library(lubridate)
+# devtools::install_github('htmlwidgets/sparkline')
+
+# Basic knitr options
+opts_chunk$set(comment = NA, 
+               echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, 
+               cache = FALSE)
+```
+
+```{r}
+creation_date <- as.Date(Sys.Date())
+source('../global.R', chdir = T)
+source('../functions.R')
+```
+
+# Executive summary
+
+This report contains 1920 tables from the YouthREX Ontario census data. It is ordered by sub-category.
+
+```{r, results = 'asis'}
+library(DT)
+# table_list <- lapply(split(iris, iris[, 5]), prettify)
+# titles <- names(table_list)
+
+# Generate a list of tables
+already_done <- c()
+table_list <- list()
+titles <- c()
+scs <- sort(unique(census_dict$sub_category))
+scs <- scs[!scs %in% c('demographic', 'year')]
+ages <- sexes <- pobs <- vms <- ais <- geo_codes <- percents <- c(TRUE, FALSE)
+years <- c(2001, 2006, 2011)
+counter <- 0
+for(sc in scs){
+  for(age in ages){
+    for(sex in sexes){
+      for(pob in pobs){
+        for(vm in vms){
+          for(ai in ais){
+            for(geo_code in geo_codes){
+              for(percent in percents){
+                counter <- counter + 1
+                nothing <- !age & !sex & !pob & !vm & !ai & !geo_code
+                title <- paste0('Raw ', gsub('_', ' ', sc),
+                                ' data',
+                                ifelse(nothing, '', ' by '),
+                                ifelse(sex, 'sex, ', ''),
+                                ifelse(pob, 'place of birth, ', ''),
+                                ifelse(vm, 'visible minority status, ', ''),
+                                ifelse(ai, 'aboriginal identity, ', ''),
+                                ifelse(geo_code, 'geography, ', ''))
+                if(substr(title, nchar(title) - 1, nchar(title)) == ', '){
+                  title <- substr(title, 1, nchar(title) - 2)
+                }
+                title <- paste0(title,
+                                ifelse(percent, ' (%)', ''))
+                titles[counter] <- title
+                table_list[[counter]] <-
+                  prettify(censify(age = age,
+                          sex = sex,
+                          pob = pob,
+                          vm = vm,
+                          ai = ai,
+                          geo_code = geo_code,
+                          years = c(2001, 2006, 2011),
+                          sc = sc,
+                          percent = percent),
+                          download_options = TRUE)
+                # message(counter)
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+```
+
+```{r}
+chunks <- paste0('\n## ',
+                 titles, 
+                 "\n\n```{r}\n", 
+                 paste0('table_list[[',
+                        1:length(table_list),
+                        ']]'), 
+                 "\n```\n\n")
+
+# Write our order / child-calls to a doc
+file_connection <- file('children.Rmd')
+writeLines(paste0('---\noutput: html_document\n---\n\n', 
+                  chunks), 
+           file_connection)
+close(file_connection)
+```
+
+
+```{r child='children.Rmd', echo = FALSE}
+# Now, we simply include "children.Rmd" to construct our doc
+# (ie, children is the child doc, and each section is a grandchild)
+```
+
+```{r, results='hide'}
+# Having already called the auto-generated children.Rmd, we can delete it
+file.remove('children.Rmd')
+```
+
