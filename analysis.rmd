@@ -31,8 +31,6 @@ dat <- dat[, apply(dat, 2, function(x) length(which(is.na(x))) < 1000)]
 # hw_osduhs_last_week_phy_activity_60minutes, hw_osduhs_12_months_pain_pill_without_prescription, 
 # hw_osduhs_12_months_used_cannabis ,
 
-# for the time being remove any factors that have more than 4 levels (ill clean them later, just rushed to get this to xing)
-dat <- dat[, apply(dat, 2, function(x) length(unique(x)) < 5)]
 
 # recode dat$demo_osduhs_sex_male
 colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRUE), 'demo_osduhs_sex', colnames(dat))
@@ -42,42 +40,62 @@ dat$hw_osduhs_drank_alcohol_past_12_months <- as.factor(ifelse(grepl('no',dat$hw
                                                      'no', ifelse(grepl('yes', dat$hw_osduhs_drank_alcohol_past_12_months), 'yes', dat$hw_osduhs_drank_alcohol_past_12_months)))
 
 # remove other sex variable because it is same as sex_male 
-dat$demo_osduhs_sex_female <-  NULL
+dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <- 
+  dat$demo_osduhs_grade <- dat$demo_osduhs_time_started_survey <- dat$demo_osduhs_time_ended_survey <- NULL 
 
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
 # function that takes an outcome (any variable by demo) and regresses on all demo variables
-model_data <- dat
 
-weights <- NULL
+get_glm <- function(model_data = dat, weights = NULL) {
 
-get_glm <- function(model_data = dat, weights = FALSE) {
-
+  result_list <- list()
   # remove NAS
   model_data <- as.data.frame(model_data[complete.cases(model_data),])
   
+  # get weight vector
+  weight_index <- grepl('demo_osduhs_pop_weight', colnames(model_data))
+  weight_vector <-model_data[, weight_index]
+  
+  if(!is.null(weights)) {
+    weights <- weight_vector
+  }
+  # remove weight from data 
+  model_data <- model_data[, !grepl('demo_osduhs_pop_weight', colnames(model_data))]
+  
+  # for the time being remove any factors that have more than 4 levels (ill clean them later, just rushed to      get this to xing)
+  # index out weights to keep it - sloppy code, will change
+  model_data <- model_data[, apply(model_data, 2, function(x) length(unique(x)) < 5)]
   # get feature matrix 
-  feat_data <- dat[, grepl('^hw', colnames(dat))]
-  outcome_data <- dat[, !grepl('^hw', colnames(dat))]
+  outcome_data <- model_data[, grepl('^hw', colnames(model_data))]
+  demo_data <- model_data[, !grepl('^hw', colnames(model_data))]
   
   # loop through outcome_dat and bind each outcome variable with feature dat
-  for(i in 1:colnames(outcome_data)){
+  for(i in 1:ncol(outcome_data)){
     # remove variables that cannot be modeled
-    y_outcome <- model_data[,i]
+    y_outcome <- outcome_data[,i]
+    y_outcome_name <- names(outcome_data)[i]
+    temp_mod_data <- as.data.frame(cbind(y_outcome = y_outcome, demo_data))
     # loop though colnames (without demo) and estimate logit
-    logit_mod <- glm(y_outcome~. , family = 'binomial', weights = weights, data = model_data)
+    logit_mod <- glm(y_outcome~. , family = 'binomial', weights = weights, data = temp_mod_data)
     model_result <- cbind(tidy(logit_mod), odds_ratio = tidy(exp(coef(logit_mod))))
     model_result$odds_ratio.names <- NULL
+    model_result$outcome_var <- y_outcome_name
+    model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
   
+    result_list[[i]] <- model_result
   }
+  
+  logit_results <- do.call(rbind, result_list)
 
+  return(logit_results)
 }
 
-function(y, x, dataset, weights){
-  f <- substitute(glm(y~x, data=dataset, weights=weights, family=binomial))
-  logLik(eval(f))
-}
+glm_results <- get_glm()
+
+write_csv(glm_results, '~/Desktop/glm_results.csv')
+
 
 ```
 
