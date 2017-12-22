@@ -128,7 +128,7 @@ source('../functions.R')
 
 # Executive summary
 
-This report contains 1920 tables from the YouthREX Ontario census data. It is ordered by sub-category.
+
 
 ```{r, results = 'asis'}
 library(DT)
@@ -145,6 +145,9 @@ ages <- sexes <- pobs <- vms <- ais <- geo_codes <- percents <- c(TRUE, FALSE)
 years <- c(2001, 2006, 2011)
 counter <- 0
 for(sc in scs){
+  counter <- counter + 1
+  titles[counter] <- paste0('\n# ', Hmisc::capitalize(gsub('_', ' ', sc)))
+  table_list[[counter]] <- NA
   for(age in ages){
     for(sex in sexes){
       for(pob in pobs){
@@ -152,11 +155,30 @@ for(sc in scs){
           for(ai in ais){
             for(geo_code in geo_codes){
               for(percent in percents){
+                trues <- c(ifelse(age, 'age', NA),
+                           ifelse(sex, 'sex', NA),
+                           ifelse(pob, 'pob', NA),
+                           ifelse(vm, 'vm', NA),
+                           ifelse(ai, 'ai', NA),
+                           ifelse(geo_code, 'geo_code', NA),
+                           ifelse(percent, 'percent', NA),
+                           ifelse(!is.null(sc), sc, NA))
+                trues <- trues[!is.na(trues)]
+                trues <- sort(unique(trues))
+                lt <- length(trues)
+                trues <- paste0(trues, collapse = ',')
+
+                if(lt <= 3 & !trues %in% already_done){
                 counter <- counter + 1
+                message(trues)
+
+                already_done <- c(already_done, trues)
+                
                 nothing <- !age & !sex & !pob & !vm & !ai & !geo_code
                 title <- paste0('Raw ', gsub('_', ' ', sc),
                                 ' data',
                                 ifelse(nothing, '', ' by '),
+                                ifelse(age, 'age, ', ''),
                                 ifelse(sex, 'sex, ', ''),
                                 ifelse(pob, 'place of birth, ', ''),
                                 ifelse(vm, 'visible minority status, ', ''),
@@ -167,9 +189,9 @@ for(sc in scs){
                 }
                 title <- paste0(title,
                                 ifelse(percent, ' (%)', ''))
-                titles[counter] <- title
+                titles[counter] <- paste0('\n## ', title)
                 table_list[[counter]] <-
-                  prettify(censify(age = age,
+                  prettify_scroll(censify(age = age,
                           sex = sex,
                           pob = pob,
                           vm = vm,
@@ -178,7 +200,14 @@ for(sc in scs){
                           years = c(2001, 2006, 2011),
                           sc = sc,
                           percent = percent),
-                          download_options = TRUE)
+                          download_options = TRUE,
+                          no_scroll = FALSE,
+                          nrows = 20,
+                          scroll_x = TRUE)
+                }
+
+                
+                
                 # message(counter)
               }
             }
@@ -190,14 +219,15 @@ for(sc in scs){
 }
 ```
 
+This report contains `r counter - length(scs)` tables from the YouthREX Ontario census data. 
 ```{r}
-chunks <- paste0('\n## ',
-                 titles, 
-                 "\n\n```{r}\n", 
-                 paste0('table_list[[',
-                        1:length(table_list),
-                        ']]'), 
-                 "\n```\n\n")
+headers <- unlist(lapply(table_list, function(x){length(x)})) == 1
+chunks <- paste0(titles,
+                 "\n\n", 
+                 paste0(ifelse(headers, '', '```{r}\ntable_list[['),
+                        ifelse(headers, '', 1:length(table_list)),
+                        ifelse(headers, '', ']]\n```')), 
+                 "\n\n")
 
 # Write our order / child-calls to a doc
 file_connection <- file('children.Rmd')
