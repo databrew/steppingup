@@ -168,7 +168,7 @@ for(sc in scs){
                 lt <- length(trues)
                 trues <- paste0(trues, collapse = ',')
 
-                if(lt <= 3 & !trues %in% already_done){
+                if(lt <= 4 & !trues %in% already_done){
                 counter <- counter + 1
                 message(trues)
 
