@@ -16,10 +16,9 @@ library(preprocessCore)
 
 registerDoParallel(2)
 
-
-# source
 # source('global.R')
 source('functions.R')
+
 # load global to get survey data
 load('data/processed_survey_data.RData')
 
@@ -32,20 +31,10 @@ dat$demo_osduhs_date <- get_date_osduhs(dat$demo_osduhs_date)
 # for the time being flag and remove any column with over 1000 NA entries (talk to joe about this)
 dat <- dat[, apply(dat, 2, function(x) length(which(is.na(x))) < 1000)]
 
-# questionnaire_ease, head_injury_lifetime_freq, hw_osduhs_weight, hw_osduhs_height
-# hw_osduhs_last_week_energy_drinks, hw_osduhs_last_week_hours_day_tv_video_games, 
-# hw_osduhs_last_week_phy_activity_60minutes, hw_osduhs_12_months_pain_pill_without_prescription, 
-# hw_osduhs_12_months_used_cannabis ,
-
-
 # recode dat$demo_osduhs_sex_male
 colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRUE), 'demo_osduhs_sex', colnames(dat))
 
-# recode hw_osduhs_drank_alcohol_past_12_months
-dat$hw_osduhs_drank_alcohol_past_12_months <- as.factor(ifelse(grepl('no',dat$hw_osduhs_drank_alcohol_past_12_months), 
-                                                     'no', ifelse(grepl('yes', dat$hw_osduhs_drank_alcohol_past_12_months), 'yes', dat$hw_osduhs_drank_alcohol_past_12_months)))
-
-# remove other sex variable because it is same as sex_male 
+# remove variable that won't be in model (we have extra sex variable so remove that too)
 dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <- 
   dat$demo_osduhs_grade <- dat$demo_osduhs_time_started_survey <- dat$demo_osduhs_time_ended_survey <- NULL 
 
@@ -54,9 +43,13 @@ dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <-
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
 # function that takes an outcome (any variable by demo) and regresses on all demo variables
 # default estimates a lasso
-get_glm <- function(model_data = dat, model_type, weights = NULL) {
+get_glm <- function(model_data = dat, 
+                    model_type, 
+                    weights = NULL) {
 
+  # get list to store dta
   result_list <- list()
+  
   # remove NAS
   model_data <- as.data.frame(model_data[complete.cases(model_data),])
   
@@ -70,27 +63,27 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
   # remove weight from data 
   model_data <- model_data[, !grepl('demo_osduhs_pop_weight', colnames(model_data))]
   
-  # for the time being remove any factors that have more than 4 levels (ill clean them later, just rushed to      get this to xing)
-  # index out weights to keep it - sloppy code, will change
+  # for the time being remove any factors that have more than 10 levels (ill clean them later, just rushed to      get this to xing)
   model_data <- model_data[, apply(model_data, 2, function(x) length(unique(x)) < 10)]
-  # get feature matrix 
+  
+  # get outcome and feature data (for time being anything that is demo is feature)
   outcome_data <- model_data[, !grepl('^demo', colnames(model_data))]
   demo_data <- model_data[, grepl('^demo', colnames(model_data))]
   
-
-  # verify that outcome data had two levels if factor
+  # only keep outcome variable that have two levels
   outcome_data <- outcome_data[, apply(outcome_data, 2, function(x) length(unique(x)) < 3)]
 
-  #use aic forward and backward, tune lambda and alpha with cv and the apply two full data
   # loop through outcome_dat and bind each outcome variable with feature dat
   for(i in 1:ncol(outcome_data)){
-    # remove variables that cannot be modeled
+
+    # get outcome variable and the name (to store later)
     y_outcome <- outcome_data[,i]
     y_outcome_name <- names(outcome_data)[i]
     
-    # get target class 
+    # get target class (always second in alphabetical order so you can store this as well)
     target_class <- sort(unique(y_outcome))[2]
 
+    # set the alpha parameter based on model type
     if(model_type == 'lasso') {
       alpha_val <- 1
     } 
@@ -98,6 +91,7 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
       alpha_val <- 0
     }
     
+    # do ridge or lasso
     if(grepl('lasso|ridge', model_type)){
       
       if(!is.null(weights)) {
@@ -105,43 +99,29 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
       } else {
         weights <- rep.int(1, nrow(demo_data))
       }
-      
-      non_zero_coeff = 0
-      loop_count = 0
-      while (non_zero_coeff < 1) { 
-        cv_model = cv.glmnet(model.matrix(~.,demo_data), 
-                          y_outcome,
-                          alpha = alpha_val, 
-                          family = 'binomial',
-                          weights = weights,
-                          parallel = TRUE)
     
-        lambda_index = which(cv_model$lambda == cv_model$lambda.min) 
+    # runs model with 5 fold cv and we keep the lambda with minimum cv error
+    cv_model = cv.glmnet(model.matrix(~.,demo_data), 
+                         nfolds = 5,
+                         y_outcome,
+                         alpha = alpha_val, 
+                         family = 'binomial',
+                         weights = weights,
+                         parallel = TRUE)
 
-        # # number of non zero coefficients at that lambda    
-        non_zero_coeff = cv_model$nzero[lambda_index] 
-        
-        # number of non zero coefficients at that lambda    
-        loop_count = loop_count + 1
-        # set seed for next loop iteration
-        as.numeric(Sys.time())-> t 
-        set.seed((t - floor(t)) * 1e8 -> seed) 
-        if (loop_count > 10) {
-          print("diverged")
-          lambda_index = 50 # if it loops more than 5 times, then model did not converge
-          break
-        }
-      } 
-  
-  
-      model_result <- data.frame(outcome_name = y_outcome_name, target_class = target_class, coef.name = dimnames(coef(cv_model))[[1]], coef.value = matrix(exp(coef(cv_model, s = "lambda.min"))))
+    lambda_index = which(cv_model$lambda == cv_model$lambda.min) 
+
+    # creat result table with odds ratios tha correspond to the best lamnd (minimum)
+    model_result <- data.frame(outcome_name = y_outcome_name, target_class = target_class, coef.name = dimnames(coef(cv_model))[[1]], coef.value = matrix(exp(coef(cv_model, s = "lambda.min"))))
   
     } else {
+      
+      # do normal logit with no regularization
       temp_mod_data <- as.data.frame(cbind(y_outcome = y_outcome, demo_data))
       
       # loop though colnames (without demo) and estimate logit
-      logit_mod <- glm(y_outcome~. , family = 'binomial', weights = weights, data = temp_mod_data)
-      model_result <- cbind(tidy(logit_mod), odds_ratio = tidy(exp(coef(logit_mod))), target_class = target_class)
+      model_result <- glm(y_outcome~. , family = 'binomial', weights = weights, data = temp_mod_data)
+      model_result <- cbind(tidy(model_result), odds_ratio = exp(model_result$coefficients), target_class = target_class)
       model_result$odds_ratio.names <- NULL
       model_result$outcome_var <- y_outcome_name
       model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
@@ -149,7 +129,7 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
     }
     
    result_list[[i]] <- model_result
-    print(i)
+   print(i)
   }
   
   logit_results <- do.call(rbind, result_list)
@@ -158,13 +138,11 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
 }
 
 lasso_results <- get_glm(model_data = dat, model_type = 'lasso', weights = NULL)
+write_csv(lasso_results, '~/Desktop/lasso_results.csv')
 ridge_results <- get_glm(model_data = dat, model_type = 'ridge', weights = NULL)
+write_csv(ridge_results, '~/Desktop/ridge_results.csv')
 logit_results <- get_glm(model_data = dat, model_type = 'no_reularization', weights = NULL)
-
-
-
-write_csv(glm_results, '~/Desktop/glm_results.csv')
-write_csv(glm_net_results, '~/Desktop/glm_net_results.csv')
+write_csv(logit_results, '~/Desktop/logit_results.csv')
 
 
 ```
