@@ -117,8 +117,7 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
                           parallel = TRUE)
     
         lambda_index = which(cv_model$lambda == cv_model$lambda.min) 
-        lambda_min <- cv_model$lambda_min
-    
+
         # # number of non zero coefficients at that lambda    
         non_zero_coeff = cv_model$nzero[lambda_index] 
         
@@ -150,7 +149,7 @@ get_glm <- function(model_data = dat, model_type, weights = NULL) {
     }
     
    result_list[[i]] <- model_result
-    
+    print(i)
   }
   
   logit_results <- do.call(rbind, result_list)
