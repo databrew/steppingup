@@ -66,10 +66,10 @@ get_glm <- function(model_data = dat, weights = NULL) {
   
   # for the time being remove any factors that have more than 4 levels (ill clean them later, just rushed to      get this to xing)
   # index out weights to keep it - sloppy code, will change
-  model_data <- model_data[, apply(model_data, 2, function(x) length(unique(x)) < 5)]
+  model_data <- model_data[, apply(model_data, 2, function(x) length(unique(x)) < 10)]
   # get feature matrix 
-  outcome_data <- model_data[, grepl('^hw', colnames(model_data))]
-  demo_data <- model_data[, !grepl('^hw', colnames(model_data))]
+  outcome_data <- model_data[, !grepl('^demo', colnames(model_data))]
+  demo_data <- model_data[, grepl('^demo', colnames(model_data))]
   
   # loop through outcome_dat and bind each outcome variable with feature dat
   for(i in 1:ncol(outcome_data)){
@@ -85,6 +85,7 @@ get_glm <- function(model_data = dat, weights = NULL) {
     model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
   
     result_list[[i]] <- model_result
+    
   }
   
   logit_results <- do.call(rbind, result_list)
