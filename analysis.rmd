@@ -71,6 +71,9 @@ get_glm <- function(model_data = dat, weights = NULL) {
   outcome_data <- model_data[, !grepl('^demo', colnames(model_data))]
   demo_data <- model_data[, grepl('^demo', colnames(model_data))]
   
+  # verify that outcome data had two levels if factor
+  outcome_datat <- outcome_data[apply(outcome_data, 2, function(x) length(unique(x)) < 3),]
+  
   # loop through outcome_dat and bind each outcome variable with feature dat
   for(i in 1:ncol(outcome_data)){
     # remove variables that cannot be modeled
