@@ -36,7 +36,7 @@ colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRU
 
 # remove variable that won't be in model (we have extra sex variable so remove that too)
 dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <- 
-  dat$demo_osduhs_grade <- dat$demo_osduhs_time_started_survey <- dat$demo_osduhs_time_ended_survey <- NULL 
+  dat$demo_osduhs_time_started_survey <- dat$demo_osduhs_time_ended_survey <- NULL 
 
 ```
 
@@ -149,9 +149,8 @@ write_csv(logit_results, '~/Desktop/logit_results.csv')
 
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
-# function that takes an column and groups by to get sums and percentages 
-get_variable_groups <- function(column_name) {
-  
-}
+# analysis of 4 outcome sof interest 
+# cigs, binge, cannabis, opiods. 
+# by race, parents, residence, questionaire, sex, language
 
 ```
