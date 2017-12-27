@@ -35,35 +35,34 @@ dat <- dat[, apply(dat, 2, function(x) length(which(is.na(x))) < 1000)]
 colnames(dat) <- ifelse(grepl('demo_osduhs_sex_male', colnames(dat), fixed = TRUE), 'demo_osduhs_sex', colnames(dat))
 
 # recode body weight variable 
-get_body_weight_osduhs <- function(dat = dat){
-  temp <- unlist(lapply(strsplit(as.character(dat$hw_osduhs_weight), 
-                          '/', 
-                          fixed = TRUE), function(x){
-                            x[1]
-                          }))
-  unique_pounds <- as.character(unique(sort(temp)))
+get_body_weight_osduhs <- function(temp_dat){
+  # temp <- unlist(lapply(strsplit(as.character(dat$hw_osduhs_weight), 
+  #                         '/', 
+  #                         fixed = TRUE), function(x){
+  #                           x[1]
+  #                         }))
+  unique_pounds <- as.character(unique(sort(temp_dat$hw_osduhs_weight)))
   
   temp <- as.data.frame(cbind(pounds = unique_pounds, 
                                 sequence = seq(1, length(unique_pounds), 1)))
-  temp$sequence <- as.numeric(temp$sequence)
+  temp$sequence <- as.numeric(sort(temp$sequence))
   
   # split into 5 categories using sequence 
-  temp$new_weight <- ifelse(temp$sequence > 0 & temp$sequence <=6, '80_105',
-                            ifelse(temp$sequence > 7 & temp$sequence <=12, '106_135', 
-                                   ifelse(temp$sequence > 13 & temp$sequence <= 18, '136_165',
-                                          ifelse(temp$sequence > 19 & temp$sequence <=24, '166_195',
-                                                 ifelse(temp$sequence > 25 & temp$sequence <= 30, '196_225',
-                                                        ifelse(temp$sequence > 31 & temp$sequence <=36, '226_255', '255_up'))))))
+  temp$demo_osduhs_new_weight <- ifelse(temp$sequence > 0 & temp$sequence <=6, '80_105',
+                            ifelse(temp$sequence > 6 & temp$sequence <=12, '106_135', 
+                                   ifelse(temp$sequence > 12 & temp$sequence <= 18, '136_165',
+                                          ifelse(temp$sequence > 18 & temp$sequence <=24, '166_195',
+                                                 ifelse(temp$sequence > 24 & temp$sequence <= 30, '196_225',
+                                                        ifelse(temp$sequence > 30 & temp$sequence <=36, '226_255', '255_up'))))))
   
   temp$sequence <- NULL
+  temp_dat <- left_join(temp_dat, temp, by = c('hw_osduhs_weight' = 'pounds'))
+  temp_dat$hw_osduhs_weight <- NULL
+  return(temp_dat)
   
-  dat1 <- left_join(dat, temp, by = c('hw_osduhs_weigth' = 'pounds'))
-  
-  # l
-                                                               
 }
-sort(unique(dat$hw_osduhs_weight))
-sort(unique(temp))
+
+dat <- get_body_weight_osduhs(temp_dat = dat)
 
 # remove variable that won't be in model (we have extra sex variable so remove that too)
 dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <- 
