@@ -68,6 +68,14 @@ dat <- get_body_weight_osduhs(temp_dat = dat)
 dat$demo_osduhs_sex_female <- dat$demo_osduhs_ids <- dat$hw_osduhs_class_ids <- 
   dat$demo_osduhs_time_started_survey <- dat$demo_osduhs_time_ended_survey <- NULL 
 
+# get rid of 6th graders
+dat <- dat %>% filter(demo_osduhs_grade != 'grade 6')
+
+# relevel factors for interpretability
+dat$demo_osduhs_grade <- relevel(dat$demo_osduhs_grade, ref = 'grade 7')
+dat$demo_osduhs_new_weight <- relevel(as.factor(dat$demo_osduhs_new_weight), ref = '80_105')
+
+
 ```
 
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
@@ -167,7 +175,16 @@ get_glm <- function(model_data = dat,
   return(logit_results)
 }
 
-lasso_results <- get_glm(model_data = dat, model_type = 'lasso', weights = NULL)
+# # get all variable levels for xing so she can interpret 
+# temp_demo <- dat[, grepl('^demo', colnames(dat))]
+# temp_demo <- temp_demo[, apply(temp_demo, 2, function(x) length(unique(x)) < 10)]
+# temp_demo <- apply(temp_demo, 2, function(x) unique(x))
+# temp_demo <- as.data.frame(do.call(rbind, temp_demo))
+# temp_demo$var <- rownames(temp_demo)
+# write_csv(temp_demo, '~/Desktop/temp_demo.csv')
+# 
+
+slasso_results <- get_glm(model_data = dat, model_type = 'lasso', weights = NULL)
 write_csv(lasso_results, '~/Desktop/lasso_results.csv')
 ridge_results <- get_glm(model_data = dat, model_type = 'ridge', weights = NULL)
 write_csv(ridge_results, '~/Desktop/ridge_results.csv')
