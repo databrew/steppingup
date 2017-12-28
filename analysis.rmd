@@ -175,14 +175,14 @@ get_glm <- function(model_data = dat,
   return(logit_results)
 }
 
-# # get all variable levels for xing so she can interpret 
-# temp_demo <- dat[, grepl('^demo', colnames(dat))]
-# temp_demo <- temp_demo[, apply(temp_demo, 2, function(x) length(unique(x)) < 10)]
-# temp_demo <- apply(temp_demo, 2, function(x) unique(x))
-# temp_demo <- as.data.frame(do.call(rbind, temp_demo))
-# temp_demo$var <- rownames(temp_demo)
-# write_csv(temp_demo, '~/Desktop/temp_demo.csv')
-# 
+# get all variable levels for xing so she can interpret
+temp_demo <- dat[, grepl('^demo', colnames(dat))]
+temp_demo <- temp_demo[, apply(temp_demo, 2, function(x) length(unique(x)) < 15)]
+temp_demo <- apply(temp_demo, 2, function(x) unique(x))
+temp_demo <- as.data.frame(do.call(rbind, temp_demo))
+temp_demo$var <- rownames(temp_demo)
+write_csv(temp_demo, '~/Desktop/temp_demo.csv')
+
 
 slasso_results <- get_glm(model_data = dat, model_type = 'lasso', weights = NULL)
 write_csv(lasso_results, '~/Desktop/lasso_results.csv')
