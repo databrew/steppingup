@@ -44,9 +44,9 @@ ui <- dashboardPage(skin = 'blue',
                                                 badgeLabel = "placeholder",
                                                 badgeColor = "green"))),
                     dashboardBody(
-                      # tags$head(
-                      #   tags$link(rel = "stylesheet", type = "text/css", href = "assets/css/main.css")
-                      # ),
+                      tags$head(
+                        tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
+                      ),
                       tabItems(
                         tabItem(tabName = 'welcome',
                                 jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
