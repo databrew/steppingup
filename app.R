@@ -410,6 +410,21 @@ server <- function(input, output) {
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Get the label names of our variables
+    if(!is.null(v1)){
+      v1_label <- survey_dictionary %>% filter(new_variable == v1) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v1_label <- ''
+    }
+    if(!is.null(v2)){
+      v2_label <- survey_dictionary %>% filter(new_variable == v2) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v2_label <- ''
+    }
+    
+    
+    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
@@ -435,14 +450,17 @@ server <- function(input, output) {
             g <- ggplot(data = df,
                         aes(x = v1,
                             y = v2)) +
-              geom_point()
+              geom_point() +
+              labs(x = v1_label,
+                   y = v2_label)
           }
           if(type_1_numeric & !type_2_numeric){
             g <- ggplot(data = df,
                         aes(x = v1,
                             group = v2,
                             fill = v2)) +
-              geom_density(alpha = 0.3)
+              geom_density(alpha = 0.3) +
+              labs(x = v1_label)
           }
           if(!type_1_numeric & type_2_numeric){
             g <- ggplot(data = df,
@@ -450,20 +468,25 @@ server <- function(input, output) {
                             y = v2,
                             group = v1)) +
               geom_jitter(alpha = 0.3) +
-              geom_violin()
+              geom_violin() +
+              labs(x = v1_label,
+                   y = v2_label)
           }
+          
           if(!type_1_numeric & !type_2_numeric){
+            cols <- colorRampPalette(brewer.pal(9, 'Spectral'))(length(unique(df$v2)))
             g <- ggplot(data = df,
                         aes(x = v1,
                             group = v2,
                             fill = v2)) +
-              geom_bar(position = 'dodge') 
+              geom_bar(position = 'dodge') +
+              labs(x = v2_label) +
+              scale_fill_manual(name = v1_label,
+                                values = cols) 
           }
           g <- g + theme_databrew() +
-            labs(title = v1,
-                 subtitle = v2,
-                 x = '',
-                 y = '')
+            labs(title = v1_label,
+                 subtitle = v2_label) 
           
         } else {
           df <- data.frame(v1 = df)
@@ -473,19 +496,21 @@ server <- function(input, output) {
             g <- ggplot(data = df,
                         aes(x = v1)) +
               geom_density(fill = 'darkorange',
-                           alpha = 0.6)
+                           alpha = 0.6) +
+              labs(x = v1_label)
           } else {
             g <- ggplot(data = df,
                         aes(x = v1)) +
               geom_bar(fill = 'darkorange',
-                       alpha = 0.6) 
+                       alpha = 0.6) +
+              labs(x = v1_label)
           }
           g <- g +
             theme_databrew() +
-            labs(title = theme_choices_labels(),
-                 x = '',
-                 y = '')
+            labs(title = v1_label)
         }
+        g <- g +
+          theme(axis.text.x = element_text(angle = 90))
         return(g)
         
       }
@@ -500,6 +525,19 @@ server <- function(input, output) {
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Get the label names of our variables
+    if(!is.null(v1)){
+      v1_label <- survey_dictionary %>% filter(new_variable == v1) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v1_label <- ''
+    }
+    if(!is.null(v2)){
+      v2_label <- survey_dictionary %>% filter(new_variable == v2) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v2_label <- ''
+    }
+    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
@@ -547,8 +585,8 @@ server <- function(input, output) {
                         observations = length(v2),
                         NAs = length(which(is.na(v2))))
             out <- bind_rows(
-              cbind(data.frame(variable = v1), a),
-              cbind(data.frame(variable = v2), b)
+              cbind(data.frame(variable = v1_label), a),
+              cbind(data.frame(variable = v2_label), b)
             )
 
           }
@@ -561,7 +599,7 @@ server <- function(input, output) {
                         IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
                         observations = length(v1),
                         NAs = length(which(is.na(v1))))
-            names(out)[1] <- v2
+            names(out)[1] <- v2_label
           }
           if(!type_1_numeric & type_2_numeric){
             out <- df %>%
@@ -572,12 +610,12 @@ server <- function(input, output) {
                         IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
                         observations = length(v2),
                         NAs = length(which(is.na(v2))))
-            names(out)[1] <- v1
+            names(out)[1] <- v1_label
           }
           if(!type_1_numeric & !type_2_numeric){
             # Both are categorical
             out <- broom::tidy(table(df$v1, df$v2))
-            names(out)[1:2] <- c(v1, v2)
+            names(out)[1:2] <- c(v1_label, v2_label)
           }
         } else {
           df <- data.frame(v1 = df)
@@ -597,6 +635,7 @@ server <- function(input, output) {
               summarise(observations = n()) %>%
               ungroup %>%
               mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            names(out)[1] <- v1_label
           }
         }
         return(prettify(out, download_options = TRUE))
