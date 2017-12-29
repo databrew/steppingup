@@ -532,31 +532,74 @@ server <- function(input, output) {
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric & type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            a <- df %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
+            b <- df %>%
+              summarise(average = mean(v2, na.rm = TRUE),
+                        maximum = max(v2, na.rm = TRUE),
+                        minimum = min(v2, na.rm = TRUE),
+                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v2),
+                        NAs = length(which(is.na(v2))))
+            out <- bind_rows(
+              cbind(data.frame(variable = v1), a),
+              cbind(data.frame(variable = v2), b)
+            )
+
           }
           if(type_1_numeric & !type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            out <- df %>%
+              group_by(v2) %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
+            names(out)[1] <- v2
           }
           if(!type_1_numeric & type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            out <- df %>%
+              group_by(v1) %>%
+              summarise(average = mean(v2, na.rm = TRUE),
+                        maximum = max(v2, na.rm = TRUE),
+                        minimum = min(v2, na.rm = TRUE),
+                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v2),
+                        NAs = length(which(is.na(v2))))
+            names(out)[1] <- v1
           }
           if(!type_1_numeric & !type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            # Both are categorical
+            out <- broom::tidy(table(df$v1, df$v2))
+            names(out)[1:2] <- c(v1, v2)
           }
-          names(out) <- c(v1, v2)
-          
         } else {
           df <- data.frame(v1 = df)
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
-            out <- data.frame(z = 1)
+            out <- df %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
           } else {
-            out <- data.frame(z = 1)
+            out <- df %>%
+              group_by(v1) %>%
+              summarise(observations = n()) %>%
+              ungroup %>%
+              mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
           }
-          names(out) <- v1
         }
-        return(out)
+        return(prettify(out, download_options = TRUE))
       }
     } else{
       NULL
