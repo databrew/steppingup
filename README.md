@@ -1,4 +1,4 @@
-# steppingup
+# Developer's guide: Youth Rex / Stepping Up
 
 Youth Compass Stepping Up Web Application
 
@@ -33,7 +33,7 @@ For a demonstration of the application's use, see [https://www.youtube.com/watch
 
 ### Task 1: Get data
 
-Download this entire folder from [https://drive.google.com/drive/folders/1xjJVvybmhH6RUk3Ic-6fSCEuCkxmqJH9](https://drive.google.com/drive/folders/1xjJVvybmhH6RUk3Ic-6fSCEuCkxmqJH9) and save it to your data folder so it looks like this: "data/census_data/(put the 8 .`csv`s here)"
+Download this entire folder from [https://drive.google.com/drive/folders/1xjJVvybmhH6RUk3Ic-6fSCEuCkxmqJH9](https://drive.google.com/drive/folders/1xjJVvybmhH6RUk3Ic-6fSCEuCkxmqJH9) and save it to your data folder so it looks like this: "data/census_data/(put the 8 .`csv`s here)" Note, this is a private folder. Those who are authorized to access these data and have not yet received access should send a request email to ben@databrew.cc
 
 ### Task 2: Run global.R, save data (optional)
 
