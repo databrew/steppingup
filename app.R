@@ -166,10 +166,12 @@ ui <- dashboardPage(skin = 'blue',
                                                 uiOutput('theme_var')),
                                          column(6,
                                                 uiOutput('theme_var_2'))),
-                                fluidRow(column(12,
+                                fluidRow(column(6,
                                                 checkboxInput('want_another_var',
                                                               'Compare with a second variable?',
-                                                              value = FALSE))),
+                                                              value = FALSE)),
+                                         column(6,
+                                                helpText(textOutput('compare_text')))),
                                 # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
                                   tabPanel('Table',
@@ -335,6 +337,15 @@ server <- function(input, output) {
       return(NULL)
     }
   })
+  
+  output$compare_text <-
+    renderText({
+      if(input$want_another_var){
+        'Note that variables can only be compared from within the same dataset. So, the list of comparison variables (to the right) depends on the exploratory variable chosen (on the left).'
+      } else {
+        NULL
+      }
+    })
   
   # reactive dataset based on the theme_data_name
   theme_data <- reactive({
