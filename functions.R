@@ -27,8 +27,8 @@ get_survey_data <- function() {
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   # create list to store results
   result_list <- list()
+  
   # loop through each folder and read in all data in that folder (either 1 or 3)
-
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
     temp_folder <- survey_folders[i]
@@ -49,7 +49,7 @@ get_survey_data <- function() {
                               trim_values = F,
                               use.missings = T)
         
-        if(grepl('gss|piaac|cfcs|sduhs', temp_data)) {
+        if(grepl('gss|piaac|cfcs', temp_data)) {
           get_year = T
         } else {
           get_year = F
@@ -59,6 +59,43 @@ get_survey_data <- function() {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
+
+        # remove age groups that are above 29 
+        if(grepl('gss_2010_1|gss_2012_1', temp_data)) {
+          
+          temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
+                                      temp_sub$age_group_of_the_respondent_groups_of_5),]
+          
+        } else if(grepl('gss_2010_2', temp_data)) {
+          temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
+                                      temp_sub$age_group_of_the_respondent),]
+          
+        } else if(grepl('gss_2011', temp_data)) {
+          # note that age here should be numeric and is not grouped. 
+          # also the age at second interview seems to be corrupted, so will only use first one.
+          temp_sub$rs_age_at_time_of_survey_interview_1 <- 
+            as.numeric(as.character(temp_sub$rs_age_at_time_of_survey_interview_1))
+          # remove any over 29 - we can group these later
+          temp_sub <- temp_sub[temp_sub$rs_age_at_time_of_survey_interview_1 < 30,]
+          
+        } else if(grepl('piaac', temp_data)) {
+          temp_sub <- temp_sub[grepl('24 or less|25-34', 
+                                      temp_sub$age_in_10_year_bands_derived),]
+          
+        } else if(grepl('gss_2013|gss_2014', temp_data)) {
+          
+          temp_sub <- temp_sub[grepl('15 to 24 years|25 to 34 years', 
+                                      temp_sub$age_group_of_respondent_groups_of_10),]
+
+        } else if (grepl('cfcs_1', temp_data)) {
+          temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
+                                      temp_sub$age_of_respondent_grouped),]
+        } else if (grepl('eics_1', temp_data)) {
+          temp_sub <- temp_sub[!grepl('15-24 years', 
+                                      temp_sub$age_of_respondent_groups),]
+        } 
+        
+        
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
