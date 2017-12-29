@@ -37,12 +37,7 @@ ui <- dashboardPage(skin = 'blue',
                                                 icon = icon("suitcase")),
                                        menuItem("About",
                                                 icon = icon('folder-open'),
-                                                tabName = "about"),
-                                       menuItem("Widgets",
-                                                icon = icon("th"),
-                                                tabName = "widgets",
-                                                badgeLabel = "placeholder",
-                                                badgeColor = "green"))),
+                                                tabName = "about"))),
                     dashboardBody(
                       tags$head(
                         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -141,13 +136,13 @@ ui <- dashboardPage(skin = 'blue',
                                            ))),
                                   tabPanel('Map',
                                            textOutput('map_text'),
-                                          
+                                           
                                            h3(textOutput('map_title')),
                                            leafletOutput('the_map')),
                                   tabPanel('Plot', 
                                            checkboxInput('show_labels',
-                                                        'Show values on charts?',
-                                                        TRUE),
+                                                         'Show values on charts?',
+                                                         TRUE),
                                            plotOutput('bar_plot')))),
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
@@ -189,108 +184,21 @@ ui <- dashboardPage(skin = 'blue',
                                 p('Click below to download the entire census dataset (processed, formatted, and filtered by Databrew). Warning: This file is nearly 30MB large; depending on your internet connection speed, this download can be slow.'),
                                 downloadButton('downloadData', 'Download'),
                                 h3('Survey data'),
-                                p('Click below to download the entire survey dataset (processed, formatted, and filtered by Databrew). This is just a placeholder - data not yet available for download.'),
+                                p('This application uses many different surveys. Select a survey below, and then click download to get entire survey dataset (processed, formatted, and filtered by Databrew) in raw form.'),
+                                fluidRow(column(12,
+                                                selectInput('survey_download',
+                                                            'Choose a survey dataset to download',
+                                                            choices = survey_download_choices))),
+
                                 downloadButton('downloadSurvey', 'Download'),
                                 br()),
                         tabItem(tabName = "about",
                                 h2("About"),
-                                h4('A collaboration with www.databrew.cc')),
-                        tabItem(tabName = "widgets",
-                                h2("Widgets tab content"),
-                                # infoBoxes with fill=FALSE
-                                fluidRow(
-                                  # A static infoBox
-                                  infoBox("New Orders", 10 * 2, icon = icon("credit-card")),
-                                  # Dynamic infoBoxes
-                                  infoBoxOutput("progressBox"),
-                                  infoBoxOutput("approvalBox")
-                                ),
-                                # infoBoxes with fill=TRUE
-                                fluidRow(
-                                  infoBox("New Orders", 10 * 2, icon = icon("credit-card"), fill = TRUE),
-                                  infoBoxOutput("progressBox2"),
-                                  infoBoxOutput("approvalBox2")
-                                ),
-                                
-                                fluidRow(
-                                  # Clicking this will increment the progress amount
-                                  box(width = 4, actionButton("count", "Increment progress"))
-                                ),
-                                fluidRow(
-                                  box(title = "Box title", "Box content"),
-                                  box(status = "warning", "Box content")
-                                ),
-                                
-                                fluidRow(
-                                  box(
-                                    title = "Title 1", width = 4, solidHeader = TRUE, status = "primary",
-                                    "Box content"
-                                  ),
-                                  box(
-                                    title = "Title 2", width = 4, solidHeader = TRUE,
-                                    "Box content"
-                                  ),
-                                  box(
-                                    title = "Title 1", width = 4, solidHeader = TRUE, status = "warning",
-                                    "Box content"
-                                  )
-                                ),
-                                
-                                fluidRow(
-                                  box(
-                                    width = 4, background = "black",
-                                    "A box with a solid black background"
-                                  ),
-                                  box(
-                                    title = "Title 5", width = 4, background = "light-blue",
-                                    "A box with a solid light-blue background"
-                                  ),
-                                  box(
-                                    title = "Title 6",width = 4, background = "maroon",
-                                    "A box with a solid maroon background"
-                                  )
-                                ),
-                                
-                                fluidRow(
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 1", width = NULL, solidHeader = TRUE, status = "primary",
-                                           "Box content"
-                                         ),
-                                         box(
-                                           width = NULL, background = "black",
-                                           "A box with a solid black background"
-                                         )
-                                  ),
-                                  
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
-                                           "Box content"
-                                         ),
-                                         box(
-                                           title = "Title 5", width = NULL, background = "light-blue",
-                                           "A box with a solid light-blue background"
-                                         )
-                                  ),
-                                  
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 2", width = NULL, solidHeader = TRUE,
-                                           "Box content"
-                                         ),
-                                         box(
-                                           title = "Title 6", width = NULL, background = "maroon",
-                                           "A box with a solid maroon background"
-                                         )
-                                  )
-                                )
-                                
-                        ))
-                      
-                      
-                    )
-)
+                                h4('A collaboration with www.databrew.cc'))
+                        
+                      )))
+                    
+
 
 
 # Define server 
@@ -599,7 +507,7 @@ server <- function(input, output) {
               cbind(data.frame(variable = v1_label), a),
               cbind(data.frame(variable = v2_label), b)
             )
-
+            
           }
           if(type_1_numeric & !type_2_numeric){
             out <- df %>%
@@ -776,12 +684,14 @@ server <- function(input, output) {
   })
   # Download survey
   output$downloadSurvey <- downloadHandler(
-    filename = function() { paste('databrew_survey', '.csv', sep='') },
+    filename = function() { paste(paste0('databrew_survey_',
+                                         input$survey_download,
+                                         collapse = ''), 
+                                  '.csv', sep='') },
     content = function(file) {
-      write.csv(data.frame(a = 'placeholer',
-                           b = 'no',
-                           c = 'data',
-                           d = 'yet'), file)})
+      the_data <- survey[[which(names(survey) == input$survey_download)]]
+      write.csv(the_data, file)})
+  
   # Leaflet
   output$map_text <- renderText({
     make_map <- FALSE
@@ -902,9 +812,9 @@ server <- function(input, output) {
         incProgress(1/n, detail = paste("Doing part", i))
         df$value <- val
         leaf(x = df)#,
-             # tile = input$tile,
-             # palette = input$palette,
-             # show_legend = input$show_legend)
+        # tile = input$tile,
+        # palette = input$palette,
+        # show_legend = input$show_legend)
       })
     } else {
       # NULL

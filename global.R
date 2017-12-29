@@ -584,4 +584,6 @@ survey_dictionary <-
                                gsub('_', ' ', long_name),
                                ')'))
   
-
+# Choices for survey download
+survey_download_choices <- names(survey)
+names(survey_download_choices) <- Hmisc::capitalize(gsub('_', ' ', survey_download_choices))
