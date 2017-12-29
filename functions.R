@@ -91,7 +91,6 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
                                       temp_sub$age_of_respondent_grouped),]
         } else if (grepl('eics_1', temp_data)) {
-          # WILL CHECK WITH XING ABOUT KEEPING GROUP 25-44
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } 
