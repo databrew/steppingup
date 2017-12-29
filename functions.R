@@ -59,17 +59,15 @@ get_survey_data <- function() {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-        
-        colnames(temp_sub)[grepl('age|Age', colnames(temp_sub))]
-        summary(as.factor(temp_sub$respondents_age))
+
         # remove age groups that are above 29 
         if(grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
-          temp_sub <- temp_sub[!grepl('30 to 34|35 to 39|40 to 44|45 to 49|50 to 54|55 to 59|60 to 64|65 to 69|70 to 74|75 to 79|80 years+', 
+          temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
         } else if(grepl('gss_2010_2', temp_data)) {
-          temp_sub <- temp_sub[!grepl('30 to 34|35 to 39|40 to 44|45 to 49|50 to 54|55 to 59|60 to 64|65 to 69|70 to 74|75 to 79|80 years+', 
+          temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent),]
           
         } else if(grepl('gss_2011', temp_data)) {
@@ -81,20 +79,20 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[temp_sub$rs_age_at_time_of_survey_interview_1 < 30,]
           
         } else if(grepl('piaac', temp_data)) {
-          temp_sub <- temp_sub[!grepl('35-44|45-54|55 plus|>65', 
+          temp_sub <- temp_sub[grepl('24 or less|25-34', 
                                       temp_sub$age_in_10_year_bands_derived),]
           
         } else if(grepl('gss_2013|gss_2014', temp_data)) {
           
-          temp_sub <- temp_sub[!grepl('35 to 44|45 to 54|55 to 64|65 to 74|75 years and over', 
+          temp_sub <- temp_sub[grepl('15 to 24 years|25 to 34 years', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
 
         } else if (grepl('cfcs_1', temp_data)) {
-          temp_sub <- temp_sub[!grepl('35 to 44|45 to 54|55 to 59|60 to 64|65 to 69|70 and over ', 
+          temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
                                       temp_sub$age_of_respondent_grouped),]
         } else if (grepl('eics_1', temp_data)) {
           # WILL CHECK WITH XING ABOUT KEEPING GROUP 25-44
-          temp_sub <- temp_sub[!grepl('45 years or older', 
+          temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } 
         
