@@ -88,8 +88,7 @@ get_survey_data <- function() {
           
           temp_sub <- temp_sub[!grepl('35 to 44|45 to 54|55 to 64|65 to 74|75 years and over', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
-          age_group_of_respondent_groups_of_10
-          
+
         } else if (grepl('cfcs_1', temp_data)) {
           temp_sub <- temp_sub[!grepl('35 to 44|45 to 54|55 to 59|60 to 64|65 to 69|70 and over ', 
                                       temp_sub$age_of_respondent_grouped),]
