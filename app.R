@@ -37,12 +37,7 @@ ui <- dashboardPage(skin = 'blue',
                                                 icon = icon("suitcase")),
                                        menuItem("About",
                                                 icon = icon('folder-open'),
-                                                tabName = "about"),
-                                       menuItem("Widgets",
-                                                icon = icon("th"),
-                                                tabName = "widgets",
-                                                badgeLabel = "placeholder",
-                                                badgeColor = "green"))),
+                                                tabName = "about"))),
                     dashboardBody(
                       tags$head(
                         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
@@ -141,13 +136,13 @@ ui <- dashboardPage(skin = 'blue',
                                            ))),
                                   tabPanel('Map',
                                            textOutput('map_text'),
-                                          
+                                           
                                            h3(textOutput('map_title')),
                                            leafletOutput('the_map')),
                                   tabPanel('Plot', 
                                            checkboxInput('show_labels',
-                                                        'Show values on charts?',
-                                                        TRUE),
+                                                         'Show values on charts?',
+                                                         TRUE),
                                            plotOutput('bar_plot')))),
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
@@ -166,10 +161,12 @@ ui <- dashboardPage(skin = 'blue',
                                                 uiOutput('theme_var')),
                                          column(6,
                                                 uiOutput('theme_var_2'))),
-                                fluidRow(column(12,
+                                fluidRow(column(6,
                                                 checkboxInput('want_another_var',
                                                               'Compare with a second variable?',
-                                                              value = FALSE))),
+                                                              value = FALSE)),
+                                         column(6,
+                                                helpText(textOutput('compare_text')))),
                                 # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
                                   tabPanel('Table',
@@ -187,108 +184,21 @@ ui <- dashboardPage(skin = 'blue',
                                 p('Click below to download the entire census dataset (processed, formatted, and filtered by Databrew). Warning: This file is nearly 30MB large; depending on your internet connection speed, this download can be slow.'),
                                 downloadButton('downloadData', 'Download'),
                                 h3('Survey data'),
-                                p('Click below to download the entire survey dataset (processed, formatted, and filtered by Databrew). This is just a placeholder - data not yet available for download.'),
+                                p('This application uses many different surveys. Select a survey below, and then click download to get entire survey dataset (processed, formatted, and filtered by Databrew) in raw form.'),
+                                fluidRow(column(12,
+                                                selectInput('survey_download',
+                                                            'Choose a survey dataset to download',
+                                                            choices = survey_download_choices))),
+
                                 downloadButton('downloadSurvey', 'Download'),
                                 br()),
                         tabItem(tabName = "about",
                                 h2("About"),
-                                h4('A collaboration with www.databrew.cc')),
-                        tabItem(tabName = "widgets",
-                                h2("Widgets tab content"),
-                                # infoBoxes with fill=FALSE
-                                fluidRow(
-                                  # A static infoBox
-                                  infoBox("New Orders", 10 * 2, icon = icon("credit-card")),
-                                  # Dynamic infoBoxes
-                                  infoBoxOutput("progressBox"),
-                                  infoBoxOutput("approvalBox")
-                                ),
-                                # infoBoxes with fill=TRUE
-                                fluidRow(
-                                  infoBox("New Orders", 10 * 2, icon = icon("credit-card"), fill = TRUE),
-                                  infoBoxOutput("progressBox2"),
-                                  infoBoxOutput("approvalBox2")
-                                ),
-                                
-                                fluidRow(
-                                  # Clicking this will increment the progress amount
-                                  box(width = 4, actionButton("count", "Increment progress"))
-                                ),
-                                fluidRow(
-                                  box(title = "Box title", "Box content"),
-                                  box(status = "warning", "Box content")
-                                ),
-                                
-                                fluidRow(
-                                  box(
-                                    title = "Title 1", width = 4, solidHeader = TRUE, status = "primary",
-                                    "Box content"
-                                  ),
-                                  box(
-                                    title = "Title 2", width = 4, solidHeader = TRUE,
-                                    "Box content"
-                                  ),
-                                  box(
-                                    title = "Title 1", width = 4, solidHeader = TRUE, status = "warning",
-                                    "Box content"
-                                  )
-                                ),
-                                
-                                fluidRow(
-                                  box(
-                                    width = 4, background = "black",
-                                    "A box with a solid black background"
-                                  ),
-                                  box(
-                                    title = "Title 5", width = 4, background = "light-blue",
-                                    "A box with a solid light-blue background"
-                                  ),
-                                  box(
-                                    title = "Title 6",width = 4, background = "maroon",
-                                    "A box with a solid maroon background"
-                                  )
-                                ),
-                                
-                                fluidRow(
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 1", width = NULL, solidHeader = TRUE, status = "primary",
-                                           "Box content"
-                                         ),
-                                         box(
-                                           width = NULL, background = "black",
-                                           "A box with a solid black background"
-                                         )
-                                  ),
-                                  
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 3", width = NULL, solidHeader = TRUE, status = "warning",
-                                           "Box content"
-                                         ),
-                                         box(
-                                           title = "Title 5", width = NULL, background = "light-blue",
-                                           "A box with a solid light-blue background"
-                                         )
-                                  ),
-                                  
-                                  column(width = 4,
-                                         box(
-                                           title = "Title 2", width = NULL, solidHeader = TRUE,
-                                           "Box content"
-                                         ),
-                                         box(
-                                           title = "Title 6", width = NULL, background = "maroon",
-                                           "A box with a solid maroon background"
-                                         )
-                                  )
-                                )
-                                
-                        ))
-                      
-                      
-                    )
-)
+                                h4('A collaboration with www.databrew.cc'))
+                        
+                      )))
+                    
+
 
 
 # Define server 
@@ -335,6 +245,15 @@ server <- function(input, output) {
       return(NULL)
     }
   })
+  
+  output$compare_text <-
+    renderText({
+      if(input$want_another_var){
+        'Note that variables can only be compared from within the same dataset. So, the list of comparison variables (to the right) depends on the exploratory variable chosen (on the left).'
+      } else {
+        NULL
+      }
+    })
   
   # reactive dataset based on the theme_data_name
   theme_data <- reactive({
@@ -410,6 +329,21 @@ server <- function(input, output) {
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Get the label names of our variables
+    if(!is.null(v1)){
+      v1_label <- survey_dictionary %>% filter(new_variable == v1) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v1_label <- ''
+    }
+    if(!is.null(v2)){
+      v2_label <- survey_dictionary %>% filter(new_variable == v2) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v2_label <- ''
+    }
+    
+    
+    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
@@ -435,14 +369,17 @@ server <- function(input, output) {
             g <- ggplot(data = df,
                         aes(x = v1,
                             y = v2)) +
-              geom_point()
+              geom_point() +
+              labs(x = v1_label,
+                   y = v2_label)
           }
           if(type_1_numeric & !type_2_numeric){
             g <- ggplot(data = df,
                         aes(x = v1,
                             group = v2,
                             fill = v2)) +
-              geom_density(alpha = 0.3)
+              geom_density(alpha = 0.3) +
+              labs(x = v1_label)
           }
           if(!type_1_numeric & type_2_numeric){
             g <- ggplot(data = df,
@@ -450,20 +387,25 @@ server <- function(input, output) {
                             y = v2,
                             group = v1)) +
               geom_jitter(alpha = 0.3) +
-              geom_violin()
+              geom_violin() +
+              labs(x = v1_label,
+                   y = v2_label)
           }
+          
           if(!type_1_numeric & !type_2_numeric){
+            cols <- colorRampPalette(brewer.pal(9, 'Spectral'))(length(unique(df$v2)))
             g <- ggplot(data = df,
                         aes(x = v1,
                             group = v2,
                             fill = v2)) +
-              geom_bar(position = 'dodge') 
+              geom_bar(position = 'dodge') +
+              labs(x = v2_label) +
+              scale_fill_manual(name = v1_label,
+                                values = cols) 
           }
           g <- g + theme_databrew() +
-            labs(title = v1,
-                 subtitle = v2,
-                 x = '',
-                 y = '')
+            labs(title = v1_label,
+                 subtitle = v2_label) 
           
         } else {
           df <- data.frame(v1 = df)
@@ -473,19 +415,21 @@ server <- function(input, output) {
             g <- ggplot(data = df,
                         aes(x = v1)) +
               geom_density(fill = 'darkorange',
-                           alpha = 0.6)
+                           alpha = 0.6) +
+              labs(x = v1_label)
           } else {
             g <- ggplot(data = df,
                         aes(x = v1)) +
               geom_bar(fill = 'darkorange',
-                       alpha = 0.6) 
+                       alpha = 0.6) +
+              labs(x = v1_label)
           }
           g <- g +
             theme_databrew() +
-            labs(title = theme_choices_labels(),
-                 x = '',
-                 y = '')
+            labs(title = v1_label)
         }
+        g <- g +
+          theme(axis.text.x = element_text(angle = 90))
         return(g)
         
       }
@@ -500,6 +444,19 @@ server <- function(input, output) {
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Get the label names of our variables
+    if(!is.null(v1)){
+      v1_label <- survey_dictionary %>% filter(new_variable == v1) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v1_label <- ''
+    }
+    if(!is.null(v2)){
+      v2_label <- survey_dictionary %>% filter(new_variable == v2) %>% .$display_name %>% strsplit(' (', fixed = TRUE) %>% lapply(function(x){x[1]}) %>% unlist
+    } else {
+      v2_label <- ''
+    }
+    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
@@ -532,31 +489,75 @@ server <- function(input, output) {
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric & type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            a <- df %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
+            b <- df %>%
+              summarise(average = mean(v2, na.rm = TRUE),
+                        maximum = max(v2, na.rm = TRUE),
+                        minimum = min(v2, na.rm = TRUE),
+                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v2),
+                        NAs = length(which(is.na(v2))))
+            out <- bind_rows(
+              cbind(data.frame(variable = v1_label), a),
+              cbind(data.frame(variable = v2_label), b)
+            )
+            
           }
           if(type_1_numeric & !type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            out <- df %>%
+              group_by(v2) %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
+            names(out)[1] <- v2_label
           }
           if(!type_1_numeric & type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            out <- df %>%
+              group_by(v1) %>%
+              summarise(average = mean(v2, na.rm = TRUE),
+                        maximum = max(v2, na.rm = TRUE),
+                        minimum = min(v2, na.rm = TRUE),
+                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v2),
+                        NAs = length(which(is.na(v2))))
+            names(out)[1] <- v1_label
           }
           if(!type_1_numeric & !type_2_numeric){
-            out <- data.frame(a = 1, b = 2)
+            # Both are categorical
+            out <- broom::tidy(table(df$v1, df$v2))
+            names(out)[1:2] <- c(v1_label, v2_label)
           }
-          names(out) <- c(v1, v2)
-          
         } else {
           df <- data.frame(v1 = df)
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
-            out <- data.frame(z = 1)
+            out <- df %>%
+              summarise(average = mean(v1, na.rm = TRUE),
+                        maximum = max(v1, na.rm = TRUE),
+                        minimum = min(v1, na.rm = TRUE),
+                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                        observations = length(v1),
+                        NAs = length(which(is.na(v1))))
           } else {
-            out <- data.frame(z = 1)
+            out <- df %>%
+              group_by(v1) %>%
+              summarise(observations = n()) %>%
+              ungroup %>%
+              mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            names(out)[1] <- v1_label
           }
-          names(out) <- v1
         }
-        return(out)
+        return(prettify(out, download_options = TRUE))
       }
     } else{
       NULL
@@ -683,12 +684,14 @@ server <- function(input, output) {
   })
   # Download survey
   output$downloadSurvey <- downloadHandler(
-    filename = function() { paste('databrew_survey', '.csv', sep='') },
+    filename = function() { paste(paste0('databrew_survey_',
+                                         input$survey_download,
+                                         collapse = ''), 
+                                  '.csv', sep='') },
     content = function(file) {
-      write.csv(data.frame(a = 'placeholer',
-                           b = 'no',
-                           c = 'data',
-                           d = 'yet'), file)})
+      the_data <- survey[[which(names(survey) == input$survey_download)]]
+      write.csv(the_data, file)})
+  
   # Leaflet
   output$map_text <- renderText({
     make_map <- FALSE
@@ -809,9 +812,9 @@ server <- function(input, output) {
         incProgress(1/n, detail = paste("Doing part", i))
         df$value <- val
         leaf(x = df)#,
-             # tile = input$tile,
-             # palette = input$palette,
-             # show_legend = input$show_legend)
+        # tile = input$tile,
+        # palette = input$palette,
+        # show_legend = input$show_legend)
       })
     } else {
       # NULL
