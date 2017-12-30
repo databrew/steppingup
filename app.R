@@ -167,6 +167,14 @@ ui <- dashboardPage(skin = 'blue',
                                                               value = FALSE)),
                                          column(6,
                                                 helpText(textOutput('compare_text')))),
+                                fluidRow(
+                                  column(3,
+                                         uiOutput('theme_gender')),
+                                  column(3,
+                                         uiOutput('theme_race')),
+                                  column(6,
+                                         textOutput('helper_text'))
+                                ),
                                 # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
                                   tabPanel('Table',
@@ -297,6 +305,38 @@ server <- function(input, output) {
     } else{
       return(out)
     }
+  })
+  
+  # 
+  
+  output$theme_gender <- renderUI({
+    checkboxInput('theme_gender',
+                  'Group by gender')
+  })
+  output$theme_race <- renderUI({
+    checkboxInput('theme_race',
+                  'Group by race')
+  })
+  output$helper_text <- renderText({
+    # Get the theme data name
+    x <- theme_data_name()
+    y <- theme_code()
+    full_name <- NULL
+    if(!is.null(x)){
+      # Use the dataset dictionary to convert to a fuller name
+      full_name <- dataset_dictionary %>%
+        filter(short_name == x) 
+      if(nrow(full_name) == 1){
+        full_name <- full_name$long_name
+      } else {
+        full_name <- NULL
+      }
+    } 
+    if(!is.null(full_name)){
+      
+    }
+    full_name <- paste0(x, ' ', y)
+    return(full_name)
   })
   
   output$theme_var_2 <- renderUI({
