@@ -27,7 +27,7 @@ get_survey_data <- function() {
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   # create list to store results
   result_list <- list()
-  
+ 
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -84,7 +84,7 @@ get_survey_data <- function() {
           
         } else if(grepl('gss_2013|gss_2014', temp_data)) {
           
-          temp_sub <- temp_sub[grepl('15 to 24 years|25 to 34 years', 
+          temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
 
         } else if (grepl('cfcs_1', temp_data)) {
