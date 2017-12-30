@@ -62,21 +62,22 @@ get_survey_data <- function() {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-         
+        
         colnames(temp_sub)
         unique(temp_sub$prov_35_lfsstat_6_age12__3_filter)
+        
         # remove age groups that are above 29 
-        if(grepl('gss_2010_1|gss_2012_1', temp_data)) {
+        if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
-        } else if(grepl('gss_2010_2', temp_data)) {
+        } else if (grepl('gss_2010_2', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent),]
           
-        } else if(grepl('gss_2011', temp_data)) {
+        } else if (grepl('gss_2011', temp_data)) {
           # note that age here should be numeric and is not grouped. 
           # also the age at second interview seems to be corrupted, so will only use first one.
           temp_sub$rs_age_at_time_of_survey_interview_1 <- 
@@ -84,25 +85,53 @@ get_survey_data <- function() {
           # remove any over 29 - we can group these later
           temp_sub <- temp_sub[temp_sub$rs_age_at_time_of_survey_interview_1 < 30,]
           
-        } else if(grepl('piaac', temp_data)) {
+        } else if (grepl('piaac', temp_data)) {
           temp_sub <- temp_sub[grepl('24 or less|25-34', 
                                       temp_sub$age_in_10_year_bands_derived),]
           
-        } else if(grepl('gss_2013|gss_2014', temp_data)) {
+        } else if (grepl('gss_2013|gss_2014', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
 
         } else if (grepl('cfcs_1', temp_data)) {
+          
           temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
                                       temp_sub$age_of_respondent_grouped),]
+          
         } else if (grepl('eics_1', temp_data)) {
+          
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } 
         
-        
+        # get subsetted by variables names
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
+        colnames(temp_sub)[which(grepl('.1', colnames(temp_sub), fixed = TRUE))]
+        # clean data - don't recode variable names because the current ones are linked to a data dictionary 
+        # clean by recoding factors or numerics (bare minimum right now)
+        if(grepl('lfs', temp_data)) {
+          # remove extra columns or columns with too many NAs
+          temp_sub$current_student_status_and_type_of_school.1 <- NULL
+          temp_sub$reason_for_partweek_absence <- NULL
+          # check na
+          apply(temp_sub, 2, function(x) length(which(is.na(x))))
+          # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployers_directly)
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployment_agency)
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_contacted_relatives)
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_looked_at_ads)
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_placed_or_answered_ads)
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_other_methods)
+          
+          # recode variables with too many levels if possible
+          
+          # look at all other variable levels and recode where applicable
+          summary(as.factor(temp_sub$not_currently_employed_worked_in_past))
+          i =1
+          summary(as.factor(temp_sub[,i]))
+        }
+        
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
         new_names <- left_join(new_names, var_summary)
@@ -849,3 +878,10 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
   }
 }
 
+# taking factors with one level in osduhs survey data and imputing 'NO' onto it
+relevel_factor_one_osduhs <- function(dat_var) {
+  dat_var <- as.character(dat_var)
+  dat_var[is.na(dat_var)] <- 'NO'
+  dat_var <- as.factor(dat_var)
+  return(dat_var)
+}
