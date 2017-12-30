@@ -28,6 +28,9 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
   
+  i = 1
+  j = 1
+  
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
