@@ -62,7 +62,9 @@ get_survey_data <- function() {
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-
+         
+        colnames(temp_sub)
+        unique(temp_sub$prov_35_lfsstat_6_age12__3_filter)
         # remove age groups that are above 29 
         if(grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
