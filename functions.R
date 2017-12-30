@@ -70,6 +70,7 @@ get_survey_data <- function() {
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
         } else if(grepl('gss_2010_2', temp_data)) {
+          
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent),]
           
