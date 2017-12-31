@@ -447,7 +447,7 @@ server <- function(input, output) {
         df <- df[,names(df) %in% keep_vars, drop = FALSE]
         print(head(df))
         
-        if(has_two){
+        if(has_two & ncol(df) >= 2){
           names(df)[1:2] <- c('v1', 'v2')
           type_1 <- class(df$v1)
           type_2 <- class(df$v2)
@@ -538,11 +538,39 @@ server <- function(input, output) {
   })
   
   output$theme_table <- renderDataTable({
+    
+    # Deal with grouping by gender and race
+    by_gender <- FALSE
+    by_race <- FALSE
+    demo_keepers <- c()
+    has_two <- FALSE
+    df <- NULL
+    v1 <- NULL
+    v2 <- NULL
+    
     input$tabs # just run to refresh
     df <- theme_data()
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+
+    
+    if(!is.null(df)){
+      if(!is.null(input$theme_gender)){
+        if(input$theme_gender){
+          by_gender <- TRUE
+        }
+      }
+      if(!is.null(input$theme_race)){
+        if(input$theme_race){
+          by_race <- TRUE
+        }
+      }
+    } else {
+      return(NULL)
+    }
+    
     
     # Get the label names of our variables
     if(!is.null(v1)){
@@ -561,47 +589,71 @@ server <- function(input, output) {
     if(!is.null(df)){
       if(has_two){
         keep_vars <- c(keep_vars, v2)
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]  
       }
       if(!is.data.frame(df)){
         return(NULL)
       } else {
         # All operations go here
-        v1 <- input$theme_var
-        v2 <- input$theme_var_2
-        input$tabs # just run to refresh
-        has_two <- input$want_another_var & !is.null(input$theme_var_2)
-        # Subset to only include the variables we want
-        keep_vars <- v1
-        if(has_two){
-          keep_vars <- c(keep_vars, v2)
-        }
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]
-        head(df)
         
-        if(has_two){
-          names(df) <- c('v1', 'v2')
+        # Deal with gender and race grouping
+        
+        if(by_gender){
+          keep_vars <- c(keep_vars, 'gender')
+          demo_keepers <- c(demo_keepers, 'gender')
+        }
+        if(by_race){
+          keep_vars <- c(keep_vars, 'race')
+          demo_keepers <- c(demo_keepers, 'gender')
+        }
+        
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% unique(c(demo_keepers, keep_vars)), drop = FALSE] 
+
+        if(is.null(df)){
+          return(NULL)
+        }
+        
+        if(has_two & ncol(df) >= 2){
+          names(df)[1:2] <- c('v1', 'v2')
           type_1 <- class(df$v1)
           type_2 <- class(df$v2)
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric & type_2_numeric){
-            a <- df %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
-            b <- df %>%
-              summarise(average = mean(v2, na.rm = TRUE),
-                        maximum = max(v2, na.rm = TRUE),
-                        minimum = min(v2, na.rm = TRUE),
-                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v2),
-                        NAs = length(which(is.na(v2))))
+            if(length(demo_keepers) > 0){
+              a <- df %>%
+                group_by_(demo_keepers) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+              b <- df %>%
+                group_by_(demo_keepers) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            } else {
+              a <- df %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+              b <- df %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            }
+            
             out <- bind_rows(
               cbind(data.frame(variable = v1_label), a),
               cbind(data.frame(variable = v2_label), b)
@@ -609,50 +661,102 @@ server <- function(input, output) {
             
           }
           if(type_1_numeric & !type_2_numeric){
-            out <- df %>%
-              group_by(v2) %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_('v2', demo_keepers) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            } else {
+              out <- df %>%
+                group_by(v2) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            }
             names(out)[1] <- v2_label
           }
           if(!type_1_numeric & type_2_numeric){
-            out <- df %>%
-              group_by(v1) %>%
-              summarise(average = mean(v2, na.rm = TRUE),
-                        maximum = max(v2, na.rm = TRUE),
-                        minimum = min(v2, na.rm = TRUE),
-                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v2),
-                        NAs = length(which(is.na(v2))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_('v1', demo_keepers) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            } else {
+              out <- df %>%
+                group_by(v1) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            }
             names(out)[1] <- v1_label
           }
           if(!type_1_numeric & !type_2_numeric){
             # Both are categorical
-            out <- broom::tidy(table(df$v1, df$v2))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_('v1', 'v2', demo_keepers) %>% tally
+            } else {
+              out <- df %>%
+                group_by(v1, v2) %>% tally
+            }
+            
             names(out)[1:2] <- c(v1_label, v2_label)
           }
         } else {
-          df <- data.frame(v1 = df)
+          if(!is.data.frame(df)){ # this means there is no gender / race, it's just one vector
+            df <- data.frame(v1 = df)
+          } else {
+            names(df)[1] <- 'v1'
+          }
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
-            out <- df %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_(demo_keepers) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            } else {
+              out <- df %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            }
           } else {
-            out <- df %>%
-              group_by(v1) %>%
-              summarise(observations = n()) %>%
-              ungroup %>%
-              mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_('v1', demo_keepers) %>%
+                summarise(observations = n()) %>%
+                ungroup %>%
+                mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            } else {
+              out <- df %>%
+                group_by(v1) %>%
+                summarise(observations = n()) %>%
+                ungroup %>%
+                mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            }
             names(out)[1] <- v1_label
           }
         }
