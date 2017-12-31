@@ -276,6 +276,11 @@ get_census_data <- function() {
     mutate(`Aboriginal identity` = 'Total - Population by aboriginal identity')
   old_rows <- old_rows[,ordered_columns]
   census <- bind_rows(new_rows, old_rows)
+  
+  # Remove the word "identity" from the `Aboriginal identity` column
+  census <- census %>%
+    mutate(`Aboriginal identity` = 
+             gsub(' identity', '', `Aboriginal identity`))
 
   # Change "All others" in vm to "white"
   census <- 
