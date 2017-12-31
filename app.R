@@ -79,7 +79,9 @@ ui <- dashboardPage(skin = 'blue',
                                                             choices = category_choices)),
                                          column(3, 
                                                 uiOutput("sub_category")),
-                                         column(6,
+                                         column(1,
+                                                htmlOutput('arrow')),
+                                         column(5,
                                                 uiOutput("variable"),
                                                 h4(strong(textOutput('variable_text'))))),
                                 fluidRow(column(3,
@@ -238,6 +240,14 @@ server <- function(input, output) {
     selectInput('theme_var',
                 'Choose a variable to explore',
                 choices = x)
+  })
+  
+  output$arrow <- renderText({
+    if(is.null(input$variable)){
+      HTML(as.character(icon("arrow-circle-right", "fa-4x")))
+    } else {
+      NULL
+  }
   })
   
   # reactive data set NAME based on the input$theme_var
