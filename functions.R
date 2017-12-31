@@ -589,7 +589,7 @@ censify <- function(df = census,
                     geo_code = FALSE,
                     years = 2001,
                     sc = NULL,
-                    percent = TRUE) {
+                    percent = 'Percentage') { # one of Percentage, Raw Numbers, or Both
   # category
   if(!is.null(sc)) {
     if(!sc %in% unique(dict$sub_category)) {
@@ -671,7 +671,7 @@ censify <- function(df = census,
   # }
   
   # make percentages 
-  if(percent) {
+  if(percent %in% c('Percentage', 'Both')) {
     if(is.null(sc)) {
       warning("Choose a sub category to generate percentages")
     } else {
@@ -689,9 +689,19 @@ censify <- function(df = census,
         
         df <- as.data.frame(df)
         
-        for(j in ni) {
-          df[,j] <- (df[, j]/denom)*100
+        if(percent == 'Percentage'){
+          for(j in ni) {
+            df[,j] <- (df[, j]/denom)*100
+          }
+        } else if(percent == 'Both'){
+          for(j in ni) {
+            n <- df[,j]
+            p <- (df[, j]/denom)*100
+            df[,j] <- paste0(prettyNum(n, big.mark = ','), ' (',
+                             round(p, 2), '%)')
+          }
         }
+        
         colnames(df) <- col_names
       }
     }

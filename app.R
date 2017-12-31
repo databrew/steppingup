@@ -87,8 +87,9 @@ ui <- dashboardPage(skin = 'blue',
                                 fluidRow(column(3,
                                                 radioButtons('percent',
                                                              'View as percentage or raw number',
-                                                             choices = c('Percentage' = TRUE, 
-                                                                         'Raw numbers' = FALSE))),
+                                                             choices = c('Percentage', 
+                                                                         'Raw numbers',
+                                                                         'Both'))),
                                          column(3,
                                                 checkboxGroupInput('years',
                                                                    'Year',
@@ -843,6 +844,70 @@ server <- function(input, output) {
     return(x)
   })
   
+  # Separate censified table (just for plotting) - does not use the "Both" option for %
+  censified_plot <- reactive({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    
+    if(length(choices) == 1) {
+      sc <- input$category
+    } else {
+      sc <- input$sub_category 
+    }
+    
+    # This is the only different with censified - can't handle the pasted values with % in one column
+    pp <- input$percent
+    if(pp == 'Both'){
+      pp <- 'Percentage'
+    }
+    x <- censify(df = census, dict = census_dict, 
+                 age = input$age, 
+                 sex = input$sex,
+                 pob = input$pob,
+                 vm = input$vm,
+                 ai = input$ai,
+                 geo_code = input$geography,
+                 years = input$years,
+                 sc = sc,
+                 percent = pp)
+    
+    if(input$age & !is.null(input$age_filter)) {
+      if(input$age_filter != 'All') {
+        x <- x %>% filter(`Age group` == input$age_filter)
+      }
+    }
+    
+    if(input$sex & !is.null(input$sex_filter)) {
+      if(input$sex_filter != 'All') {
+        x <- x %>% filter(Sex == input$sex_filter)
+      }
+    }
+    
+    if(input$pob & !is.null(input$pob_filter)) {
+      if(input$pob_filter != 'All') {
+        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      }
+    }
+    
+    if(input$vm & !is.null(input$vm_filter)) {
+      if(input$vm_filter != 'All') {
+        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      }
+    }
+    
+    if(input$ai & !is.null(input$ai_filter)) {
+      if(input$ai_filter != 'All') {
+        x <- x %>% filter(`Aboriginal identity` == input$ai_filter)
+      }
+    }
+    
+    if(input$geography & !is.null(input$geography_filter)) {
+      if(input$geography_filter != 'All') {
+        x <- x %>% filter(Geography == input$geography_filter)
+      }
+    }
+    return(x)
+  })
+  
   # Misc approval box
   output$approvalBox <- renderInfoBox({
     infoBox(
@@ -881,7 +946,7 @@ server <- function(input, output) {
           theme_databrew() +
           labs(title = 'You must select a variable to plot')
       } else {
-        plotter(censified(), variable = input$variable, show_labels = input$show_labels)
+        plotter(censified_plot(), variable = input$variable, show_labels = input$show_labels)
       }
     }
   })
