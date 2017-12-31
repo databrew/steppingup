@@ -93,7 +93,35 @@ get_survey_data <- function() {
         } else if (grepl('eics_1', temp_data)) {
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
-        } 
+        } else if(grepl('sduhs', temp_data)) {
+          # Need to combine all race variables into one
+          temp_sub <- temp_sub %>%
+            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
+                                 'white',
+                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'yes',
+                                        'chinese',
+                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                               'south asian',
+                                               ifelse(black_which_of_the_following_best_describes_your_background == 'yes',
+                                                      'black',
+                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'yes',
+                                                             'aboriginal',
+                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'yes',
+                                                                    'filipino',
+                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                                                           'southeast asian',
+                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                  'west asian / arab',
+                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                         'korean',
+                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                'japanese',
+                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                       'not sure', 
+                                                                                                       NA))))))))))))
+ 
+          temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
+        }
         
         
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
