@@ -277,6 +277,10 @@ get_census_data <- function() {
   old_rows <- old_rows[,ordered_columns]
   census <- bind_rows(new_rows, old_rows)
 
+  # Change "All others" in vm to "white"
+  census <- 
+    census %>%
+    mutate(`Visible minority` = ifelse(`Visible minority` == 'All others', 'White', `Visible minority`))
   return(census)
 }
 
