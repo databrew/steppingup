@@ -50,7 +50,7 @@ get_survey_data <- function() {
                               to.data.frame = T,
                               trim.factor.names = T,
                               trim_values = F,
-                              use.missings = T)
+                              use.missings = FALSE)
         
         if(grepl('gss|piaac|cfcs', temp_data)) {
           get_year = T
@@ -64,10 +64,64 @@ get_survey_data <- function() {
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
         
         colnames(temp_sub)
-        unique(temp_sub$prov_35_lfsstat_6_age12__3_filter)
         
-        # remove age groups that are above 29 
-        if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
+        # get subsetted by variables names
+        temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
+        
+        colnames(temp_sub)[which(grepl('.1', colnames(temp_sub), fixed = TRUE))]
+        
+        # check na
+        apply(temp_sub, 2, function(x) length(which(is.na(x))))
+        
+        # clean data - don't recode variable names because the current ones are linked to a data dictionary 
+        # clean by recoding factors or numerics (bare minimum right now)
+        if(grepl('lfs', temp_data)) {
+          # remove extra columns or columns with too many NAs
+          temp_sub$current_student_status_and_type_of_school.1 <- NULL
+          temp_sub$reason_for_partweek_absence <- temp_sub$survey_month <-  NULL
+          
+          # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
+          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployers_directly)
+          temp_sub$job_seeker_checked_wemployment_agency <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployment_agency)
+          temp_sub$jobseeker_contacted_relatives <- relevel_factor_one_osduhs(temp_sub$jobseeker_contacted_relatives)
+          temp_sub$jobseeker_looked_at_ads <- relevel_factor_one_osduhs(temp_sub$jobseeker_looked_at_ads)
+          temp_sub$jobseeker_placed_or_answered_ads <- relevel_factor_one_osduhs(temp_sub$jobseeker_placed_or_answered_ads)
+          temp_sub$jobseeker_other_methods <- relevel_factor_one_osduhs(temp_sub$jobseeker_other_methods)
+        
+          # filter to get ontario (should have done this earlier, but missed it)
+          temp_sub <- temp_sub %>% filter(province == 'Ontario')
+          
+          # recode variables that have sloppy coding 
+          temp_sub$not_currently_employed_worked_in_past <- ifelse(grepl('within', temp_sub$not_currently_employed_worked_in_past, fixed = TRUE), 
+                                                                   'Yes within last year',
+                                                                   ifelse(grepl('>1', temp_sub$not_currently_employed_worked_in_past, fixed = TRUE), 
+                                                                          'Yes greater than 1 year', 'No never worked'))
+          temp_sub$full_or_parttime_status_of_last_job <- ifelse(grepl('Part', temp_sub$full_or_parttime_status_of_last_job),
+                                                                 'Part time (1 to 29 hours)',
+                                                                 ifelse(grepl('Full', temp_sub$full_or_parttime_status_of_last_job), 
+                                                                        'Full time (30+)', 'Not applicable'))
+           
+          # recode variables with too many levels or ones that can be summarized with less information
+          temp_sub$class_of_worker_main_job <- ifelse(grepl('unpaid', temp_sub$class_of_worker_main_job), 
+                                                      'Unpaid family work', 
+                                                      ifelse(grepl('0|no', temp_sub$class_of_worker_main_job),
+                                                             'Self employed, no employees',
+                                                             ifelse(grepl('/w/', temp_sub$class_of_worker_main_job, fixed = TRUE),
+                                                                    'Self employed, with employees',
+                                                                    ifelse(grepl('Private', temp_sub$class_of_worker_main_job), 
+                                                                           'Private employee', 
+                                                                           ifelse(grepl('Public', temp_sub$class_of_worker_main_job),
+                                                                                  'Publice employee', 'Not applicable')))))
+          
+          # look at all other variable levels and recode where applicable
+          i = 15
+          colnames(temp_sub)[i]
+          str(temp_sub[i])
+          unique(temp_sub[i])
+          summary(as.factor(temp_sub[,i]))
+          unemployed_only
+          
+        } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
@@ -104,33 +158,6 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } 
-        
-        # get subsetted by variables names
-        temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
-        colnames(temp_sub)[which(grepl('.1', colnames(temp_sub), fixed = TRUE))]
-        # clean data - don't recode variable names because the current ones are linked to a data dictionary 
-        # clean by recoding factors or numerics (bare minimum right now)
-        if(grepl('lfs', temp_data)) {
-          # remove extra columns or columns with too many NAs
-          temp_sub$current_student_status_and_type_of_school.1 <- NULL
-          temp_sub$reason_for_partweek_absence <- NULL
-          # check na
-          apply(temp_sub, 2, function(x) length(which(is.na(x))))
-          # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployers_directly)
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployment_agency)
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_contacted_relatives)
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_looked_at_ads)
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_placed_or_answered_ads)
-          temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$jobseeker_other_methods)
-          
-          # recode variables with too many levels if possible
-          
-          # look at all other variable levels and recode where applicable
-          summary(as.factor(temp_sub$not_currently_employed_worked_in_past))
-          i =1
-          summary(as.factor(temp_sub[,i]))
-        }
         
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
