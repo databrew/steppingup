@@ -807,38 +807,38 @@ server <- function(input, output) {
                  percent = input$percent)
     
     if(input$age & !is.null(input$age_filter)) {
-      if(input$age_filter != 'All') {
-        x <- x %>% filter(`Age group` == input$age_filter)
+      if(!'All' %in% input$age_filter) {
+        x <- x %>% filter(`Age group` %in% input$age_filter)
       }
     }
     
     if(input$sex & !is.null(input$sex_filter)) {
-      if(input$sex_filter != 'All') {
-        x <- x %>% filter(Sex == input$sex_filter)
+      if(!'All' %in% input$sex_filter) {
+        x <- x %>% filter(Sex %in% input$sex_filter)
       }
     }
     
     if(input$pob & !is.null(input$pob_filter)) {
-      if(input$pob_filter != 'All') {
-        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      if(!'All' %in% input$pob_filter) {
+        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
       }
     }
     
     if(input$vm & !is.null(input$vm_filter)) {
-      if(input$vm_filter != 'All') {
-        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      if(!'All' %in% input$vm_filter) {
+        x <- x %>% filter(`Visible minority` %in% input$vm_filter)
       }
     }
     
     if(input$ai & !is.null(input$ai_filter)) {
-      if(input$ai_filter != 'All') {
-        x <- x %>% filter(`Aboriginal identity` == input$ai_filter)
+      if(!'All' %in% input$ai_filter) {
+        x <- x %>% filter(`Aboriginal identity` %in% input$ai_filter)
       }
     }
     
     if(input$geography & !is.null(input$geography_filter)) {
-      if(input$geography_filter != 'All') {
-        x <- x %>% filter(Geography == input$geography_filter)
+      if(!'All' %in% input$geography_filter) {
+        x <- x %>% filter(Geography %in% input$geography_filter)
       }
     }
     return(x)
@@ -871,38 +871,38 @@ server <- function(input, output) {
                  percent = pp)
     
     if(input$age & !is.null(input$age_filter)) {
-      if(input$age_filter != 'All') {
-        x <- x %>% filter(`Age group` == input$age_filter)
+      if(!'All' %in% input$age_filter) {
+        x <- x %>% filter(`Age group` %in% input$age_filter)
       }
     }
     
     if(input$sex & !is.null(input$sex_filter)) {
-      if(input$sex_filter != 'All') {
-        x <- x %>% filter(Sex == input$sex_filter)
+      if(!'All' %in% input$sex_filter) {
+        x <- x %>% filter(Sex %in% input$sex_filter)
       }
     }
     
     if(input$pob & !is.null(input$pob_filter)) {
-      if(input$pob_filter != 'All') {
-        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      if(!'All' %in% input$pob_filter) {
+        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
       }
     }
     
     if(input$vm & !is.null(input$vm_filter)) {
-      if(input$vm_filter != 'All') {
-        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      if(!'All' %in% input$vm_filter) {
+        x <- x %>% filter(`Visible minority` %in% input$vm_filter)
       }
     }
     
     if(input$ai & !is.null(input$ai_filter)) {
-      if(input$ai_filter != 'All') {
-        x <- x %>% filter(`Aboriginal identity` == input$ai_filter)
+      if(!'All' %in% input$ai_filter) {
+        x <- x %>% filter(`Aboriginal identity` %in% input$ai_filter)
       }
     }
     
     if(input$geography & !is.null(input$geography_filter)) {
-      if(input$geography_filter != 'All') {
-        x <- x %>% filter(Geography == input$geography_filter)
+      if(!'All' %in% input$geography_filter) {
+        x <- x %>% filter(Geography %in% input$geography_filter)
       }
     }
     return(x)
@@ -930,7 +930,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('age_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   
@@ -963,7 +964,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('geography_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Download survey
@@ -999,7 +1001,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('pob_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Progress box
@@ -1024,7 +1027,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('sex_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Sub category UI
@@ -1147,7 +1151,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('vm_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Aboriginal identity filter
@@ -1158,7 +1163,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('ai_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Main table
