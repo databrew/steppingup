@@ -28,6 +28,9 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
   
+  i = 1
+  j = 1
+  
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -69,6 +72,10 @@ get_survey_data <- function() {
         
         # check na
         apply(temp_sub, 2, function(x) length(which(is.na(x))))
+        
+        # make everything a character for editing, delete floating objects, and makes sure numbers are numbers, then
+        # characters back to factors
+        temp_sub <- apply(temp_sub, 2, function(x) as.character(x))
         
         # clean data - don't recode variable names because the current ones are linked to a data dictionary 
         # clean by recoding factors or numerics (bare minimum right now)
@@ -130,19 +137,79 @@ get_survey_data <- function() {
                                                                    ifelse(grepl('Part', temp_sub$fulltime_or_parttime_main_or_only_job), 
                                                                           'Part time (1 to 29 hours)','Not applicable'))
           
-          temp_sub$type_of_economic_family <- ifelse(grepl())
+          # is it better to recode them all or create new variables that are just true of false for type of couple, employeds, kids etc?
+          temp_sub$type_of_economic_family <- as.character(temp_sub$type_of_economic_family)
+          temp_sub$type_of_economic_family <- ifelse(temp_sub$type_of_economic_family == 'H-W:2earn,0 kids<25',
+                                                     'Husband Wife: both employeds, no kids < 25',
+                                                     ifelse(temp_sub$type_of_economic_family == 'H-W:2earn, kids<18',
+                                                            'Husband Wife: both employeds, kids < 18',
+                                                            ifelse(temp_sub$type_of_economic_family == 'H-W:2earn,kids18-24',
+                                                                   'Husband Wife: both employeds, kids 18 - 24',
+                                                                   ifelse(temp_sub$type_of_economic_family == 'H-W:H empl,0 kids<25',
+                                                                          'Husband Wife: husband employed, no kids < 25',
+                                                                          ifelse(temp_sub$type_of_economic_family == 'H-W:H empl,kids<18', 
+                                                                                 'Husband Wife: husband employed, kids < 18',
+                                                                                 ifelse(temp_sub$type_of_economic_family == 'H-W:H empl,kids18-24',
+                                                                                        'Husband Wife: husband employed, kids 18 - 24',
+                                                                                        ifelse(temp_sub$type_of_economic_family == 'H-W:W empl,0 kids<25',
+                                                                                               'Husband Wife: wife employed, no kids < 25',
+                                                                                               ifelse(temp_sub$type_of_economic_family == 'H-W:W empl,kids<18', 
+                                                                                                      'Husband Wife: wife employed, kids < 18',
+                                                                                                      ifelse(temp_sub$type_of_economic_family == 'H-W:W empl,kids18-24',
+                                                                                                             'Husband Wife: wife employed, kids 18 - 24',
+                                                                                                             ifelse(temp_sub$type_of_economic_family == 'H-W:non-earn,0kid<25',
+                                                                                                                    'Husband Wife: no employed, no kids < 25',
+                                                                                                                    ifelse(temp_sub$type_of_economic_family == 'H-W:non-earn,kids<18', 
+                                                                                                                           'Husband Wife: no employed, kids < 18',
+                                                                                                                           ifelse(temp_sub$type_of_economic_family == 'H-W:no-earn,kid18-24',
+                                                                                                                                  'Husband Wife:no employed, kids 18 - 24',
+                                                                                                                                  ifelse(temp_sub$type_of_economic_family == '1parent:empl,kids<18',
+                                                                                                                                         '1 Parent: employed, kids < 18',
+                                                                                                                                         ifelse(temp_sub$type_of_economic_family == '1parent:emp,kid18-24',
+                                                                                                                                                '1 Parent: employed, kids 18 - 24', 
+                                                                                                                                                ifelse(temp_sub$type_of_economic_family == '1par:no-empl,kids<18',
+                                                                                                                                                       '1 Parent: not employed, kids < 18', 
+                                                                                                                                                       ifelse(temp_sub$type_of_economic_family == '1par:no-emp,kid18-24',
+                                                                                                                                                              '1 Parent: not employed, kids 18 - 24', temp_sub$type_of_economic_family))))))))))))))))
+                                                     
+                                                     
           
           # just replace with NA with Not applicable (need to make character first)
           temp_sub$union_membership_status_employees_only <- as.character(temp_sub$union_membership_status_employees_only)
           temp_sub$union_membership_status_employees_only[is.na(temp_sub$union_membership_status_employees_only)] <- 'Not applicable'
           
-          # look at all other variable levels and recode where applicable
-          i = 31
-          colnames(temp_sub)[i]
-          str(temp_sub[i])
-          unique(temp_sub[i])
-          summary(as.factor(temp_sub[,i]))
-          unemployed_only
+          # same here as above
+          temp_sub$age_of_spouse_if_applicable <- as.character(temp_sub$age_of_spouse_if_applicable)
+          temp_sub$age_of_spouse_if_applicable[is.na(temp_sub$age_of_spouse_if_applicable)] <- 'Not applicable'
+          
+          # same as above, but also fix out of scope value in labour force status
+          temp_sub$spouse_labour_force_status <- as.character(temp_sub$spouse_labour_force_status)
+          temp_sub$spouse_labour_force_status[is.na(temp_sub$spouse_labour_force_status)] <- 'Not applicable'
+          temp_sub$spouse_labour_force_status <- ifelse(grepl('military', temp_sub$spouse_labour_force_status),
+                                                        'Out of scope (military)', temp_sub$spouse_labour_force_status)
+          
+          # same here as above
+          temp_sub$spouses_usual_hours_at_main_job <- as.character(temp_sub$spouses_usual_hours_at_main_job)
+          temp_sub$spouses_usual_hours_at_main_job[is.na(temp_sub$spouses_usual_hours_at_main_job)] <- 'Not applicable'
+          
+          # same as above and recode some levels in spouses main job
+          temp_sub$spouses_class_of_worker_at_main_job <- as.character(temp_sub$spouses_class_of_worker_at_main_job)
+          temp_sub$spouses_class_of_worker_at_main_job[is.na(temp_sub$spouses_class_of_worker_at_main_job)] <- 'Not applicable'
+          temp_sub$spouses_class_of_worker_at_main_job <- ifelse(grepl('-w/', temp_sub$spouses_class_of_worker_at_main_job),
+                                                                 'Self-employed paid',
+                                                                 ifelse(grepl('no ', temp_sub$spouses_class_of_worker_at_main_job),
+                                                                        'Self-employed not paid', temp_sub$spouses_class_of_worker_at_main_job))
+          # remove the NA from the level "Spouse present,NA" 
+          temp_sub$spouses_class_of_worker_at_main_job <- gsub(',NA', '', temp_sub$spouses_class_of_worker_at_main_job)
+          
+          
+          # # look at all other variable levels and recode where applicable
+          # i = 38
+          # colnames(temp_sub)[i]
+          # str(temp_sub[i])
+          # unique(temp_sub[i])
+          # summary(as.factor(temp_sub[,i]))
+          # unemployed_only
           
         } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
