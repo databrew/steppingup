@@ -76,6 +76,7 @@ get_survey_data <- function() {
           # remove extra columns or columns with too many NAs
           temp_sub$current_student_status_and_type_of_school.1 <- NULL
           temp_sub$reason_for_partweek_absence <- temp_sub$survey_month <-  NULL
+          temp_sub$unemployed_type_of_job_wanted <- NULL
           
           # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
           temp_sub$job_seeker_checked_wemployers_directly <- relevel_factor_one_osduhs(temp_sub$job_seeker_checked_wemployers_directly)
@@ -124,8 +125,19 @@ get_survey_data <- function() {
                                                                              ifelse(grepl('Agric|Forest', as.character(temp_sub$industry_of_main_job_naics_200718)),
                                                                                     'Agriculture/Forest/Fish/Mine/Oil&Gas', as.character(temp_sub$industry_of_main_job_naics_200718)))))
           
+          temp_sub$fulltime_or_parttime_main_or_only_job <- ifelse(grepl('Full', temp_sub$fulltime_or_parttime_main_or_only_job), 
+                                                                   'Full time (30+)',
+                                                                   ifelse(grepl('Part', temp_sub$fulltime_or_parttime_main_or_only_job), 
+                                                                          'Part time (1 to 29 hours)','Not applicable'))
+          
+          temp_sub$type_of_economic_family <- ifelse(grepl())
+          
+          # just replace with NA with Not applicable (need to make character first)
+          temp_sub$union_membership_status_employees_only <- as.character(temp_sub$union_membership_status_employees_only)
+          temp_sub$union_membership_status_employees_only[is.na(temp_sub$union_membership_status_employees_only)] <- 'Not applicable'
+          
           # look at all other variable levels and recode where applicable
-          i = 18
+          i = 31
           colnames(temp_sub)[i]
           str(temp_sub[i])
           unique(temp_sub[i])
