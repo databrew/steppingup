@@ -28,9 +28,6 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
   
-  i = 1
-  j = 1
-  
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -157,7 +154,35 @@ get_survey_data <- function() {
           
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
-        } 
+        } else if(grepl('sduhs', temp_data)) {
+          # Need to combine all race variables into one
+          temp_sub <- temp_sub %>%
+            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
+                                 'white',
+                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'yes',
+                                        'chinese',
+                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                               'south asian',
+                                               ifelse(black_which_of_the_following_best_describes_your_background == 'yes',
+                                                      'black',
+                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'yes',
+                                                             'aboriginal',
+                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'yes',
+                                                                    'filipino',
+                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                                                           'southeast asian',
+                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                  'west asian / arab',
+                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                         'korean',
+                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                'japanese',
+                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                       'not sure', 
+                                                                                                       NA))))))))))))
+ 
+          temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
+        }
         
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
@@ -623,7 +648,7 @@ censify <- function(df = census,
                     geo_code = FALSE,
                     years = 2001,
                     sc = NULL,
-                    percent = TRUE) {
+                    percent = 'Percentage') { # one of Percentage, Raw Numbers, or Both
   # category
   if(!is.null(sc)) {
     if(!sc %in% unique(dict$sub_category)) {
@@ -705,7 +730,7 @@ censify <- function(df = census,
   # }
   
   # make percentages 
-  if(percent) {
+  if(percent %in% c('Percentage', 'Both')) {
     if(is.null(sc)) {
       warning("Choose a sub category to generate percentages")
     } else {
@@ -723,9 +748,19 @@ censify <- function(df = census,
         
         df <- as.data.frame(df)
         
-        for(j in ni) {
-          df[,j] <- (df[, j]/denom)*100
+        if(percent == 'Percentage'){
+          for(j in ni) {
+            df[,j] <- (df[, j]/denom)*100
+          }
+        } else if(percent == 'Both'){
+          for(j in ni) {
+            n <- df[,j]
+            p <- (df[, j]/denom)*100
+            df[,j] <- paste0(prettyNum(n, big.mark = ','), ' (',
+                             round(p, 2), '%)')
+          }
         }
+        
         colnames(df) <- col_names
       }
     }

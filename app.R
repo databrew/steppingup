@@ -79,14 +79,17 @@ ui <- dashboardPage(skin = 'blue',
                                                             choices = category_choices)),
                                          column(3, 
                                                 uiOutput("sub_category")),
-                                         column(6,
+                                         column(1,
+                                                htmlOutput('arrow')),
+                                         column(5,
                                                 uiOutput("variable"),
                                                 h4(strong(textOutput('variable_text'))))),
                                 fluidRow(column(3,
                                                 radioButtons('percent',
                                                              'View as percentage or raw number',
-                                                             choices = c('Percentage' = TRUE, 
-                                                                         'Raw numbers' = FALSE))),
+                                                             choices = c('Percentage', 
+                                                                         'Raw numbers',
+                                                                         'Both'))),
                                          column(3,
                                                 checkboxGroupInput('years',
                                                                    'Year',
@@ -172,8 +175,7 @@ ui <- dashboardPage(skin = 'blue',
                                          uiOutput('theme_gender')),
                                   column(3,
                                          uiOutput('theme_race')),
-                                  column(6,
-                                         textOutput('helper_text'))
+                                  column(6)
                                 ),
                                 # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
@@ -239,6 +241,14 @@ server <- function(input, output) {
     selectInput('theme_var',
                 'Choose a variable to explore',
                 choices = x)
+  })
+  
+  output$arrow <- renderText({
+    if(is.null(input$variable)){
+      HTML(as.character(icon("arrow-circle-right", "fa-4x")))
+    } else {
+      NULL
+  }
   })
   
   # reactive data set NAME based on the input$theme_var
@@ -307,17 +317,7 @@ server <- function(input, output) {
     }
   })
   
-  # 
-  
-  output$theme_gender <- renderUI({
-    checkboxInput('theme_gender',
-                  'Group by gender')
-  })
-  output$theme_race <- renderUI({
-    checkboxInput('theme_race',
-                  'Group by race')
-  })
-  output$helper_text <- renderText({
+  has_race_gender <- reactive({
     # Get the theme data name
     x <- theme_data_name()
     y <- theme_code()
@@ -333,11 +333,42 @@ server <- function(input, output) {
       }
     } 
     if(!is.null(full_name)){
-      
+      race_gender <- race_gender_dictionary %>%
+        filter(data_folder == full_name)
+      full_name <- race_gender
+      race <- full_name %>% dplyr::filter(category == 'race') %>% .$variable_name
+      gender <- full_name %>% dplyr::filter(category == 'gender') %>% .$variable_name 
+      full_name <- data.frame('race' = ifelse(is.na(race), NA, race), 
+                              'gender' = ifelse(is.na(gender), NA, gender))
     }
-    full_name <- paste0(x, ' ', y)
+    # full_name <- paste0(x, ' ', y)
     return(full_name)
   })
+  
+  output$theme_gender <- renderUI({
+    x <- has_race_gender()
+    out <- NULL
+    if(!is.null(x)){
+      if(!is.na(x$gender)){
+        out <- checkboxInput('theme_gender',
+                             'Group by gender')
+      }
+    }
+    return(out)
+  })
+  output$theme_race <- renderUI({
+    x <- has_race_gender()
+    out <- NULL
+    if(!is.null(x)){
+      if(!is.na(x$race)){
+        out <- checkboxInput('theme_race',
+                             'Group by race')
+      }
+    }
+    return(out)
+  })
+  
+  
   
   output$theme_var_2 <- renderUI({
     input$tabs # just run to refresh
@@ -366,9 +397,30 @@ server <- function(input, output) {
   output$theme_plot <- renderPlot({
     input$tabs # just run to refresh
     df <- theme_data()
+    df_full <- df
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Deal with grouping by gender and race
+    by_gender <- FALSE
+    by_race <- FALSE
+    
+    if(!is.null(df)){
+      if(!is.null(input$theme_gender)){
+        if(input$theme_gender){
+          by_gender <- TRUE
+        }
+      }
+      if(!is.null(input$theme_race)){
+        if(input$theme_race){
+          by_race <- TRUE
+        }
+      }
+    } else {
+      return(NULL)
+    }
+    
     
     # Get the label names of our variables
     if(!is.null(v1)){
@@ -382,25 +434,32 @@ server <- function(input, output) {
       v2_label <- ''
     }
     
-    
-    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
       if(has_two){
         keep_vars <- c(keep_vars, v2)
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]  
       }
+      
+      # Deal with gender and race grouping
+      if(by_gender){
+        keep_vars <- c(keep_vars, 'gender')
+      }
+      if(by_race){
+        keep_vars <- c(keep_vars, 'race')
+      }
+      
+      
       if(!is.data.frame(df)){
         return(NULL)
       } else {
         # All operations go here
         # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]
+        df <- df[,names(df) %in% keep_vars, drop = FALSE]
+        print(head(df))
         
-        if(has_two){
-          names(df) <- c('v1', 'v2')
+        if(has_two & ncol(df) >= 2){
+          names(df)[1:2] <- c('v1', 'v2')
           type_1 <- class(df$v1)
           type_2 <- class(df$v2)
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
@@ -448,7 +507,11 @@ server <- function(input, output) {
                  subtitle = v2_label) 
           
         } else {
-          df <- data.frame(v1 = df)
+          if(!is.data.frame(df)){ # this means there is no gender / race, it's just one vector
+            df <- data.frame(v1 = df)
+          } else {
+            names(df)[1] <- 'v1'
+          }
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
@@ -468,6 +531,19 @@ server <- function(input, output) {
             theme_databrew() +
             labs(title = v1_label)
         }
+        if(by_gender & !by_race){
+          if('gender' %in% names(df)){
+            g <- g + facet_wrap(~gender)
+          }
+        } else if(!by_gender & by_race){
+          if('race' %in% names(df)){
+            g <- g + facet_wrap(~race)
+          }
+        } else if(by_gender & by_race){
+          if('race' %in% names(df) & 'gender' %in% names(df)){
+            g <- g + facet_grid(~gender+race)
+          }
+        } 
         g <- g +
           theme(axis.text.x = element_text(angle = 90))
         return(g)
@@ -479,11 +555,39 @@ server <- function(input, output) {
   })
   
   output$theme_table <- renderDataTable({
+    
+    # Deal with grouping by gender and race
+    by_gender <- FALSE
+    by_race <- FALSE
+    demo_keepers <- c()
+    has_two <- FALSE
+    df <- NULL
+    v1 <- NULL
+    v2 <- NULL
+    
     input$tabs # just run to refresh
     df <- theme_data()
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+
+    
+    if(!is.null(df)){
+      if(!is.null(input$theme_gender)){
+        if(input$theme_gender){
+          by_gender <- TRUE
+        }
+      }
+      if(!is.null(input$theme_race)){
+        if(input$theme_race){
+          by_race <- TRUE
+        }
+      }
+    } else {
+      return(NULL)
+    }
+    
     
     # Get the label names of our variables
     if(!is.null(v1)){
@@ -502,47 +606,71 @@ server <- function(input, output) {
     if(!is.null(df)){
       if(has_two){
         keep_vars <- c(keep_vars, v2)
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]  
       }
       if(!is.data.frame(df)){
         return(NULL)
       } else {
         # All operations go here
-        v1 <- input$theme_var
-        v2 <- input$theme_var_2
-        input$tabs # just run to refresh
-        has_two <- input$want_another_var & !is.null(input$theme_var_2)
-        # Subset to only include the variables we want
-        keep_vars <- v1
-        if(has_two){
-          keep_vars <- c(keep_vars, v2)
-        }
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]
-        head(df)
         
-        if(has_two){
-          names(df) <- c('v1', 'v2')
+        # Deal with gender and race grouping
+        
+        if(by_gender){
+          keep_vars <- c(keep_vars, 'gender')
+          demo_keepers <- c(demo_keepers, 'gender')
+        }
+        if(by_race){
+          keep_vars <- c(keep_vars, 'race')
+          demo_keepers <- c(demo_keepers, 'race')
+        }
+        
+        # Keep only the relevant variables
+        df <- df[,names(df) %in% unique(c(demo_keepers, keep_vars)), drop = FALSE] 
+
+        if(is.null(df)){
+          return(NULL)
+        }
+        
+        if(has_two & ncol(df) >= 2){
+          names(df)[1:2] <- c('v1', 'v2')
           type_1 <- class(df$v1)
           type_2 <- class(df$v2)
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric & type_2_numeric){
-            a <- df %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
-            b <- df %>%
-              summarise(average = mean(v2, na.rm = TRUE),
-                        maximum = max(v2, na.rm = TRUE),
-                        minimum = min(v2, na.rm = TRUE),
-                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v2),
-                        NAs = length(which(is.na(v2))))
+            if(length(demo_keepers) > 0){
+              a <- df %>%
+                group_by_at(demo_keepers) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+              b <- df %>%
+                group_by_at(demo_keepers) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            } else {
+              a <- df %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+              b <- df %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            }
+            
             out <- bind_rows(
               cbind(data.frame(variable = v1_label), a),
               cbind(data.frame(variable = v2_label), b)
@@ -550,50 +678,102 @@ server <- function(input, output) {
             
           }
           if(type_1_numeric & !type_2_numeric){
-            out <- df %>%
-              group_by(v2) %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_at(c('v2', demo_keepers)) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            } else {
+              out <- df %>%
+                group_by(v2) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            }
             names(out)[1] <- v2_label
           }
           if(!type_1_numeric & type_2_numeric){
-            out <- df %>%
-              group_by(v1) %>%
-              summarise(average = mean(v2, na.rm = TRUE),
-                        maximum = max(v2, na.rm = TRUE),
-                        minimum = min(v2, na.rm = TRUE),
-                        IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v2),
-                        NAs = length(which(is.na(v2))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_at(c('v1', demo_keepers)) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            } else {
+              out <- df %>%
+                group_by(v1) %>%
+                summarise(average = mean(v2, na.rm = TRUE),
+                          maximum = max(v2, na.rm = TRUE),
+                          minimum = min(v2, na.rm = TRUE),
+                          IQR = paste0(quantile(v2, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v2),
+                          NAs = length(which(is.na(v2))))
+            }
             names(out)[1] <- v1_label
           }
           if(!type_1_numeric & !type_2_numeric){
             # Both are categorical
-            out <- broom::tidy(table(df$v1, df$v2))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_at(c('v1', 'v2', demo_keepers)) %>% tally
+            } else {
+              out <- df %>%
+                group_by(v1, v2) %>% tally
+            }
+            
             names(out)[1:2] <- c(v1_label, v2_label)
           }
         } else {
-          df <- data.frame(v1 = df)
+          if(!is.data.frame(df)){ # this means there is no gender / race, it's just one vector
+            df <- data.frame(v1 = df)
+          } else {
+            names(df)[1] <- 'v1'
+          }
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
-            out <- df %>%
-              summarise(average = mean(v1, na.rm = TRUE),
-                        maximum = max(v1, na.rm = TRUE),
-                        minimum = min(v1, na.rm = TRUE),
-                        IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
-                        observations = length(v1),
-                        NAs = length(which(is.na(v1))))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_at(demo_keepers) %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            } else {
+              out <- df %>%
+                summarise(average = mean(v1, na.rm = TRUE),
+                          maximum = max(v1, na.rm = TRUE),
+                          minimum = min(v1, na.rm = TRUE),
+                          IQR = paste0(quantile(v1, c(0.25, 0.75), na.rm = TRUE), collapse = ' to '),
+                          observations = length(v1),
+                          NAs = length(which(is.na(v1))))
+            }
           } else {
-            out <- df %>%
-              group_by(v1) %>%
-              summarise(observations = n()) %>%
-              ungroup %>%
-              mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            if(length(demo_keepers) > 0){
+              out <- df %>%
+                group_by_at(c('v1', demo_keepers)) %>%
+                summarise(observations = n()) %>%
+                ungroup %>%
+                mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            } else {
+              out <- df %>%
+                group_by(v1) %>%
+                summarise(observations = n()) %>%
+                ungroup %>%
+                mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            }
             names(out)[1] <- v1_label
           }
         }
@@ -627,38 +807,102 @@ server <- function(input, output) {
                  percent = input$percent)
     
     if(input$age & !is.null(input$age_filter)) {
-      if(input$age_filter != 'All') {
-        x <- x %>% filter(`Age group` == input$age_filter)
+      if(!'All' %in% input$age_filter) {
+        x <- x %>% filter(`Age group` %in% input$age_filter)
       }
     }
     
     if(input$sex & !is.null(input$sex_filter)) {
-      if(input$sex_filter != 'All') {
-        x <- x %>% filter(Sex == input$sex_filter)
+      if(!'All' %in% input$sex_filter) {
+        x <- x %>% filter(Sex %in% input$sex_filter)
       }
     }
     
     if(input$pob & !is.null(input$pob_filter)) {
-      if(input$pob_filter != 'All') {
-        x <- x %>% filter(`Place of birth` == input$pob_filter)
+      if(!'All' %in% input$pob_filter) {
+        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
       }
     }
     
     if(input$vm & !is.null(input$vm_filter)) {
-      if(input$vm_filter != 'All') {
-        x <- x %>% filter(`Visible minority` == input$vm_filter)
+      if(!'All' %in% input$vm_filter) {
+        x <- x %>% filter(`Visible minority` %in% input$vm_filter)
       }
     }
     
     if(input$ai & !is.null(input$ai_filter)) {
-      if(input$ai_filter != 'All') {
-        x <- x %>% filter(`Aboriginal identity` == input$ai_filter)
+      if(!'All' %in% input$ai_filter) {
+        x <- x %>% filter(`Aboriginal identity` %in% input$ai_filter)
       }
     }
     
     if(input$geography & !is.null(input$geography_filter)) {
-      if(input$geography_filter != 'All') {
-        x <- x %>% filter(Geography == input$geography_filter)
+      if(!'All' %in% input$geography_filter) {
+        x <- x %>% filter(Geography %in% input$geography_filter)
+      }
+    }
+    return(x)
+  })
+  
+  # Separate censified table (just for plotting) - does not use the "Both" option for %
+  censified_plot <- reactive({
+    choices <- unique(census_dict$sub_category[census_dict$category == input$category])
+    
+    if(length(choices) == 1) {
+      sc <- input$category
+    } else {
+      sc <- input$sub_category 
+    }
+    
+    # This is the only different with censified - can't handle the pasted values with % in one column
+    pp <- input$percent
+    if(pp == 'Both'){
+      pp <- 'Percentage'
+    }
+    x <- censify(df = census, dict = census_dict, 
+                 age = input$age, 
+                 sex = input$sex,
+                 pob = input$pob,
+                 vm = input$vm,
+                 ai = input$ai,
+                 geo_code = input$geography,
+                 years = input$years,
+                 sc = sc,
+                 percent = pp)
+    
+    if(input$age & !is.null(input$age_filter)) {
+      if(!'All' %in% input$age_filter) {
+        x <- x %>% filter(`Age group` %in% input$age_filter)
+      }
+    }
+    
+    if(input$sex & !is.null(input$sex_filter)) {
+      if(!'All' %in% input$sex_filter) {
+        x <- x %>% filter(Sex %in% input$sex_filter)
+      }
+    }
+    
+    if(input$pob & !is.null(input$pob_filter)) {
+      if(!'All' %in% input$pob_filter) {
+        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
+      }
+    }
+    
+    if(input$vm & !is.null(input$vm_filter)) {
+      if(!'All' %in% input$vm_filter) {
+        x <- x %>% filter(`Visible minority` %in% input$vm_filter)
+      }
+    }
+    
+    if(input$ai & !is.null(input$ai_filter)) {
+      if(!'All' %in% input$ai_filter) {
+        x <- x %>% filter(`Aboriginal identity` %in% input$ai_filter)
+      }
+    }
+    
+    if(input$geography & !is.null(input$geography_filter)) {
+      if(!'All' %in% input$geography_filter) {
+        x <- x %>% filter(Geography %in% input$geography_filter)
       }
     }
     return(x)
@@ -686,7 +930,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('age_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   
@@ -702,7 +947,7 @@ server <- function(input, output) {
           theme_databrew() +
           labs(title = 'You must select a variable to plot')
       } else {
-        plotter(censified(), variable = input$variable, show_labels = input$show_labels)
+        plotter(censified_plot(), variable = input$variable, show_labels = input$show_labels)
       }
     }
   })
@@ -719,7 +964,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('geography_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Download survey
@@ -755,7 +1001,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('pob_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Progress box
@@ -780,7 +1027,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('sex_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Sub category UI
@@ -903,7 +1151,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('vm_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Aboriginal identity filter
@@ -914,7 +1163,8 @@ server <- function(input, output) {
       choices <- choices[!grepl('Total', choices)]
       selectInput('ai_filter',
                   'Filter',
-                  choices = choices)
+                  choices = choices,
+                  multiple = TRUE)
     }
   })
   # Main table
