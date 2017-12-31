@@ -398,16 +398,12 @@ server <- function(input, output) {
     if(!is.null(df)){
       if(!is.null(input$theme_gender)){
         if(input$theme_gender){
-          hrg <- has_race_gender()
           by_gender <- TRUE
-          gender_var <- hrg$gender[1]
         }
       }
       if(!is.null(input$theme_race)){
         if(input$theme_race){
-          hrg <- has_race_gender()
           by_race <- TRUE
-          race_var <- hrg$race[1]
         }
       }
     } else {
@@ -435,12 +431,11 @@ server <- function(input, output) {
       }
       
       # Deal with gender and race grouping
-      message(gender_var)
       if(by_gender){
-        keep_vars <- c(keep_vars, gender_var)
+        keep_vars <- c(keep_vars, 'gender')
       }
       if(by_race){
-        keep_vars <- c(keep_vars, race_var)
+        keep_vars <- c(keep_vars, 'race')
       }
       
       
@@ -450,14 +445,6 @@ server <- function(input, output) {
         # All operations go here
         # Keep only the relevant variables
         df <- df[,names(df) %in% keep_vars, drop = FALSE]
-        if(by_gender){
-          df$gender <- df_full[,names(df_full) == gender_var]
-          df <- df[,names(df) != gender_var]
-        }
-        if(by_race){
-          df$race <- df_full[,names(df_full) == race_var]
-          df <- df[,names(df) != gender_var]
-        }
         print(head(df))
         
         if(has_two){
@@ -511,6 +498,8 @@ server <- function(input, output) {
         } else {
           if(!is.data.frame(df)){ # this means there is no gender / race, it's just one vector
             df <- data.frame(v1 = df)
+          } else {
+            names(df)[1] <- 'v1'
           }
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')

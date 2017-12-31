@@ -594,6 +594,20 @@ race_gender_dictionary <-
   race_gender_dictionary %>%
   mutate(variable_name = ifelse(variable_name == 'na', NA, variable_name))
 
+# Loop through each survey dataset and add a race / gender var
+for(i in 1:nrow(race_gender_dictionary)){
+  this_variable <- race_gender_dictionary$variable_name[i]
+  if(!is.na(this_variable)){
+    this_data_name <- race_gender_dictionary$data_folder[i]
+    this_category <- race_gender_dictionary$category[i]
+    this_data <- survey[[which(names(survey) == this_data_name)]]
+    if(!this_category %in% names(this_data)){
+      this_data[,this_category] <- this_data[,this_variable, drop = TRUE]
+      survey[[which(names(survey) == this_data_name)]] <- this_data
+    }
+  }
+}
+
 # # Perform a check to ensure that all race/gender variables are in their respective datasets
 # out <- rep(NA, nrow(race_gender_dictionary))
 # for(i in 1:nrow(race_gender_dictionary)){
