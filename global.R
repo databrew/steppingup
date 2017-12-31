@@ -627,3 +627,11 @@ for(i in 1:nrow(race_gender_dictionary)){
 #     out[i] <- this_variable %in% names(this_data)
 #   }
 # }
+
+# Define a list of variables from the themes
+theme_variables <- survey_dictionary %>%
+  dplyr::select(-long_name) %>%
+  left_join(theme_dictionary, by = c('theme_name' = 'short_name')) %>%
+  filter(!grepl('demo_', new_variable),
+         !is.na(long_name)) %>%
+  .$display_name

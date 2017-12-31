@@ -150,7 +150,14 @@ ui <- dashboardPage(skin = 'blue',
                         tabItem(tabName = "theme",
                                 h2('Explore data by theme'),
                                 p('In 2013, the Government of Ontario adopted Stepping Up as the province’s evidence-based framework for improving youth outcomes. As an evidence-based framework, Stepping Up aims to consolidate and harmonize decision-making and program planning in Ontario’s youth-serving sectors to support youth wellbeing. This framework has guided both the development and implementation of youth initiatives by specifying seven themes for youth wellbeing.'),
-                                p('You can explore various data sets under each of the Stepping Up themes below.'),
+                                p('You can explore various data sets under each of the Stepping Up themes below, or search for which theme any variable falls under below:'),
+                                fluidRow(column(6,
+                                                selectInput('theme_word', 'Select or type to search for variable(s):',
+                                                            choices = theme_variables,
+                                                            selectize = TRUE,
+                                                            multiple = TRUE)),
+                                         column(6,
+                                                dataTableOutput('theme_search'))),
                                 tabsetPanel(id = "tabs",
                                             tabPanel(title = 'Health and wellness'),
                                             tabPanel(title = 'Supportive families'),
@@ -552,6 +559,27 @@ server <- function(input, output) {
     } else{
       NULL
     }
+  })
+  
+  output$theme_search <- renderDataTable({
+    out <- NULL
+    theme_word <- input$theme_word
+    if(!is.null(theme_word)){
+        x <- survey_dictionary
+        x <- x %>% filter(display_name %in% theme_word)
+        x <- x %>%
+          dplyr::select(display_name, theme_name)
+        x <- left_join(x, theme_dictionary,
+                       by = c('theme_name' = 'short_name'))
+        x <- x %>%
+          filter(theme_name != 'demo')
+        x <- x %>% dplyr::select(-theme_name) %>%
+          rename(Theme = long_name) %>%
+          rename(Variable = display_name)
+        x <- x %>% filter(!is.na(Theme))
+        out <- DT::datatable(x,options = list(dom = 't'), rownames = FALSE)
+    } 
+    return(out)
   })
   
   output$theme_table <- renderDataTable({
