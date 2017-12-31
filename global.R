@@ -276,6 +276,11 @@ get_census_data <- function() {
     mutate(`Aboriginal identity` = 'Total - Population by aboriginal identity')
   old_rows <- old_rows[,ordered_columns]
   census <- bind_rows(new_rows, old_rows)
+  
+  # Remove the word "identity" from the `Aboriginal identity` column
+  census <- census %>%
+    mutate(`Aboriginal identity` = 
+             gsub(' identity', '', `Aboriginal identity`))
 
   # Change "All others" in vm to "white"
   census <- 
@@ -622,3 +627,11 @@ for(i in 1:nrow(race_gender_dictionary)){
 #     out[i] <- this_variable %in% names(this_data)
 #   }
 # }
+
+# Define a list of variables from the themes
+theme_variables <- survey_dictionary %>%
+  dplyr::select(-long_name) %>%
+  left_join(theme_dictionary, by = c('theme_name' = 'short_name')) %>%
+  filter(!grepl('demo_', new_variable),
+         !is.na(long_name)) %>%
+  .$display_name
