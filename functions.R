@@ -88,11 +88,16 @@ get_survey_data <- function() {
           # filter to get ontario (should have done this earlier, but missed it)
           temp_sub <- temp_sub %>% filter(province == 'Ontario')
           
-          # recode variables that have sloppy coding 
-          temp_sub$not_currently_employed_worked_in_past <- ifelse(grepl('within', temp_sub$not_currently_employed_worked_in_past, fixed = TRUE), 
+          # recode variables that have sloppy coding - We checked and NAs literally mean the question was not appicable to that person. 
+          # Real NAs - actual missing values - were deleted prior to them giving us this data (from carlton university). This is documented in 
+          # data documentation under the Labour Force Survey.
+          temp_sub$not_currently_employed_worked_in_past <- ifelse(grepl('within', temp_sub$not_currently_employed_worked_in_past), 
                                                                    'Yes within last year',
-                                                                   ifelse(grepl('>1', temp_sub$not_currently_employed_worked_in_past, fixed = TRUE), 
-                                                                          'Yes greater than 1 year', 'No never worked'))
+                                                                   ifelse(grepl('>1', temp_sub$not_currently_employed_worked_in_past), 
+                                                                          'Yes greater than 1 year', 
+                                                                          ifelse(grepl('never', temp_sub$not_currently_employed_worked_in_past),
+                                                                                 'No never worked', 'Not applicable')))
+          
           temp_sub$full_or_parttime_status_of_last_job <- ifelse(grepl('Part', temp_sub$full_or_parttime_status_of_last_job),
                                                                  'Part time (1 to 29 hours)',
                                                                  ifelse(grepl('Full', temp_sub$full_or_parttime_status_of_last_job), 
@@ -103,15 +108,24 @@ get_survey_data <- function() {
                                                       'Unpaid family work', 
                                                       ifelse(grepl('0|no', temp_sub$class_of_worker_main_job),
                                                              'Self employed, no employees',
-                                                             ifelse(grepl('/w/', temp_sub$class_of_worker_main_job, fixed = TRUE),
+                                                             ifelse(grepl('/w/', temp_sub$class_of_worker_main_job),
                                                                     'Self employed, with employees',
                                                                     ifelse(grepl('Private', temp_sub$class_of_worker_main_job), 
                                                                            'Private employee', 
                                                                            ifelse(grepl('Public', temp_sub$class_of_worker_main_job),
                                                                                   'Publice employee', 'Not applicable')))))
           
+          temp_sub$industry_of_main_job_naics_200718 <- ifelse(grepl('Utilities|Construction|Manufact', as.character(temp_sub$industry_of_main_job_naics_200718)),
+                                                               'Utilities/Construction/Manufacturing',
+                                                               ifelse(grepl('Trade', as.character(temp_sub$industry_of_main_job_naics_200718)), 
+                                                                      'Trade Retail/Whosale',
+                                                                      ifelse(grepl('Accomm/Food Services|Other Services', as.character(temp_sub$industry_of_main_job_naics_200718)),
+                                                                             'Accommodation/Food/Other Services',
+                                                                             ifelse(grepl('Agric|Forest', as.character(temp_sub$industry_of_main_job_naics_200718)),
+                                                                                    'Agriculture/Forest/Fish/Mine/Oil&Gas', as.character(temp_sub$industry_of_main_job_naics_200718)))))
+          
           # look at all other variable levels and recode where applicable
-          i = 15
+          i = 18
           colnames(temp_sub)[i]
           str(temp_sub[i])
           unique(temp_sub[i])
