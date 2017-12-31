@@ -521,11 +521,17 @@ server <- function(input, output) {
             labs(title = v1_label)
         }
         if(by_gender & !by_race){
-          g <- g + facet_wrap(~gender)
+          if('gender' %in% names(df)){
+            g <- g + facet_wrap(~gender)
+          }
         } else if(!by_gender & by_race){
-          g <- g + facet_wrap(~race)
+          if('race' %in% names(df)){
+            g <- g + facet_wrap(~race)
+          }
         } else if(by_gender & by_race){
-          g <- g + facet_grid(~gender+race)
+          if('race' %in% names(df) & 'gender' %in% names(df)){
+            g <- g + facet_grid(~gender+race)
+          }
         } 
         g <- g +
           theme(axis.text.x = element_text(angle = 90))
