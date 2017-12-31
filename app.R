@@ -172,8 +172,7 @@ ui <- dashboardPage(skin = 'blue',
                                          uiOutput('theme_gender')),
                                   column(3,
                                          uiOutput('theme_race')),
-                                  column(6,
-                                         textOutput('helper_text'))
+                                  column(6)
                                 ),
                                 # fluidRow(textOutput('fake_text')),
                                 tabsetPanel(
@@ -307,17 +306,7 @@ server <- function(input, output) {
     }
   })
   
-  # 
-  
-  output$theme_gender <- renderUI({
-    checkboxInput('theme_gender',
-                  'Group by gender')
-  })
-  output$theme_race <- renderUI({
-    checkboxInput('theme_race',
-                  'Group by race')
-  })
-  output$helper_text <- renderText({
+  has_race_gender <- reactive({
     # Get the theme data name
     x <- theme_data_name()
     y <- theme_code()
@@ -333,11 +322,42 @@ server <- function(input, output) {
       }
     } 
     if(!is.null(full_name)){
-      
+      race_gender <- race_gender_dictionary %>%
+        filter(data_folder == full_name)
+      full_name <- race_gender
+      race <- full_name %>% dplyr::filter(category == 'race') %>% .$variable_name
+      gender <- full_name %>% dplyr::filter(category == 'gender') %>% .$variable_name 
+      full_name <- data.frame('race' = ifelse(is.na(race), NA, race), 
+                              'gender' = ifelse(is.na(gender), NA, gender))
     }
-    full_name <- paste0(x, ' ', y)
+    # full_name <- paste0(x, ' ', y)
     return(full_name)
   })
+  
+  output$theme_gender <- renderUI({
+    x <- has_race_gender()
+    out <- NULL
+    if(!is.null(x)){
+      if(!is.na(x$gender)){
+        out <- checkboxInput('theme_gender',
+                             'Group by gender')
+      }
+    }
+    return(out)
+  })
+  output$theme_race <- renderUI({
+    x <- has_race_gender()
+    out <- NULL
+    if(!is.null(x)){
+      if(!is.na(x$race)){
+        out <- checkboxInput('theme_race',
+                             'Group by race')
+      }
+    }
+    return(out)
+  })
+  
+  
   
   output$theme_var_2 <- renderUI({
     input$tabs # just run to refresh
@@ -366,9 +386,34 @@ server <- function(input, output) {
   output$theme_plot <- renderPlot({
     input$tabs # just run to refresh
     df <- theme_data()
+    df_full <- df
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
+    
+    # Deal with grouping by gender and race
+    by_gender <- FALSE
+    by_race <- FALSE
+    
+    if(!is.null(df)){
+      if(!is.null(input$theme_gender)){
+        if(input$theme_gender){
+          hrg <- has_race_gender()
+          by_gender <- TRUE
+          gender_var <- hrg$gender[1]
+        }
+      }
+      if(!is.null(input$theme_race)){
+        if(input$theme_race){
+          hrg <- has_race_gender()
+          by_race <- TRUE
+          race_var <- hrg$race[1]
+        }
+      }
+    } else {
+      return(NULL)
+    }
+    
     
     # Get the label names of our variables
     if(!is.null(v1)){
@@ -382,25 +427,41 @@ server <- function(input, output) {
       v2_label <- ''
     }
     
-    
-    
     # Subset to only include the variables we want
     keep_vars <- v1
     if(!is.null(df)){
       if(has_two){
         keep_vars <- c(keep_vars, v2)
-        # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]  
       }
+      
+      # Deal with gender and race grouping
+      message(gender_var)
+      if(by_gender){
+        keep_vars <- c(keep_vars, gender_var)
+      }
+      if(by_race){
+        keep_vars <- c(keep_vars, race_var)
+      }
+      
+      
       if(!is.data.frame(df)){
         return(NULL)
       } else {
         # All operations go here
         # Keep only the relevant variables
-        df <- df[,names(df) %in% keep_vars]
+        df <- df[,names(df) %in% keep_vars, drop = FALSE]
+        if(by_gender){
+          df$gender <- df_full[,names(df_full) == gender_var]
+          df <- df[,names(df) != gender_var]
+        }
+        if(by_race){
+          df$race <- df_full[,names(df_full) == race_var]
+          df <- df[,names(df) != gender_var]
+        }
+        print(head(df))
         
         if(has_two){
-          names(df) <- c('v1', 'v2')
+          names(df)[1:2] <- c('v1', 'v2')
           type_1 <- class(df$v1)
           type_2 <- class(df$v2)
           type_2_numeric <- type_2 %in% c('integer', 'numeric')
@@ -448,7 +509,9 @@ server <- function(input, output) {
                  subtitle = v2_label) 
           
         } else {
-          df <- data.frame(v1 = df)
+          if(!is.data.frame(df)){ # this means there is no gender / race, it's just one vector
+            df <- data.frame(v1 = df)
+          }
           type_1 <- class(df$v1)
           type_1_numeric <- type_1 %in% c('integer', 'numeric')
           if(type_1_numeric){
@@ -468,6 +531,13 @@ server <- function(input, output) {
             theme_databrew() +
             labs(title = v1_label)
         }
+        if(by_gender & !by_race){
+          g <- g + facet_wrap(~gender)
+        } else if(!by_gender & by_race){
+          g <- g + facet_wrap(~race)
+        } else if(by_gender & by_race){
+          g <- g + facet_grid(~gender+race)
+        } 
         g <- g +
           theme(axis.text.x = element_text(angle = 90))
         return(g)
