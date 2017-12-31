@@ -603,7 +603,7 @@ server <- function(input, output) {
         }
         if(by_race){
           keep_vars <- c(keep_vars, 'race')
-          demo_keepers <- c(demo_keepers, 'gender')
+          demo_keepers <- c(demo_keepers, 'race')
         }
         
         # Keep only the relevant variables
@@ -622,7 +622,7 @@ server <- function(input, output) {
           if(type_1_numeric & type_2_numeric){
             if(length(demo_keepers) > 0){
               a <- df %>%
-                group_by_(demo_keepers) %>%
+                group_by_at(demo_keepers) %>%
                 summarise(average = mean(v1, na.rm = TRUE),
                           maximum = max(v1, na.rm = TRUE),
                           minimum = min(v1, na.rm = TRUE),
@@ -630,7 +630,7 @@ server <- function(input, output) {
                           observations = length(v1),
                           NAs = length(which(is.na(v1))))
               b <- df %>%
-                group_by_(demo_keepers) %>%
+                group_by_at(demo_keepers) %>%
                 summarise(average = mean(v2, na.rm = TRUE),
                           maximum = max(v2, na.rm = TRUE),
                           minimum = min(v2, na.rm = TRUE),
@@ -663,7 +663,7 @@ server <- function(input, output) {
           if(type_1_numeric & !type_2_numeric){
             if(length(demo_keepers) > 0){
               out <- df %>%
-                group_by_('v2', demo_keepers) %>%
+                group_by_at(c('v2', demo_keepers)) %>%
                 summarise(average = mean(v1, na.rm = TRUE),
                           maximum = max(v1, na.rm = TRUE),
                           minimum = min(v1, na.rm = TRUE),
@@ -685,7 +685,7 @@ server <- function(input, output) {
           if(!type_1_numeric & type_2_numeric){
             if(length(demo_keepers) > 0){
               out <- df %>%
-                group_by_('v1', demo_keepers) %>%
+                group_by_at(c('v1', demo_keepers)) %>%
                 summarise(average = mean(v2, na.rm = TRUE),
                           maximum = max(v2, na.rm = TRUE),
                           minimum = min(v2, na.rm = TRUE),
@@ -708,7 +708,7 @@ server <- function(input, output) {
             # Both are categorical
             if(length(demo_keepers) > 0){
               out <- df %>%
-                group_by_('v1', 'v2', demo_keepers) %>% tally
+                group_by_at(c('v1', 'v2', demo_keepers)) %>% tally
             } else {
               out <- df %>%
                 group_by(v1, v2) %>% tally
@@ -727,7 +727,7 @@ server <- function(input, output) {
           if(type_1_numeric){
             if(length(demo_keepers) > 0){
               out <- df %>%
-                group_by_(demo_keepers) %>%
+                group_by_at(demo_keepers) %>%
                 summarise(average = mean(v1, na.rm = TRUE),
                           maximum = max(v1, na.rm = TRUE),
                           minimum = min(v1, na.rm = TRUE),
@@ -746,7 +746,7 @@ server <- function(input, output) {
           } else {
             if(length(demo_keepers) > 0){
               out <- df %>%
-                group_by_('v1', demo_keepers) %>%
+                group_by_at(c('v1', demo_keepers)) %>%
                 summarise(observations = n()) %>%
                 ungroup %>%
                 mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
