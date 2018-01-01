@@ -16,6 +16,9 @@ library(sas7bdat)
 
 # Define function for reading survey data
 
+i = 2
+j = 1
+
 get_survey_data <- function() {
   path_to_data <- 'data/survey_data'
   var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
@@ -60,6 +63,9 @@ get_survey_data <- function() {
         
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
+        
+        colnames(temp_sub)
+        summary(as.factor(temp_sub$age_group_of_the_respondent))
         
         # get subsetted by variables names
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
