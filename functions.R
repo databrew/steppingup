@@ -64,6 +64,9 @@ get_survey_data <- function() {
         # get subsetted by variables names
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
         
+        # remove in column name that has .1 in it because its a duplicate 
+        temp_sub <- temp_sub[,!grepl('.1', colnames(temp_sub), fixed = TRUE)]
+        
         # clean data - don't recode variable names because the current ones are linked to a data dictionary 
         # clean by recoding factors or numerics (bare minimum right now)
         if(grepl('lfs', temp_data)) {
@@ -102,7 +105,7 @@ get_survey_data <- function() {
           
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
-        } else if(grepl('osduhs', temp_data)) {
+        } else if(grepl('sduhs', temp_data)) {
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
             mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
@@ -892,7 +895,6 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
 relevel_factor_one_lfs <- function(dat_var) {
   dat_var <- as.character(dat_var)
   dat_var[is.na(dat_var)] <- 'NO'
-  dat_var <- as.factor(dat_var)
   return(dat_var)
 }
 
