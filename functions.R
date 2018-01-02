@@ -28,6 +28,10 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
 
+  i = 10
+  j = 1
+  
+  
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -61,9 +65,8 @@ get_survey_data <- function() {
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
         
-        colnames(temp_sub)
-        summary(as.factor(temp_sub$age_group_of_the_respondent))
-        
+        write_csv(as.data.frame(colnames(temp_sub)), '~/Desktop/osduhs_variables.csv')
+
         # get subsetted by variables names
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
         
