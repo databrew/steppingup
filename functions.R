@@ -27,7 +27,7 @@ get_survey_data <- function() {
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   # create list to store results
   result_list <- list()
- 
+
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -47,50 +47,62 @@ get_survey_data <- function() {
                               to.data.frame = T,
                               trim.factor.names = T,
                               trim_values = F,
-                              use.missings = T)
+                              use.missings = FALSE)
         
         if(grepl('gss|piaac|cfcs', temp_data)) {
           get_year = T
         } else {
           get_year = F
         }
-        
+       
         # get long for variable names
         colnames(temp_dat) <- attr(temp_dat,"variable.labels")
+        
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
-
-        # remove age groups that are above 29 
-        if(grepl('gss_2010_1|gss_2012_1', temp_data)) {
+        
+        # get subsetted by variables names
+        temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
+        
+        # remove in column name that has .1 in it because its a duplicate 
+        temp_sub <- temp_sub[,!grepl('.1', colnames(temp_sub), fixed = TRUE)]
+        
+        # clean data - don't recode variable names because the current ones are linked to a data dictionary 
+        # clean by recoding factors or numerics (bare minimum right now)
+        if(grepl('lfs', temp_data)) {
+          
+          temp_sub <- clean_lfs(temp_sub)
+          
+        } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
-        } else if(grepl('gss_2010_2', temp_data)) {
+        } else if (grepl('gss_2010_2', temp_data)) {
+          temp_sub$age_group_of_the_respondent.1 <- NULL
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent),]
           
-        } else if(grepl('gss_2011', temp_data)) {
-          # note that age here should be numeric and is not grouped. 
-          # also the age at second interview seems to be corrupted, so will only use first one.
-          temp_sub$rs_age_at_time_of_survey_interview_1 <- 
-            as.numeric(as.character(temp_sub$rs_age_at_time_of_survey_interview_1))
-          # remove any over 29 - we can group these later
-          temp_sub <- temp_sub[temp_sub$rs_age_at_time_of_survey_interview_1 < 30,]
+        } else if (grepl('gss_2011', temp_data)) {
+          temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
+                                     temp_sub$age_group_of_r_grps_of_5),]
           
-        } else if(grepl('piaac', temp_data)) {
+        } else if (grepl('piaac', temp_data)) {
           temp_sub <- temp_sub[grepl('24 or less|25-34', 
                                       temp_sub$age_in_10_year_bands_derived),]
           
-        } else if(grepl('gss_2013|gss_2014', temp_data)) {
+        } else if (grepl('gss_2013|gss_2014', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
 
         } else if (grepl('cfcs_1', temp_data)) {
+          
           temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
                                       temp_sub$age_of_respondent_grouped),]
+          
         } else if (grepl('eics_1', temp_data)) {
+          
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } else if(grepl('sduhs', temp_data)) {
@@ -123,8 +135,6 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
         }
         
-        
-        temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
         new_names <- data.frame(variable_name = names(temp_sub),
                                 data_name = temp_folder)
         new_names <- left_join(new_names, var_summary)
@@ -881,3 +891,150 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
   }
 }
 
+# taking factors with one level in osduhs survey data and imputing 'NO' onto it
+relevel_factor_one_lfs <- function(dat_var) {
+  dat_var <- as.character(dat_var)
+  dat_var[is.na(dat_var)] <- 'NO'
+  return(dat_var)
+}
+
+# restructure data types
+restructure_data_types <- function(temp) {
+  for(i in 1:ncol(temp)) {
+    if(grepl('factor', class(temp[, i]))) {
+      temp[, i] <- as.character(temp[, i])
+    } else {
+      temp[, i] <- as.numeric(temp[, i])
+    }
+  }
+  return(temp)
+}
+
+clean_lfs <- function(temp_clean) {
+  
+  # characters back to factors, and everything else numeric
+  temp_clean <- restructure_data_types(temp_clean)
+  
+  # remove extra columns or columns with too many NAs
+  temp_clean$current_student_status_and_type_of_school.1 <- NULL
+  
+  # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
+  temp_clean$job_seeker_checked_wemployers_directly <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployers_directly)
+  temp_clean$job_seeker_checked_wemployment_agency <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployment_agency)
+  temp_clean$jobseeker_contacted_relatives <- relevel_factor_one_lfs(temp_clean$jobseeker_contacted_relatives)
+  temp_clean$jobseeker_looked_at_ads <- relevel_factor_one_lfs(temp_clean$jobseeker_looked_at_ads)
+  temp_clean$jobseeker_placed_or_answered_ads <- relevel_factor_one_lfs(temp_clean$jobseeker_placed_or_answered_ads)
+  temp_clean$jobseeker_other_methods <- relevel_factor_one_lfs(temp_clean$jobseeker_other_methods)
+  
+  # filter to get ontario (should have done this earlier, but missed it)
+  temp_clean <- temp_clean %>% filter(province == 'Ontario')
+  
+  # recode variables that have sloppy coding - We checked and NAs literally mean the question was not appicable to that person. 
+  # Real NAs - actual missing values - were deleted prior to them giving us this data (from carlton university). This is documented in 
+  # data documentation under the Labour Force Survey.
+  temp_clean$not_currently_employed_worked_in_past <- ifelse(grepl('within', temp_clean$not_currently_employed_worked_in_past), 
+                                                             'Yes within last year',
+                                                             ifelse(grepl('>1', temp_clean$not_currently_employed_worked_in_past), 
+                                                                    'Yes greater than 1 year', 
+                                                                    ifelse(grepl('never', temp_clean$not_currently_employed_worked_in_past),
+                                                                           'No never worked', 'Not applicable')))
+  
+  temp_clean$full_or_parttime_status_of_last_job <- ifelse(grepl('Part', temp_clean$full_or_parttime_status_of_last_job),
+                                                           'Part time (1 to 29 hours)',
+                                                           ifelse(grepl('Full', temp_clean$full_or_parttime_status_of_last_job), 
+                                                                  'Full time (30+)', 'Not applicable'))
+  
+  # recode variables with too many levels or ones that can be summarized with less information
+  temp_clean$class_of_worker_main_job <- ifelse(grepl('unpaid', temp_clean$class_of_worker_main_job), 
+                                                'Unpaid family work', 
+                                                ifelse(grepl('0|no', temp_clean$class_of_worker_main_job),
+                                                       'Self employed, no employees',
+                                                       ifelse(grepl('/w/', temp_clean$class_of_worker_main_job),
+                                                              'Self employed, with employees',
+                                                              ifelse(grepl('Private', temp_clean$class_of_worker_main_job), 
+                                                                     'Private employee', 
+                                                                     ifelse(grepl('Public', temp_clean$class_of_worker_main_job),
+                                                                            'Publice employee', 'Not applicable')))))
+  
+  temp_clean$industry_of_main_job_naics_200718 <- ifelse(grepl('Utilities|Construction|Manufact', as.character(temp_clean$industry_of_main_job_naics_200718)),
+                                                         'Utilities/Construction/Manufacturing',
+                                                         ifelse(grepl('Trade', as.character(temp_clean$industry_of_main_job_naics_200718)), 
+                                                                'Trade Retail/Whosale',
+                                                                ifelse(grepl('Accomm/Food Services|Other Services', as.character(temp_clean$industry_of_main_job_naics_200718)),
+                                                                       'Accommodation/Food/Other Services',
+                                                                       ifelse(grepl('Agric|Forest', as.character(temp_clean$industry_of_main_job_naics_200718)),
+                                                                              'Agriculture/Forest/Fish/Mine/Oil&Gas', as.character(temp_clean$industry_of_main_job_naics_200718)))))
+  
+  temp_clean$fulltime_or_parttime_main_or_only_job <- ifelse(grepl('Full', temp_clean$fulltime_or_parttime_main_or_only_job), 
+                                                             'Full time (30+)',
+                                                             ifelse(grepl('Part', temp_clean$fulltime_or_parttime_main_or_only_job), 
+                                                                    'Part time (1 to 29 hours)','Not applicable'))
+  
+  # is it better to recode them all or create new variables that are just true of false for type of couple, employeds, kids etc?
+  temp_clean$type_of_economic_family <- as.character(temp_clean$type_of_economic_family)
+  temp_clean$type_of_economic_family <- ifelse(temp_clean$type_of_economic_family == 'H-W:2earn,0 kids<25',
+                                               'Husband Wife: both employeds, no kids < 25',
+                                               ifelse(temp_clean$type_of_economic_family == 'H-W:2earn, kids<18',
+                                                      'Husband Wife: both employeds, kids < 18',
+                                                      ifelse(temp_clean$type_of_economic_family == 'H-W:2earn,kids18-24',
+                                                             'Husband Wife: both employeds, kids 18 - 24',
+                                                             ifelse(temp_clean$type_of_economic_family == 'H-W:H empl,0 kids<25',
+                                                                    'Husband Wife: husband employed, no kids < 25',
+                                                                    ifelse(temp_clean$type_of_economic_family == 'H-W:H empl,kids<18', 
+                                                                           'Husband Wife: husband employed, kids < 18',
+                                                                           ifelse(temp_clean$type_of_economic_family == 'H-W:H empl,kids18-24',
+                                                                                  'Husband Wife: husband employed, kids 18 - 24',
+                                                                                  ifelse(temp_clean$type_of_economic_family == 'H-W:W empl,0 kids<25',
+                                                                                         'Husband Wife: wife employed, no kids < 25',
+                                                                                         ifelse(temp_clean$type_of_economic_family == 'H-W:W empl,kids<18', 
+                                                                                                'Husband Wife: wife employed, kids < 18',
+                                                                                                ifelse(temp_clean$type_of_economic_family == 'H-W:W empl,kids18-24',
+                                                                                                       'Husband Wife: wife employed, kids 18 - 24',
+                                                                                                       ifelse(temp_clean$type_of_economic_family == 'H-W:non-earn,0kid<25',
+                                                                                                              'Husband Wife: no employed, no kids < 25',
+                                                                                                              ifelse(temp_clean$type_of_economic_family == 'H-W:non-earn,kids<18', 
+                                                                                                                     'Husband Wife: no employed, kids < 18',
+                                                                                                                     ifelse(temp_clean$type_of_economic_family == 'H-W:no-earn,kid18-24',
+                                                                                                                            'Husband Wife:no employed, kids 18 - 24',
+                                                                                                                            ifelse(temp_clean$type_of_economic_family == '1parent:empl,kids<18',
+                                                                                                                                   '1 Parent: employed, kids < 18',
+                                                                                                                                   ifelse(temp_clean$type_of_economic_family == '1parent:emp,kid18-24',
+                                                                                                                                          '1 Parent: employed, kids 18 - 24', 
+                                                                                                                                          ifelse(temp_clean$type_of_economic_family == '1par:no-empl,kids<18',
+                                                                                                                                                 '1 Parent: not employed, kids < 18', 
+                                                                                                                                                 ifelse(temp_clean$type_of_economic_family == '1par:no-emp,kid18-24',
+                                                                                                                                                        '1 Parent: not employed, kids 18 - 24', temp_clean$type_of_economic_family))))))))))))))))
+  
+  
+  
+  # just replace with NA with Not applicable (need to make character first)
+  temp_clean$union_membership_status_employees_only <- as.character(temp_clean$union_membership_status_employees_only)
+  temp_clean$union_membership_status_employees_only[is.na(temp_clean$union_membership_status_employees_only)] <- 'Not applicable'
+  
+  # same here as above
+  temp_clean$age_of_spouse_if_applicable <- as.character(temp_clean$age_of_spouse_if_applicable)
+  temp_clean$age_of_spouse_if_applicable[is.na(temp_clean$age_of_spouse_if_applicable)] <- 'Not applicable'
+  
+  # same as above, but also fix out of scope value in labour force status
+  temp_clean$spouse_labour_force_status <- as.character(temp_clean$spouse_labour_force_status)
+  temp_clean$spouse_labour_force_status[is.na(temp_clean$spouse_labour_force_status)] <- 'Not applicable'
+  temp_clean$spouse_labour_force_status <- ifelse(grepl('military', temp_clean$spouse_labour_force_status),
+                                                  'Out of scope (military)', temp_clean$spouse_labour_force_status)
+  
+  # same here as above
+  temp_clean$spouses_usual_hours_at_main_job <- as.character(temp_clean$spouses_usual_hours_at_main_job)
+  temp_clean$spouses_usual_hours_at_main_job[is.na(temp_clean$spouses_usual_hours_at_main_job)] <- 'Not applicable'
+  
+  # same as above and recode some levels in spouses main job
+  temp_clean$spouses_class_of_worker_at_main_job <- as.character(temp_clean$spouses_class_of_worker_at_main_job)
+  temp_clean$spouses_class_of_worker_at_main_job[is.na(temp_clean$spouses_class_of_worker_at_main_job)] <- 'Not applicable'
+  temp_clean$spouses_class_of_worker_at_main_job <- ifelse(grepl('-w/', temp_clean$spouses_class_of_worker_at_main_job),
+                                                           'Self-employed paid',
+                                                           ifelse(grepl('no ', temp_clean$spouses_class_of_worker_at_main_job),
+                                                                  'Self-employed not paid', temp_clean$spouses_class_of_worker_at_main_job))
+  # remove the NA from the level "Spouse present,NA" 
+  temp_clean$spouses_class_of_worker_at_main_job <- gsub(',NA', '', temp_clean$spouses_class_of_worker_at_main_job)
+  
+  return(temp_clean)
+  
+}
