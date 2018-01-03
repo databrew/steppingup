@@ -15,7 +15,6 @@ library(foreign)
 library(sas7bdat)
 
 # Define function for reading survey data
-
 get_survey_data <- function() {
   path_to_data <- 'data/survey_data'
   var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
@@ -28,9 +27,8 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
 
-  i = 10
+  i = 2
   j = 1
-  
   
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
@@ -65,8 +63,6 @@ get_survey_data <- function() {
         # get the column names we want from are varibale list
         temp_sub <- clean_subset_survey(temp_dat, get_year = get_year, folder = temp_folder)
         
-        write_csv(as.data.frame(colnames(temp_sub)), '~/Desktop/osduhs_variables.csv')
-
         # get subsetted by variables names
         temp_sub <- data.frame(temp_sub[, colnames(temp_sub)[colnames(temp_sub) %in% var_names]])
         
@@ -79,7 +75,27 @@ get_survey_data <- function() {
           
           temp_sub <- clean_lfs(temp_sub)
           
-        } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
+        } else if (grepl('gss_2010', temp_data)) {
+          # no NAs in this data set
+          
+          # make columns that have mins all numeric
+          temp_sub <- cols_numeric_gss10(temp_sub)
+          
+          # remove age 
+          temp_sub<- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
+                                    temp_sub$age_group_of_the_respondent_groups_of_5),]
+          
+          # recode age_of_respndnts_youngest_child_in_hhld 
+          unique(temp_sub$age_of_youngest_member_in_respdnts_hhld)
+          
+          str(temp_sub)
+          i = 7
+          colnames(temp_sub)[i]
+          summary(as.factor(temp_sub[, i]))
+          
+        }
+        else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
+
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
@@ -1043,4 +1059,24 @@ clean_lfs <- function(temp_clean) {
   
   return(temp_clean)
   
+}
+
+cols_numeric_gss10 <- function(temp_clean) {
+  
+  for(col_num in 1:ncol(temp_clean)) {
+    
+    temp_col <- colnames(temp_clean)[col_num]
+    
+    if(grepl('mins', temp_col)) {
+      
+      # remove "No time spent for this" by making the column numeric - that will make 
+      # that level an NA and then fill that with zero, because no NAs in dataset.
+      temp_clean[, temp_col] <- as.numeric(as.character(temp_clean[, temp_col]))
+      
+      # fill NA with 0
+      temp_clean[is.na(temp_clean)] <- 0
+      
+    } 
+  }
+  return(temp_clean)
 }
