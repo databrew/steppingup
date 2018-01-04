@@ -13,6 +13,10 @@ library(broom)
 library(feather)
 library(foreign)
 library(sas7bdat)
+library(memisc)
+
+# data <- as.data.set(spss.system.file('filename.sav'))
+
 
 # Define function for reading survey data
 get_survey_data <- function() {
