@@ -84,14 +84,40 @@ get_survey_data <- function() {
           # remove age 
           temp_sub<- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                     temp_sub$age_group_of_the_respondent_groups_of_5),]
+         
+          # recode young child age - can conver to numeric and fill Nas with zero since only 
+          # characters will become NAs, and all character represent zero (i checked this)
+          temp_sub$age_of_respndnts_youngest_child_in_hhld <- 
+            numeric_add_zero(temp_sub$age_of_respndnts_youngest_child_in_hhld)
           
-          # recode age_of_respndnts_youngest_child_in_hhld 
-          unique(temp_sub$age_of_youngest_member_in_respdnts_hhld)
+          # same thing 
+          temp_sub$age_of_youngest_member_in_respdnts_hhld <- 
+            numeric_add_zero(temp_sub$age_of_youngest_member_in_respdnts_hhld)
           
-          str(temp_sub)
-          i = 7
+          # remove extra white spaces  
+          temp_sub$household_size_of_r <- remove_extra_white_spaces(temp_sub$household_size_of_r)
+            
+          # remove "...' from column
+          temp_sub$how_often_not_know_what_to_do_with_your_free_time <-
+            gsub('... ', '', temp_sub$how_often_not_know_what_to_do_with_your_free_time, fixed = TRUE)
+          
+          # remove ? as well
+          temp_sub$how_often_not_know_what_to_do_with_your_free_time <- 
+            gsub('?', '', temp_sub$how_often_not_know_what_to_do_with_your_free_time, fixed = TRUE)
+          
+          # make first ltter capital
+          temp_sub$how_often_not_know_what_to_do_with_your_free_time <- 
+            sapply(temp_sub$how_often_not_know_what_to_do_with_your_free_time, make_first_captial)
+
+          
+          i = 41
           colnames(temp_sub)[i]
           summary(as.factor(temp_sub[, i]))
+          str(temp_sub[,i])
+          
+          # mins_to_buy_everyday_goodsservices_on_internet, mins_for_dwelling_renovatn, mins_for_selfdevelopmnt
+          # mins_for_other_religious_activity, mins_for_professional_sports_events, mins_for_football, 
+          # mins_for_baseball_or_softball, mins_for_volleyball, mins_for_hockey
           
         }
         else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
@@ -1079,4 +1105,23 @@ cols_numeric_gss10 <- function(temp_clean) {
     } 
   }
   return(temp_clean)
+}
+
+
+numeric_add_zero <- function(temp_clean_column){
+  temp_clean_column <- as.numeric(as.character(temp_clean_column))
+  temp_clean_column[is.na(temp_clean_column)] <- 0
+  return(temp_clean_column)
+}
+
+remove_extra_white_spaces <- function(temp_clean_column){
+  temp_clean_column <- gsub('\\s+', " ", temp_clean_column)
+  return(temp_clean_column)
+}
+
+
+make_first_captial <- function(x) {
+  s <- strsplit(x, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+        sep="", collapse=" ")
 }
