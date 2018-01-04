@@ -27,9 +27,6 @@ get_survey_data <- function() {
   # create list to store results
   result_list <- list()
 
-  i = 2
-  j = 1
-  
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
     message('Starting ', i, ': ', survey_folders[i])
@@ -76,53 +73,11 @@ get_survey_data <- function() {
           temp_sub <- clean_lfs(temp_sub)
           
         } else if (grepl('gss_2010', temp_data)) {
-          # no NAs in this data set
           
-          # make columns that have mins all numeric
-          temp_sub <- cols_numeric_gss10(temp_sub)
+          temp_sub <- clean_gss10(temp_sub)
           
-          # remove age 
-          temp_sub<- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
-                                    temp_sub$age_group_of_the_respondent_groups_of_5),]
-         
-          # recode young child age - can conver to numeric and fill Nas with zero since only 
-          # characters will become NAs, and all character represent zero (i checked this)
-          temp_sub$age_of_respndnts_youngest_child_in_hhld <- 
-            numeric_add_zero(temp_sub$age_of_respndnts_youngest_child_in_hhld)
-          
-          # same thing 
-          temp_sub$age_of_youngest_member_in_respdnts_hhld <- 
-            numeric_add_zero(temp_sub$age_of_youngest_member_in_respdnts_hhld)
-          
-          # remove extra white spaces  
-          temp_sub$household_size_of_r <- remove_extra_white_spaces(temp_sub$household_size_of_r)
-            
-          # remove "...' from column
-          temp_sub$how_often_not_know_what_to_do_with_your_free_time <-
-            gsub('... ', '', temp_sub$how_often_not_know_what_to_do_with_your_free_time, fixed = TRUE)
-          
-          # remove ? as well
-          temp_sub$how_often_not_know_what_to_do_with_your_free_time <- 
-            gsub('?', '', temp_sub$how_often_not_know_what_to_do_with_your_free_time, fixed = TRUE)
-          
-          # make first ltter capital
-          temp_sub$how_often_not_know_what_to_do_with_your_free_time <- 
-            sapply(temp_sub$how_often_not_know_what_to_do_with_your_free_time, make_first_captial)
+        } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
 
-          
-          i = 41
-          colnames(temp_sub)[i]
-          summary(as.factor(temp_sub[, i]))
-          str(temp_sub[,i])
-          
-          # mins_to_buy_everyday_goodsservices_on_internet, mins_for_dwelling_renovatn, mins_for_selfdevelopmnt
-          # mins_for_other_religious_activity, mins_for_professional_sports_events, mins_for_football, 
-          # mins_for_baseball_or_softball, mins_for_volleyball, mins_for_hockey
-          
-        }
-        else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
-
-          
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
@@ -960,12 +915,9 @@ restructure_data_types <- function(temp) {
 
 clean_lfs <- function(temp_clean) {
   
-  # characters back to factors, and everything else numeric
+  # turn factors to characters, and everything else numeric
   temp_clean <- restructure_data_types(temp_clean)
-  
-  # remove extra columns or columns with too many NAs
-  temp_clean$current_student_status_and_type_of_school.1 <- NULL
-  
+
   # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
   temp_clean$job_seeker_checked_wemployers_directly <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployers_directly)
   temp_clean$job_seeker_checked_wemployment_agency <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployment_agency)
@@ -1087,41 +1039,195 @@ clean_lfs <- function(temp_clean) {
   
 }
 
-cols_numeric_gss10 <- function(temp_clean) {
+
+##########
+# gss10 functions
+##########
+# no NAs in this data set
+# if variable has "Not asked" level then it should pertain to the number of people in which that question was not applicable - they are negative of that question.
+# for example: "how much does your spouse make". The not asked people are those without a spouse, or in survey jargon, not on that questions path. 
+# not stated and/or not answered should be filled with NAs in all levels. This is done numeric data because its coded with all numbers except the "Not stated" or 
+# "Not answered" level
+# which turns to NA when converted to numbers.
+clean_gss10 <- function(temp_clean) {
+  
+  # first restructure so factors are characters, else numeric
+  temp_clean <- restructure_data_types(temp_clean)
+  # this function will fill any variable that has "Not stated" or "Not answered" with NA, but for time being, I'll keep "Not asked" levels as they are.
+  temp_clean <- get_na_gss10(temp_clean)
+  
+  # make columns that have mins or occur all numeric
+  temp_clean <- cols_numeric_gss10(temp_clean, keyword = 'mins')
+  
+  # remove age 
+  temp_clean<- temp_clean[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
+                            temp_clean$age_group_of_the_respondent_groups_of_5),]
+  
+  # recode young child age - can conver to numeric and fill Nas with zero since only 
+  # characters will become NAs, and all character represent zero (i checked this)
+  temp_clean$age_of_respndnts_youngest_child_in_hhld <- 
+    numeric_add_zero_gss10(temp_clean$age_of_respndnts_youngest_child_in_hhld)
+  
+  # same thing 
+  temp_clean$age_of_youngest_member_in_respdnts_hhld <- 
+    numeric_add_zero_gss10(temp_clean$age_of_youngest_member_in_respdnts_hhld)
+  
+  # remove extra white spaces  
+  temp_clean$household_size_of_r <- remove_extra_white_spaces_gss10(temp_clean$household_size_of_r)
+  
+  # remove elipses, ?, and make first letters capital
+  temp_clean$how_often_not_know_what_to_do_with_your_free_time <-
+    remove_and_capitalize_gss10(temp_clean$how_often_not_know_what_to_do_with_your_free_time)
+  
+  temp_clean$in_general_would_you_say_your_health_is <-
+    remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_health_is)
+  
+  temp_clean$in_general_would_you_say_your_mental_health_is <-
+    remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_mental_health_is)
+  
+  temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services <- 
+    remove_and_capitalize_gss10(temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services)
+  
+  # clean "hour" variables - "not stated" level should be filled with NA, Not answered as well.
+  # so all you have to do is make these variables numeric and it will generate NA for you
+  temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld <- 
+    as.numeric(as.character(temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld))
+  
+  # recoed variables that are on scale from 1-10 as happiness level - 98 (dont know) or 99 (not stated) sho
+  temp_clean$how_feel_about_your_life_as_whole <-
+    recode_scale_vars_gss10(temp_clean$how_feel_about_your_life_as_whole)
+  
+  # recode last_week_was_your_main_activity 
+  temp_clean$last_week_was_your_main_activity <- gsub("Working at a paid job or busi", 'Working at a paid job', temp_clean$last_week_was_your_main_activity)
+  
+  # recode labour_force_status_of_the_r
+  temp_clean$labour_force_status_of_the_r <- gsub( " *\\(.*?\\) *", "", temp_clean$labour_force_status_of_the_r)
+  temp_clean$labour_force_status_of_the_r <- gsub( "emplmnt", "employment", temp_clean$labour_force_status_of_the_r)
+  
+  # clean  or busi from main_activity_of_r_in_the_last_12_months
+  temp_clean$main_activity_of_the_r_in_the_last_12_months <- 
+    gsub(' or busi', '', temp_clean$main_activity_of_the_r_in_the_last_12_months)
+  
+  # clean education variables
+  temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups <-
+    clean_education_var_gss10(temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups, spouse = FALSE)
+  temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups <-
+    clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups, spouse = TRUE)
+  temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups <-
+    clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups, spouse = FALSE)
+  
+  # clean would_you_say_that_you_know_the_ppl_in_your_neighbhood
+  temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood <-
+    gsub(' in your n', '', temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood)
+  
+  # clean main_source_of_inc_during_the_yr_ending_dec_31_2009
+  temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009 <- ifelse(grepl('Employment-sal', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009), 
+                                                                         'Employment salary, commission, tips', 
+                                                                         ifelse(grepl('Self-employ',temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+                                                                                'Self employed, unincorporated',
+                                                                                ifelse(grepl('Invest', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+                                                                                       'Investment income, interest, or net rents',
+                                                                                       ifelse(grepl('Retiremnt', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+                                                                                              'Retirement pension or annuitites',
+                                                                                              ifelse(grepl('Guaranteed Inc', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+                                                                                                     'Guaranteed income supplement',
+                                                                                                     ifelse(grepl('Prov Territ', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+                                                                                                            'Provincial/municipal social assistance', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009))))))
+  
+  
+  return(temp_clean)
+  # 
+}
+
+# sub functions
+cols_numeric_gss10 <- function(temp_clean, keyword) {
   
   for(col_num in 1:ncol(temp_clean)) {
     
-    temp_col <- colnames(temp_clean)[col_num]
+    temp_col_name <-colnames(temp_clean)[col_num]
+    temp_col <- temp_clean[, col_num]
     
-    if(grepl('mins', temp_col)) {
+    if(grepl(keyword, temp_col_name)) {
       
       # remove "No time spent for this" by making the column numeric - that will make 
       # that level an NA and then fill that with zero, because no NAs in dataset.
-      temp_clean[, temp_col] <- as.numeric(as.character(temp_clean[, temp_col]))
+      temp_col <- as.numeric(temp_col)
       
       # fill NA with 0
-      temp_clean[is.na(temp_clean)] <- 0
+      temp_col[is.na(temp_col)] <- 0
       
-    } 
+    }
+    temp_clean[, col_num] <- temp_col
   }
   return(temp_clean)
 }
 
 
-numeric_add_zero <- function(temp_clean_column){
-  temp_clean_column <- as.numeric(as.character(temp_clean_column))
+numeric_add_zero_gss10 <- function(temp_clean_column){
+  temp_clean_column <- as.numeric(temp_clean_column)
   temp_clean_column[is.na(temp_clean_column)] <- 0
   return(temp_clean_column)
 }
 
-remove_extra_white_spaces <- function(temp_clean_column){
+remove_extra_white_spaces_gss10 <- function(temp_clean_column){
   temp_clean_column <- gsub('\\s+', " ", temp_clean_column)
   return(temp_clean_column)
 }
 
 
-make_first_captial <- function(x) {
+make_first_captial_gss10 <- function(x) {
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1,1)), substring(s, 2),
         sep="", collapse=" ")
+}
+
+
+recode_scale_vars_gss10 <- function(temp_clean_column) {
+  temp_clean_column <- gsub("Very dissatisfied", "1", temp_clean_column)
+  # make numeric
+  temp_clean_column <- as.numeric(as.character(temp_clean_column))
+  return(temp_clean_column)
+}
+
+
+remove_and_capitalize_gss10 <- function(temp_clean_column) {
+  temp_clean_column <- gsub('... ', '', temp_clean_column , fixed = TRUE)
+  temp_clean_column <- gsub('?', '', temp_clean_column , fixed = TRUE)
+  temp_clean_column <- 
+    sapply(temp_clean_column, make_first_captial_gss10)
+  return(temp_clean_column)
+  
+}
+
+# clean levels of education
+clean_education_var_gss10 <- function(temp_clean_column, spouse) {
+  temp_clean_column <- gsub('Dipl/certif from com coll or trade/technica' ,
+                            'Dip/cert from trade/technical school or college', 
+                            temp_clean_column)
+  
+  temp_clean_column <- gsub('Some uni/comm coll' ,
+                            'Some university or community college', 
+                            temp_clean_column)
+  
+  temp_clean_column <- gsub('Some sec/elem/no schl' ,
+                            'Some secondary/elementary or no school', 
+                            temp_clean_column)
+  
+  if(spouse) {
+    temp_clean_column <- gsub('7', 'No spouse', temp_clean_column)
+  }
+  
+  return(temp_clean_column)
+}
+
+get_na_gss10 <- function(temp_clean) {
+  for(col_num in 1:ncol(temp_clean)){
+    temp_col <- temp_clean[, col_num]
+    if(any(grepl('not stated|not answered', temp_col, ignore.case = TRUE))) {
+      temp_col <- gsub('not stated', NA, temp_col, ignore.case = TRUE)
+      temp_col <- gsub('not answered', NA, temp_col, ignore.case = TRUE)
+    }
+    temp_clean[, col_num] <- temp_col
+  }
+  return(temp_clean)
 }
