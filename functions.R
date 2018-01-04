@@ -26,6 +26,10 @@ get_survey_data <- function() {
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   # create list to store results
   result_list <- list()
+  
+  i = 10
+  j = 1
+  
 
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
@@ -109,6 +113,27 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } else if(grepl('sduhs', temp_data)) {
+          
+          # restructure data
+          temp_sub <- restructure_data_types(temp_sub)
+          
+          # do something wiht NA first
+          
+          # make first letter capital - problem is when it is applied to number
+          for(num_col in 1:ncol(temp_sub)) {
+            temp_col <- temp_sub[, num_col]
+            if(grepl('character', class(temp_col))) {
+              temp_col <- sapply(temp_col, make_first_captial)
+            }
+            temp_sub[, num_col] <- temp_col
+          }
+
+          # convert date column to a date variable 
+          temp_sub$date_of_survey_administration <- 
+            get_date_osduhs(temp_sub$date_of_survey_administration)
+          
+          
+          
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
             mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
@@ -1175,7 +1200,7 @@ remove_extra_white_spaces_gss10 <- function(temp_clean_column){
 }
 
 
-make_first_captial_gss10 <- function(x) {
+make_first_captial <- function(x) {
   s <- strsplit(x, " ")[[1]]
   paste(toupper(substring(s, 1,1)), substring(s, 2),
         sep="", collapse=" ")
@@ -1194,7 +1219,7 @@ remove_and_capitalize_gss10 <- function(temp_clean_column) {
   temp_clean_column <- gsub('... ', '', temp_clean_column , fixed = TRUE)
   temp_clean_column <- gsub('?', '', temp_clean_column , fixed = TRUE)
   temp_clean_column <- 
-    sapply(temp_clean_column, make_first_captial_gss10)
+    sapply(temp_clean_column, make_first_captial)
   return(temp_clean_column)
   
 }
@@ -1231,3 +1256,28 @@ get_na_gss10 <- function(temp_clean) {
   }
   return(temp_clean)
 }
+
+
+##########
+# osduhs functions
+##########
+get_date_osduhs <- function(column_var) {
+  var_store <- list()
+  temp_cols <- as.character(column_var)
+  temp_cols <- trimws(temp_cols, 'both')
+  for(i in 1:length(temp_cols)){
+    temp <- temp_cols[i]
+    if(nchar(temp) == 7) {
+      temp <- gsub('^(.{1})(.*)$', '\\1-\\2', temp)
+      temp <- gsub('^(.{4})(.*)$', '\\1-\\2', temp)
+    } else {
+      temp <- gsub('^(.{2})(.*)$', '\\1-\\2', temp)
+      temp <- gsub('^(.{5})(.*)$', '\\1-\\2', temp)
+    }
+    temp_cols[i] <- temp
+  }
+  date_cols <- as.Date(temp_cols, format='%d-%m-%Y')
+  return(date_cols)
+}
+
+
