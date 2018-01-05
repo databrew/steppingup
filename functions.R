@@ -100,6 +100,9 @@ get_survey_data <- function() {
           
         } else if (grepl('gss_2013|gss_2014', temp_data)) {
           
+          # make weight numeric
+          temp_sub$person_weight <- as.numeric(as.character(temp_sub$person_weight))
+          
           temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
 
