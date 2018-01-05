@@ -261,7 +261,7 @@ get_census_data <- function() {
     census %>%
     filter(`Visible minority` %in% c('Aboriginal identity',
                                      'Non-Aboriginal identity')) %>%
-    rename(`Aboriginal identity` = `Visible minority`) %>%
+    dplyr::rename(`Aboriginal identity` = `Visible minority`) %>%
     mutate(`Visible minority` = "Total - Population by visible minority") 
   ordered_columns <- unique(c('Geography', 'geo_code',
                               'year', 'Age group',
