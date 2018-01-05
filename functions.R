@@ -13,6 +13,10 @@ library(broom)
 library(feather)
 library(foreign)
 library(sas7bdat)
+library(memisc)
+
+# data <- as.data.set(spss.system.file('filename.sav'))
+
 
 # Define function for reading survey data
 get_survey_data <- function() {
@@ -99,6 +103,9 @@ get_survey_data <- function() {
                                       temp_sub$age_in_10_year_bands_derived),]
           
         } else if (grepl('gss_2013|gss_2014', temp_data)) {
+          
+          # make weight numeric
+          temp_sub$person_weight <- as.numeric(as.character(temp_sub$person_weight))
           
           temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
