@@ -127,34 +127,43 @@ get_survey_data <- function() {
           # make first letter capital
           temp_sub <- get_capital_osduhs(temp_sub)
           
-          # convert date column to a date variable 
-          temp_sub$date_of_survey_administration <- 
-            get_date_osduhs(temp_sub$date_of_survey_administration)
+          # get date, and date and time of start and finish
+          temp_sub <- get_date_and_time_osduhs(temp_sub)
+          
+          # recode body weight variable
+          temp_sub <- get_body_weight_osduhs(temp_sub)
+          
+          # STOPPED HERE
+          # 
+          # i = 10
+          # colnames(temp_sub)[i]
+          # summary(as.factor(temp_sub[,i]))
+          # colnames(temp_sub)
           
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
-            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
-                                 'white',
-                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'yes',
-                                        'chinese',
-                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'yes',
-                                               'south asian',
-                                               ifelse(black_which_of_the_following_best_describes_your_background == 'yes',
-                                                      'black',
-                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'yes',
-                                                             'aboriginal',
-                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'yes',
-                                                                    'filipino',
-                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'yes',
-                                                                           'southeast asian',
-                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'yes',
-                                                                                  'west asian / arab',
-                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'yes',
-                                                                                         'korean',
-                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'yes',
-                                                                                                'japanese',
-                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'yes',
-                                                                                                       'not sure', 
+            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'Yes',
+                                 'White',
+                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'Yes',
+                                        'Chinese',
+                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'Yes',
+                                               'South asian',
+                                               ifelse(black_which_of_the_following_best_describes_your_background == 'Yes',
+                                                      'Black',
+                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'Yes',
+                                                             'Aboriginal',
+                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                    'Filipino',
+                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                           'Southeast asian',
+                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                                  'West asian / Arab',
+                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                                         'Korean',
+                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                                                'Japanese',
+                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'Yes',
+                                                                                                       'Not sure', 
                                                                                                        NA))))))))))))
  
           temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
@@ -1258,23 +1267,56 @@ get_na_gss10 <- function(temp_clean) {
 ##########
 # osduhs functions
 ##########
-get_date_osduhs <- function(column_var) {
-  var_store <- list()
-  temp_cols <- as.character(column_var)
-  temp_cols <- trimws(temp_cols, 'both')
-  for(i in 1:length(temp_cols)){
-    temp <- temp_cols[i]
-    if(nchar(temp) == 7) {
-      temp <- gsub('^(.{1})(.*)$', '\\1-\\2', temp)
-      temp <- gsub('^(.{4})(.*)$', '\\1-\\2', temp)
+
+get_date_and_time_osduhs <- function(temp_clean) {
+  # get survey data, and start and finsih time
+  survey_date <- trimws(temp_clean$date_of_survey_administration, 'both')
+  survey_begin_time <- trimws(temp_clean$time_started_survey_written_by_student, 'both')
+  survey_end_time <- trimws(temp_clean$time_ended_survey_written_by_student, 'both')
+  
+  for(i in 1:nrow(temp_clean)){
+    temp_survey_date <- survey_date[i]
+    temp_survey_begin_time <- survey_begin_time[i]
+    temp_survey_end_time <- survey_end_time[i]
+    
+    if(is.na(temp_survey_date)) {
+      temp_survey_date <- NA
+    } else if (nchar(temp_survey_date) == 7) {
+      temp_survey_date <- gsub('^(.{1})(.*)$', '\\1/\\2', temp_survey_date)
+      temp_survey_date <- gsub('^(.{4})(.*)$', '\\1/\\2', temp_survey_date)
     } else {
-      temp <- gsub('^(.{2})(.*)$', '\\1-\\2', temp)
-      temp <- gsub('^(.{5})(.*)$', '\\1-\\2', temp)
+      temp_survey_date <- gsub('^(.{2})(.*)$', '\\1/\\2', temp_survey_date)
+      temp_survey_date <- gsub('^(.{5})(.*)$', '\\1/\\2', temp_survey_date)
     }
-    temp_cols[i] <- temp
+    
+    if(is.na(temp_survey_begin_time)) {
+      temp_survey_begin_time <- NA
+    } else if(nchar(temp_survey_begin_time) == 3) {
+      temp_survey_begin_time <- gsub('^(.{1})(.*)$', '\\1:\\2', temp_survey_begin_time)
+    } else {
+      temp_survey_begin_time <- gsub('^(.{2})(.*)$', '\\1:\\2', temp_survey_begin_time)
+    }
+
+    if(is.na(temp_survey_end_time)){
+      temp_survey_end_time <- NA
+    } else if(nchar(temp_survey_end_time) == 3) {
+      temp_survey_end_time <- gsub('^(.{1})(.*)$', '\\1:\\2', temp_survey_end_time)
+    } else {
+      temp_survey_end_time <- gsub('^(.{2})(.*)$', '\\1:\\2', temp_survey_end_time)
+    }
+   
+    survey_date[i] <- temp_survey_date
+    survey_begin_time[i] <- temp_survey_begin_time
+    survey_end_time[i] <- temp_survey_end_time
+    
+    print(i)
   }
-  date_cols <- as.Date(temp_cols, format='%d-%m-%Y')
-  return(date_cols)
+  
+  temp_clean$date_of_survey_administration <- as.Date(survey_date, format = '%d/%m/%Y')
+  temp_clean$time_started_survey_written_by_student<- as.POSIXct(paste(survey_date, survey_begin_time, sep = ' '), format="%d/%m/%Y %H:%M")
+  temp_clean$time_ended_survey_written_by_student <- as.POSIXct(paste(survey_date, survey_end_time, sep = ' '), format="%d/%m/%Y %H:%M")
+
+  return(temp_clean)
 }
 
 # make first letter capital 
@@ -1290,6 +1332,41 @@ get_capital_osduhs <- function(temp_clean) {
   }
   
   temp_clean[grepl('NANA', temp_clean)] <- NA
+  return(temp_clean)
+  
+}
+
+
+get_body_weight_osduhs <- function(temp_clean){
+  # temp <- unlist(lapply(strsplit(as.character(dat$hw_osduhs_weight), 
+  #                         '/', 
+  #                         fixed = TRUE), function(x){
+  #                           x[1]
+  #                         }))
+  unique_pounds <- as.character(unique(sort(temp_clean$what_is_your_current_weight_without_shoes)))
+  
+  # take bottom to put back on top
+  bottom_5 <- unique_pounds[38:length(unique_pounds)]
+  unique_pounds <- unique_pounds[-c(38:length(unique_pounds))]
+  unique_pounds <- c(bottom_5, unique_pounds)
+  
+  
+  temp <- as.data.frame(cbind(pounds = unique_pounds, 
+                              sequence = seq(1, length(unique_pounds), 1)))
+  temp$sequence <- as.numeric(sort(temp$sequence))
+  
+  # split into 5 categories using sequence 
+  temp$new_weight <- ifelse(temp$sequence > 0 & temp$sequence <=6, '80_105',
+                            ifelse(temp$sequence > 6 & temp$sequence <=12, '106_135', 
+                                   ifelse(temp$sequence > 12 & temp$sequence <= 18, '136_165',
+                                          ifelse(temp$sequence > 18 & temp$sequence <=24, '166_195',
+                                                 ifelse(temp$sequence > 24 & temp$sequence <= 30, '196_225',
+                                                        ifelse(temp$sequence > 30 & temp$sequence <=36, '226_255', '255_up'))))))
+  
+  temp$sequence <- NULL
+  temp_clean <- left_join(temp_clean, temp, by = c('what_is_your_current_weight_without_shoes' = 'pounds'))
+  temp_clean$what_is_your_current_weight_without_shoes <- NULL
+  colnames(temp_clean)[ncol(temp_clean)] <- 'what_is_your_current_weight_without_shoes'
   return(temp_clean)
   
 }
