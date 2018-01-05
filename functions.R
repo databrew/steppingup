@@ -119,27 +119,17 @@ get_survey_data <- function() {
           
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
-        } else if(grepl('sduhs', temp_data)) {
+        } else if (grepl('sduhs', temp_data)) {
           
           # restructure data
           temp_sub <- restructure_data_types(temp_sub)
           
-          # do something wiht NA first
+          # make first letter capital
+          temp_sub <- get_capital_osduhs(temp_sub)
           
-          # make first letter capital - problem is when it is applied to number
-          for(num_col in 1:ncol(temp_sub)) {
-            temp_col <- temp_sub[, num_col]
-            if(grepl('character', class(temp_col))) {
-              temp_col <- sapply(temp_col, make_first_captial)
-            }
-            temp_sub[, num_col] <- temp_col
-          }
-
           # convert date column to a date variable 
           temp_sub$date_of_survey_administration <- 
             get_date_osduhs(temp_sub$date_of_survey_administration)
-          
-          
           
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
@@ -1287,4 +1277,20 @@ get_date_osduhs <- function(column_var) {
   return(date_cols)
 }
 
+# make first letter capital 
+get_capital_osduhs <- function(temp_clean) {
+  
+  for(num_col in 1:ncol(temp_clean)) {
+    temp_col <- temp_clean[, num_col]
+    if(grepl('character', class(temp_col))) {
+      temp_col <- sapply(temp_col, make_first_captial)
+    }
+    temp_clean[, num_col] <- temp_col
+    temp_clean[, num_col] <- gsub('NANA', NA, temp_clean[, num_col])
+  }
+  
+  temp_clean[grepl('NANA', temp_clean)] <- NA
+  return(temp_clean)
+  
+}
 
