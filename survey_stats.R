@@ -14,9 +14,10 @@ survey_folders
 #########
 # Labour force survey
 #########
+lfs <- survey[[1]]
+colnames(temp_sub)
 
-
-
+str(lfs)
 
 
 
