@@ -30,10 +30,6 @@ get_survey_data <- function() {
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   # create list to store results
   result_list <- list()
-  
-  i = 10
-  j = 1
-  
 
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
@@ -132,13 +128,6 @@ get_survey_data <- function() {
           
           # recode body weight variable
           temp_sub <- get_body_weight_osduhs(temp_sub)
-          
-          # STOPPED HERE
-          # 
-          # i = 10
-          # colnames(temp_sub)[i]
-          # summary(as.factor(temp_sub[,i]))
-          # colnames(temp_sub)
           
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
