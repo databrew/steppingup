@@ -1,5 +1,6 @@
 ##### Script for ad hoc survey analsis
 # each model should only have a few predictors and done sequentially
+# I'll choose interesting variables. Later will add in programmatic way (fetching relationships with a regularization model)
 library(tidyverse)
 library(glmnet)
 
@@ -15,8 +16,59 @@ survey_folders
 # Labour force survey
 #########
 lfs <- survey[[1]]
-colnames(temp_sub)
+colnames(lfs)
 
+# make all characters
+lfs <- restructure_data_types(lfs, convert_type = 'character')
+
+# For the purpose of this report, will
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+formula_string <- as.formula('em_lfs_hourly_wages ~ demo_lfs_student_status + 
+                             demo_lfs_age + demo_lfs_sex + demo_lfs_highest_edu + demo_lfs_multiple_single_job_holder +
+                             em_lfs_class_of_worker + em_lfs_actual_hours_per_week_main_job +em_lfs_union_membership +
+                             demo_lfs_econ_family_type + demo_lfs_age_spouse + em_lfs_spouse_usual_hours_main_job + 
+                             em_lfs_spouse_class_of_worker')
+formula_string <- 'em_lfs_neet ~ '
+formula_string <- 'em_lfs_actual_hours_per_week_main_job ~ '
+formula_string <- 'em_lfs_unemployed_only ~ '
+
+
+mod_type = 'gaussian'
+pred_vars <- c('em_lfs_hourly_wages','demo_lfs_student_status', 'demo_lfs_age', 'demo_lfs_sex', 'demo_lfs_highest_edu', 
+                'demo_lfs_multiple_single_job_holder', 'em_lfs_class_of_worker', 'em_lfs_actual_hours_per_week_main_job',
+                'em_lfs_union_membership', 'demo_lfs_econ_family_type', 'demo_lfs_age_spouse', 
+                'em_lfs_spouse_usual_hours_main_job' , 'em_lfs_spouse_class_of_worker', 'demo_lfs_sample_weight')
+
+temp_data <- lfs
+custom_logit_mod <- function(temp_data, outcome, predictors, mod_type, weights) {
+  
+  pred_sub <- temp_data[, colnames(temp_data) %in% pred_vars]
+  pred_sub <- pred_sub[complete.cases(pred_sub),]
+  if(!weights) {
+    weight_var <- rep.int(1, nrow(pred_sub))
+  } else {
+    weight_var <- pred_sub$demo_lfs_sample_weight
+  }
+  y_outcome <- pred_sub[, outcome]
+  pred_sub[, outcome]<- NULL
+  pred_sub$demo_lfs_sample_weight <- NULL
+  
+  # get target_class
+  if(class(y_outcome) == 'numeric') {
+    target_class <- 'numeric_regression'
+  } else {
+    target_class <- sort(unique(y_outcome))[2]
+  }
+
+  # loop though colnames (without demo) and estimate logit
+  model_result <- glm(y_outcome ~., family = mod_type, weights = weight_var, data = pred_sub)
+  model_result <- cbind(tidy(model_result), odds_ratio = exp(model_result$coefficients))
+  model_result$target_class <- target_class
+  model_result$odds_ratio.names <- NULL
+  model_result$outcome_var <- y_outcome_name
+  model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
+  
+}
 
 
 
