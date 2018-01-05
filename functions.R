@@ -121,7 +121,7 @@ get_survey_data <- function() {
           temp_sub <- restructure_data_types(temp_sub)
           
           # make first letter capital
-          temp_sub <- get_capital_osduhs(temp_sub)
+          # temp_sub <- get_capital_osduhs(temp_sub)
           
           # get date, and date and time of start and finish
           temp_sub <- get_date_and_time_osduhs(temp_sub)
@@ -131,28 +131,28 @@ get_survey_data <- function() {
           
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
-            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'Yes',
-                                 'White',
-                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'Yes',
-                                        'Chinese',
-                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'Yes',
-                                               'South asian',
-                                               ifelse(black_which_of_the_following_best_describes_your_background == 'Yes',
-                                                      'Black',
-                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'Yes',
-                                                             'Aboriginal',
-                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'Yes',
-                                                                    'Filipino',
-                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'Yes',
-                                                                           'Southeast asian',
-                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'Yes',
-                                                                                  'West asian / Arab',
-                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'Yes',
+            mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
+                                 'chite',
+                                 ifelse(chinese_which_of_the_following_best_describes_your_background == 'yes',
+                                        'whinese',
+                                        ifelse(south_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                               'south asian',
+                                               ifelse(black_which_of_the_following_best_describes_your_background == 'yes',
+                                                      'black',
+                                                      ifelse(aboriginalfirst_nations_which_of_the_following_best_describes_your_background == 'yes',
+                                                             'aboriginal',
+                                                             ifelse(filipino_which_of_the_following_best_describes_your_background == 'yes',
+                                                                    'filipino',
+                                                                    ifelse(southeast_asian_which_of_the_following_best_describes_your_background == 'yes',
+                                                                           'southeast asian',
+                                                                           ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                  'west asian / arab',
+                                                                                  ifelse(korean_which_of_the_following_best_describes_your_background == 'yes',
                                                                                          'Korean',
-                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'Yes',
-                                                                                                'Japanese',
-                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'Yes',
-                                                                                                       'Not sure', 
+                                                                                         ifelse(japanese_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                'japanese',
+                                                                                                ifelse(not_sure_which_of_the_following_best_describes_your_background == 'yes',
+                                                                                                       'not sure', 
                                                                                                        NA))))))))))))
  
           temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
@@ -1055,6 +1055,7 @@ clean_lfs <- function(temp_clean) {
   # remove the NA from the level "Spouse present,NA" 
   temp_clean$spouses_class_of_worker_at_main_job <- gsub(',NA', '', temp_clean$spouses_class_of_worker_at_main_job)
   
+  
   return(temp_clean)
   
 }
@@ -1195,11 +1196,11 @@ remove_extra_white_spaces_gss10 <- function(temp_clean_column){
 }
 
 
-make_first_captial <- function(x) {
-  s <- strsplit(x, " ")[[1]]
-  paste(toupper(substring(s, 1,1)), substring(s, 2),
-        sep="", collapse=" ")
-}
+# make_first_captial <- function(x) {
+#   s <- strsplit(x, " ")[[1]]
+#   paste(toupper(substring(s, 1,1)), substring(s, 2),
+#         sep="", collapse=" ")
+# }
 
 
 recode_scale_vars_gss10 <- function(temp_clean_column) {
@@ -1213,14 +1214,15 @@ recode_scale_vars_gss10 <- function(temp_clean_column) {
 remove_and_capitalize_gss10 <- function(temp_clean_column) {
   temp_clean_column <- gsub('... ', '', temp_clean_column , fixed = TRUE)
   temp_clean_column <- gsub('?', '', temp_clean_column , fixed = TRUE)
-  temp_clean_column <- 
-    sapply(temp_clean_column, make_first_captial)
+  # temp_clean_column <- 
+  #   sapply(temp_clean_column, make_first_captial)
   return(temp_clean_column)
   
 }
 
 # clean levels of education
 clean_education_var_gss10 <- function(temp_clean_column, spouse) {
+  
   temp_clean_column <- gsub('Dipl/certif from com coll or trade/technica' ,
                             'Dip/cert from trade/technical school or college', 
                             temp_clean_column)
@@ -1308,22 +1310,22 @@ get_date_and_time_osduhs <- function(temp_clean) {
   return(temp_clean)
 }
 
-# make first letter capital 
-get_capital_osduhs <- function(temp_clean) {
-  
-  for(num_col in 1:ncol(temp_clean)) {
-    temp_col <- temp_clean[, num_col]
-    if(grepl('character', class(temp_col))) {
-      temp_col <- sapply(temp_col, make_first_captial)
-    }
-    temp_clean[, num_col] <- temp_col
-    temp_clean[, num_col] <- gsub('NANA', NA, temp_clean[, num_col])
-  }
-  
-  temp_clean[grepl('NANA', temp_clean)] <- NA
-  return(temp_clean)
-  
-}
+# # make first letter capital 
+# get_capital_osduhs <- function(temp_clean) {
+#   
+#   for(num_col in 1:ncol(temp_clean)) {
+#     temp_col <- temp_clean[, num_col]
+#     if(grepl('character', class(temp_col))) {
+#       temp_col <- sapply(temp_col, make_first_captial)
+#     }
+#     temp_clean[, num_col] <- temp_col
+#     temp_clean[, num_col] <- gsub('NANA', NA, temp_clean[, num_col])
+#   }
+#   
+#   temp_clean[grepl('NANA', temp_clean)] <- NA
+#   return(temp_clean)
+#   
+# }
 
 
 get_body_weight_osduhs <- function(temp_clean){

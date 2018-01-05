@@ -17,7 +17,6 @@ survey_folders
 lfs <- survey[[1]]
 colnames(temp_sub)
 
-str(lfs)
 
 
 
