@@ -261,7 +261,7 @@ get_census_data <- function() {
     census %>%
     filter(`Visible minority` %in% c('Aboriginal identity',
                                      'Non-Aboriginal identity')) %>%
-    rename(`Aboriginal identity` = `Visible minority`) %>%
+    dplyr::rename(`Aboriginal identity` = `Visible minority`) %>%
     mutate(`Visible minority` = "Total - Population by visible minority") 
   ordered_columns <- unique(c('Geography', 'geo_code',
                               'year', 'Age group',
@@ -586,7 +586,7 @@ survey_dictionary <-
   mutate(data_set = unlist(lapply(strsplit(new_variable, '_'), function(x) x[2]))) %>%
   mutate(theme_name = unlist(lapply(strsplit(new_variable, '_'), function(x) x[1]))) %>%
     mutate(display_name = Hmisc::capitalize(gsub('_', ' ', variable_name))) %>%
-    rename(short_name = data_set) %>%
+    dplyr::rename(short_name = data_set) %>%
     left_join(dataset_dictionary, by = 'short_name') %>%
   mutate(display_name = paste0(display_name, 
                                ' (',

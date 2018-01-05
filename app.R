@@ -574,8 +574,8 @@ server <- function(input, output) {
         x <- x %>%
           filter(theme_name != 'demo')
         x <- x %>% dplyr::select(-theme_name) %>%
-          rename(Theme = long_name) %>%
-          rename(Variable = display_name)
+          dplyr::rename(Theme = long_name) %>%
+          dplyr::rename(Variable = display_name)
         x <- x %>% filter(!is.na(Theme))
         out <- DT::datatable(x,options = list(dom = 't'), rownames = FALSE)
     } 
