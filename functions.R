@@ -1366,12 +1366,12 @@ get_body_weight_osduhs <- function(temp_clean){
   
 }
 
-
-temp_data <- lfs
-model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'demo_lfs_sample_weight') 
-                outcome_var = 'em_lfs_unemployed_only'
-                weights = FALSE
-                mod_type = 'binomial'
+# 
+# temp_data <- lfs
+# model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'em_lfs_class_of_worker','demo_lfs_sample_weight')
+# outcome_var = 'em_lfs_hourly_wages'
+# weights = FALSE
+# mod_type = 'gaussian'
 
 # for now weights are broken
 custom_logit_mod <- function(temp_data, 
@@ -1411,10 +1411,11 @@ custom_logit_mod <- function(temp_data,
     model_result$p.value <- round(model_result$p.value, 4)
     model_result$outcome_var <- outcome_var
     
-    tab <- htmlreg(model_result,single.row=TRUE)
+    tab <- kable(model_result, digits = 4, format = 'html')
     
   } else {
-    tab <- kable(model_result)
+    tidy_object <- tidy(model_result)
+    tab <- kable(tidy_object, digits = 4, format = 'html')
 
   }
   
