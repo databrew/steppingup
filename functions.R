@@ -1367,6 +1367,12 @@ get_body_weight_osduhs <- function(temp_clean){
 }
 
 
+temp_data <- lfs
+model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'demo_lfs_sample_weight') 
+                outcome_var = 'em_lfs_unemployed_only'
+                weights = FALSE
+                mod_type = 'binomial'
+
 # for now weights are broken
 custom_logit_mod <- function(temp_data, 
                              model_vars,
@@ -1405,12 +1411,11 @@ custom_logit_mod <- function(temp_data,
     model_result$p.value <- round(model_result$p.value, 4)
     model_result$outcome_var <- outcome_var
     
-    tab <- xtable::xtable(model_result)
+    tab <- htmlreg(model_result,single.row=TRUE)
     
   } else {
-    # model_result <- tidy(model_result)
-    tab <- xtable::xtable(model_result)
-    
+    tab <- kable(model_result)
+
   }
   
   return(tab)

@@ -22,7 +22,8 @@ library(databrew)
 library(ggmap)
 library(reshape2)
 library(memisc)
-library(xtable)
+library(texreg)
+
 
 # Turn off scientific notation
 options(scipen = '999')
@@ -67,7 +68,7 @@ lfs <- restructure_data_types(lfs, convert_type = 'character')
 ```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
 
 # outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
-custom_logit_mod(lfs, 
+mod <- custom_logit_mod(lfs, 
                  model_vars = c('demo_lfs_sex', 'demo_lfs_sample_weight'), 
                  outcome_var = 'em_lfs_unemployed_only', 
                  weights = FALSE, 
