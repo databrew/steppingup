@@ -1405,11 +1405,11 @@ custom_logit_mod <- function(temp_data,
     model_result$p.value <- round(model_result$p.value, 4)
     model_result$outcome_var <- outcome_var
     
-    tab <- kable(model_result, format = 'markdown')
+    tab <- xtable::xtable(model_result)
     
   } else {
-    model_result <- tidy(model_result)
-    tab <- kable(model_result, format = 'markdown')
+    # model_result <- tidy(model_result)
+    tab <- xtable::xtable(model_result)
     
   }
   

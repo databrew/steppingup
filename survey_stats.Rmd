@@ -22,6 +22,7 @@ library(databrew)
 library(ggmap)
 library(reshape2)
 library(memisc)
+library(xtable)
 
 # Turn off scientific notation
 options(scipen = '999')
@@ -156,6 +157,31 @@ custom_logit_mod(lfs,
                  weights = FALSE, 
                  mod_type = 'gaussian')
 
-str(lfs)
+
+```
+
+# Hourly wage as a function of gender, age, education, and class of worker 
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','ed_lfs_highest_edu','em_lfs_class_of_worker','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+```
+
+# Hourly wage as a function of gender, age, education, class of worker, and union
+em_lfs_class_of_worker  
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','ed_lfs_highest_edu','em_lfs_class_of_worker', 'em_lfs_union_membership' ,'demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
 
 ```
