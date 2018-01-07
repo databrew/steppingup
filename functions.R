@@ -118,7 +118,7 @@ get_survey_data <- function() {
         } else if (grepl('sduhs', temp_data)) {
           
           # restructure data
-          temp_sub <- restructure_data_types(temp_sub, convert_type = 'factor')
+          temp_sub <- restructure_data_types(temp_sub, convert_from = 'factor')
           
           # make first letter capital
           # temp_sub <- get_capital_osduhs(temp_sub)
@@ -922,10 +922,10 @@ relevel_factor_one_lfs <- function(dat_var) {
 }
 
 # restructure data types
-restructure_data_types <- function(temp, convert_type) {
+restructure_data_types <- function(temp, convert_from) {
   for(i in 1:ncol(temp)) {
-    if(grepl(convert_type, class(temp[, i]))) {
-      if(convert_type == 'character') {
+    if(grepl(convert_from, class(temp[, i]))) {
+      if(convert_from == 'character') {
         temp[, i] <- as.factor(temp[, i])
       } else {
         temp[, i] <- as.character(temp[, i])
@@ -940,7 +940,7 @@ restructure_data_types <- function(temp, convert_type) {
 clean_lfs <- function(temp_clean) {
   
   # turn factors to characters, and everything else numeric
-  temp_clean <- restructure_data_types(temp_clean, convert_type = 'factor')
+  temp_clean <- restructure_data_types(temp_clean, convert_from = 'factor')
 
   # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
   temp_clean$job_seeker_checked_wemployers_directly <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployers_directly)
@@ -1077,7 +1077,7 @@ clean_lfs <- function(temp_clean) {
 clean_gss10 <- function(temp_clean) {
   
   # first restructure so factors are characters, else numeric
-  temp_clean <- restructure_data_types(temp_clean, convert_type = 'factor')
+  temp_clean <- restructure_data_types(temp_clean, convert_from = 'factor')
   # this function will fill any variable that has "Not stated" or "Not answered" with NA, but for time being, I'll keep "Not asked" levels as they are.
   temp_clean <- get_na_gss10(temp_clean)
   
@@ -1372,7 +1372,6 @@ get_body_weight_osduhs <- function(temp_clean){
 # outcome_var = 'em_lfs_hourly_wages'
 # weights = FALSE
 # mod_type = 'gaussian'
-
 # for now weights are broken
 custom_logit_mod <- function(temp_data, 
                              model_vars,
@@ -1390,7 +1389,7 @@ custom_logit_mod <- function(temp_data,
   }
   
   # remove outcome and weight variable, so only predictors are in pred_sub
-  pred_sub[, ncol(pred_sub) - 1] <- NULL
+  pred_sub[, grepl('weight', colnames(pred_sub))] <- NULL
   
   # get target_class
   if(class(pred_sub$outcome_y) == 'numeric') {

@@ -49,3 +49,18 @@ if('preprocess_survey_data.RData' %in% dir('data')){
 }
  
 ```
+
+# Osduhs
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# get lfs data from survey list 
+osduhs <- survey[[10]]
+
+# make all characters
+osduhs <- restructure_data_types(osduhs, convert_from  = 'character')
+
+```
+
+
