@@ -1,0 +1,93 @@
+---
+title: "Linear model and binomial logistic regression Example"
+author: "Ben Brew"
+date: "January 6, 2018"
+output: html_document
+---
+
+
+# Overview
+
+This document will demonstrate how to estimate a relationship between a variable of interest (outcome) and one or more explanatory variabes. 
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+###{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE, cache = FALSE}
+
+
+# If get_new_data is set to True,
+# make sure that you are working within the "insider" virtualenv
+
+# Libraries
+library(tidyverse)
+library(glmnet)
+library(knitr)
+library(Hmisc)
+library(RColorBrewer)
+library(plotly)
+library(databrew)
+library(ggmap)
+library(reshape2)
+library(memisc)
+library(texreg)
+
+
+# Turn off scientific notation
+options(scipen = '999')
+
+# Basic knitr options
+knitr::opts_chunk$set(comment = NA, 
+               echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, # Render report, even with errors
+               cache = F)
+
+# source functions
+source('functions.R')
+
+# Get all locations
+if('preprocess_survey_data.RData' %in% dir('data')){
+  load('data/preprocess_survey_data.RData')
+} else { 
+  source('global.R')
+}
+ 
+```
+
+# Osduhs
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# get lfs data from survey list 
+gss <- survey[[2]]
+
+# make all characters
+gss <- restructure_data_types(gss, convert_from  = 'character')
+colnames(gss)[grepl('weight', colnames(gss))]
+
+str(gss[, 1:70])
+str(gss[, 71:127])
+
+stri = 15
+
+colnames(gss)
+summary(as.factor(gss$hw_gss_life))
+unique(gss[, i])
+
+```
+
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# resturcture data 
+
+custom_logit_mod(gss, 
+                 model_vars = c('race', 'demo_osduhs_pop_weight'),
+                 outcome_var = 'safe_at_school_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
