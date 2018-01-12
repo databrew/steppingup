@@ -21,18 +21,23 @@ library(memisc)
 # Define function for reading survey data
 get_survey_data <- function() {
   path_to_data <- 'data/survey_data'
-  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
   
-  removals <- c()
-  var_names <- as.character(var_summary$variable_name)
   survey_folders <- list.files(path_to_data)
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  
+  removals <- c()
+ 
   # create list to store results
   result_list <- list()
 
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
+    
+    # i moved this down here (Was a few lines above) because of shared original names in data
+    # this way it only subset if that name is in the data AND same survey
+    var_names <- as.character(var_summary$variable_name[which(var_summary$data_name == survey_folders[i])])
     message('Starting ', i, ': ', survey_folders[i])
     temp_folder <- survey_folders[i]
     survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
@@ -69,6 +74,8 @@ get_survey_data <- function() {
         
         # remove in column name that has .1 in it because its a duplicate 
         temp_sub <- temp_sub[,!grepl('.1', colnames(temp_sub), fixed = TRUE)]
+        temp_sub <- temp_sub[,!grepl('.2', colnames(temp_sub), fixed = TRUE)]
+        
         
         # clean data - don't recode variable names because the current ones are linked to a data dictionary 
         # clean by recoding factors or numerics (bare minimum right now)
@@ -158,9 +165,15 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
         }
         
-        new_names <- data.frame(variable_name = names(temp_sub),
+        new_names <- data.frame(variable_name = as.character(names(temp_sub)),
                                 data_name = temp_folder)
+        
+        # remove 'X' and duplicated from both new_names$new_variable and names(temp_sub)
+        new_names$variable_name <- gsub('X', '', new_names$variable_name)
         new_names <- left_join(new_names, var_summary)
+        new_names$new_variable[duplicated(new_names$new_variable)]
+        new_names <- new_names[!duplicated(new_names$new_variable),]
+
         names(temp_sub) <- new_names$new_variable
         data_list[[j]] <-  temp_sub
       }
@@ -194,7 +207,6 @@ get_survey_data <- function() {
   }
   return(list(result_list, removals))
 }
-
 
 # Define a function for creating a crazy looking map
 crazy_map <- function(){

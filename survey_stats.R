@@ -3,78 +3,366 @@
 # I'll choose interesting variables. Later will add in programmatic way (fetching relationships with a regularization model)
 library(tidyverse)
 library(glmnet)
+library(reshape2)
 
-# load in survey_data
-load('data/processed_survey_data.RData')
+
+# source functions
+source('functions.R')
+
+# Get all locations
+if('preprocess_survey_data.RData' %in% dir('data')){
+  load('data/preprocess_survey_data.RData')
+} else { 
+  source('global.R')
+}
 
 # get folder names
 path_to_data <-  'data/survey_data'
 survey_folders <- list.files(path_to_data)
 survey_folders
 
+# read in var summary 
+var_summary <- read_csv('data/survey_data/var_summary.csv')
+
 #########
-# Labour force survey
+# Health and Wellness
+# Physical activity by gender
+# Fruit and vegetable consumption
+# Self-perceived physical and mental health by sex, age
 #########
-lfs <- survey[[1]]
-colnames(lfs)
 
-# make all characters
-lfs <- restructure_data_types(lfs, convert_type = 'character')
+##### Physical activity 
+# hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency" 
 
-# For the purpose of this report, will
-# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
-formula_string <- as.formula('em_lfs_hourly_wages ~ demo_lfs_student_status + 
-                             demo_lfs_age + demo_lfs_sex + demo_lfs_highest_edu + demo_lfs_multiple_single_job_holder +
-                             em_lfs_class_of_worker + em_lfs_actual_hours_per_week_main_job +em_lfs_union_membership +
-                             demo_lfs_econ_family_type + demo_lfs_age_spouse + em_lfs_spouse_usual_hours_main_job + 
-                             em_lfs_spouse_class_of_worker')
-formula_string <- 'em_lfs_neet ~ '
-formula_string <- 'em_lfs_actual_hours_per_week_main_job ~ '
-formula_string <- 'em_lfs_unemployed_only ~ '
+# get gss10 
+gss12 <- survey[[4]]
+summary(as.factor(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency))
+gss12 <- restructure_data_types(gss12, convert_from = 'factor')
+gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency <- as.numeric(ifelse(grepl('Not|Don', 
+                                                                                                    gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency),
+                                                                                              NA, 
+                                                                                              ifelse(grepl('Never', gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency,
+                                                                                                           gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency), 
+                                                                                                     '0', gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency)))
 
-
-mod_type = 'gaussian'
-pred_vars <- c('em_lfs_hourly_wages','demo_lfs_student_status', 'demo_lfs_age', 'demo_lfs_sex', 'demo_lfs_highest_edu', 
-                'demo_lfs_multiple_single_job_holder', 'em_lfs_class_of_worker', 'em_lfs_actual_hours_per_week_main_job',
-                'em_lfs_union_membership', 'demo_lfs_econ_family_type', 'demo_lfs_age_spouse', 
-                'em_lfs_spouse_usual_hours_main_job' , 'em_lfs_spouse_class_of_worker', 'demo_lfs_sample_weight')
-
-temp_data <- lfs
-custom_logit_mod <- function(temp_data, outcome, predictors, mod_type, weights) {
+# scatter plot men vs women freq physical activity 
+gss12 <- gss12[gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency < 30,]
+ggplot(gss12, aes(hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency, fill = demo_gss12_sex)) +
+  geom_histogram(alpha = 0.7, bins = 30, position = 'identity') +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('# time participated in moderate to vigorous physical activity in past week') +
+  ylab('Frequency') +
+  ggtitle('Physical activity by gender') +
+  theme_databrew()
   
-  pred_sub <- temp_data[, colnames(temp_data) %in% pred_vars]
-  pred_sub <- pred_sub[complete.cases(pred_sub),]
-  if(!weights) {
-    weight_var <- rep.int(1, nrow(pred_sub))
-  } else {
-    weight_var <- pred_sub$demo_lfs_sample_weight
-  }
-  y_outcome <- pred_sub[, outcome]
-  pred_sub[, outcome]<- NULL
-  pred_sub$demo_lfs_sample_weight <- NULL
   
-  # get target_class
-  if(class(y_outcome) == 'numeric') {
-    target_class <- 'numeric_regression'
-  } else {
-    target_class <- sort(unique(y_outcome))[2]
-  }
+gss12$phys_recode <- ifelse(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency > 7, 'More than 7', 
+                            ifelse(is.na(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency), NA, 
+                                   gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency))
+# group by hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency and summarise gender
+temp_sex_group <- gss12 %>% 
+  filter(!is.na(demo_gss12_sex)) %>%
+  group_by(demo_gss12_sex) %>%
+  summarise(counts = n(),
+            '1' = round((sum(phys_recode == '1', na.rm = T)/counts*100), 2),
+            '2' = round((sum(phys_recode == '2', na.rm = T)/counts*100), 2),
+            '3' = round((sum(phys_recode == '3', na.rm = T)/counts*100), 2),
+            '4' = round((sum(phys_recode == '4', na.rm = T)/counts*100), 2),
+            '5' = round((sum(phys_recode == '5', na.rm = T)/counts*100), 2),
+            '6' = round((sum(phys_recode == '6', na.rm = T)/counts*100), 2),
+            '7' = round((sum(phys_recode == '7', na.rm = T)/counts*100), 2),
+            'More than 7' = round((sum(phys_recode == 'More than 7', na.rm = T)/counts*100), 2))
 
-  # loop though colnames (without demo) and estimate logit
-  model_result <- glm(y_outcome ~., family = mod_type, weights = weight_var, data = pred_sub)
-  model_result <- cbind(tidy(model_result), odds_ratio = exp(model_result$coefficients))
-  model_result$target_class <- target_class
-  model_result$odds_ratio.names <- NULL
-  model_result$outcome_var <- y_outcome_name
-  model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
+temp_sex_group$counts <- NULL
+temp_sex_melt <- melt(temp_sex_group, id.vars = 'demo_gss12_sex')
+
+# bar plot 
+ggplot(temp_sex_melt, aes(variable, value, fill = demo_gss12_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('# time participated in moderate to vigorous physical activity in past week') +
+  ylab('Percent') +
+  ggtitle('Physical activity by gender (%)') +
+  theme_databrew()
+
+
+##### self percieved physical health
+# hw_gss14_selfrated_general_health
+# hw_gss11_self_reported_health
+# hw_gss12_self_reported_health"
+# hw_gss13_health"
+# hw_gss10_health
+gss10 <- survey[[2]]
+gss11 <- survey[[3]]
+gss12 <- survey[[4]]
+gss13 <- survey[[6]]
+gss14 <- as.data.frame(survey[[9]])
+
+summary(as.factor(gss10$hw_gss10_health))
+summary(as.factor(gss11$hw_gss11_self_reported_health))
+summary(as.factor(gss12$hw_gss12_self_reported_health))
+summary(as.factor(gss13$hw_gss13_general_health))
+summary(as.factor(gss14$hw_gss14_selfrated_general_health))
+
+gss14 <- gss14[, !is.na(colnames(gss14))]
+
+######## gss14
+temp_data <- gss14 %>%
+  filter(!is.na(demo_gss14_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss14_sex)) %>%
+  group_by(demo_gss14_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss14_selfrated_general_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss14_selfrated_general_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss14_selfrated_general_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss14_selfrated_general_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss14_selfrated_general_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss14_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss14_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rated physical health by gender 2014') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+######## gss13
+temp_data <- gss13 %>%
+  filter(!is.na(demo_gss13_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss13_sex)) %>%
+  group_by(demo_gss13_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss13_general_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss13_general_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss13_general_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss13_general_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss13_general_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss13_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss13_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rate physical health by gender 2013') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+######## gss12
+temp_data <- gss12 %>%
+  filter(!is.na(demo_gss12_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss12_sex)) %>%
+  group_by(demo_gss12_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss12_self_reported_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss12_self_reported_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss12_self_reported_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss12_self_reported_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss12_self_reported_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss12_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss12_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rate physical health by gender 2012') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+######## gss11
+temp_data <- gss11 %>%
+  filter(!is.na(demo_gss11_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss11_sex)) %>%
+  group_by(demo_gss11_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss11_self_reported_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss11_self_reported_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss11_self_reported_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss11_self_reported_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss11_self_reported_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss11_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss11_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rate physical health by gender 2011') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+
+######## gss10
+temp_data <- gss10 %>%
+  filter(!is.na(demo_gss10_sex)) %>%
+  filter(!grepl("Don't", demo_gss10_sex)) %>%
+  group_by(demo_gss10_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss10_health == 'excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss10_health == 'very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss10_health == 'good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss10_health == 'fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss10_health == 'poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss10_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss10_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rate physical health by gender 2010 ') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
   
-}
 
 
 
+##### self percieved mental health
+# hw_osduhs_mental_health
+# hw_gss14_selfrated_mental_health"
+# hw_gss12_self_reported_mental_health
+# hw_gss13_self_rated_mental_health
+# hw_gss11_self_reported_mental_health
+# hw_gss10_mental_health
+
+######## gss13
+temp_data <- gss13 %>%
+  filter(!is.na(demo_gss13_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss13_sex)) %>%
+  group_by(demo_gss13_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss13_self_rated_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss13_general_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss13_general_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss13_general_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss13_general_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss13_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss13_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Physical health') +
+  ylab('Percent') +
+  ggtitle('Self rate physical health by gender 2013') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
 
 
+######## gss12
+temp_data <- gss12 %>%
+  filter(!is.na(demo_gss12_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss12_sex)) %>%
+  group_by(demo_gss12_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss12_self_reported_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss12_self_reported_mental_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss12_self_reported_mental_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss12_self_reported_mental_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss12_self_reported_mental_health == 'Poor', na.rm = T)/counts*100), 2))
 
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss12_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss12_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Mental health') +
+  ylab('Percent') +
+  ggtitle('Self rate mental health by gender 2012') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+######## gss11
+temp_data <- gss11 %>%
+  filter(!is.na(demo_gss11_sex)) %>%
+  filter(!grepl("Don't|Not", demo_gss11_sex)) %>%
+  group_by(demo_gss11_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss11_self_reported_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss11_self_reported_mental_health == 'Very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss11_self_reported_mental_health == 'Good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss11_self_reported_mental_health == 'Fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss11_self_reported_mental_health == 'Poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss11_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss11_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Mental health') +
+  ylab('Percent') +
+  ggtitle('Self rate mental health by gender 2011') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
+
+
+####### gss10
+temp_data <- gss10 %>%
+  filter(!is.na(demo_gss10_sex)) %>%
+  filter(!grepl("Don't", demo_gss10_sex)) %>%
+  group_by(demo_gss10_sex) %>%
+  summarise(counts = n(),
+            excellent = round((sum(hw_gss10_mental_health == 'excellent', na.rm = T)/counts*100), 2),
+            very_good = round((sum(hw_gss10_mental_health == 'very good', na.rm = T)/counts*100), 2),
+            good = round((sum(hw_gss10_mental_health == 'good', na.rm = T)/counts*100), 2),
+            fair = round((sum(hw_gss10_mental_health == 'fair', na.rm = T)/counts*100), 2),
+            poor = round((sum(hw_gss10_mental_health == 'poor', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = 'demo_gss10_sex')
+
+# bar plot 
+ggplot(temp_melt, aes(variable, value, fill = demo_gss10_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
+  xlab('Mental health') +
+  ylab('Percent') +
+  ggtitle('Self rated mental health by gender 2010 ') +
+  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
+                            "fair" = "Fair", "poor" = "Poor")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
+  theme_databrew()
 
 
 
