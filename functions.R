@@ -171,7 +171,7 @@ get_survey_data <- function() {
         # remove 'X' and duplicated from both new_names$new_variable and names(temp_sub)
         new_names$variable_name <- gsub('X', '', new_names$variable_name)
         new_names <- left_join(new_names, var_summary)
-        new_names$new_variable[duplicated(new_names$new_variable)]
+        # new_names$new_variable[duplicated(new_names$new_variable)]
         new_names <- new_names[!duplicated(new_names$new_variable),]
 
         names(temp_sub) <- new_names$new_variable
@@ -180,8 +180,8 @@ get_survey_data <- function() {
     }
     
     if(length(data_list) > 1) {
-      the_data <- left_join(data_list[[2]],
-                          data_list[[1]])
+      the_data <- left_join(data_list[[1]],
+                          data_list[[2]])
     } else {
       the_data <- data_list[[1]]
     }
