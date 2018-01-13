@@ -24,363 +24,232 @@ survey_folders
 # read in var summary 
 var_summary <- read_csv('data/survey_data/var_summary.csv')
 
+# get all data 
+survey_folders
+lfs <- survey[[1]]
+gss10 <- survey[[2]]
+gss11 <- survey[[3]]
+gss12 <- survey[[4]]
+gss13 <- survey[[6]]
+gss14 <- survey[[9]]
+cfcs <- survey[[7]]
+osduhs <- survey[[10]]
+
+
+######################################################################################################################
+
+group_by_plot_factor <- function(var_1, 
+                                 var_2, 
+                                 dat, 
+                                 remove_string, 
+                                 title) {
+  dat <- dat[,c(var_1, var_2)]
+  temp_data <- dat %>%
+    filter_all(all_vars(!is.na(.))) %>%
+    group_by_(var_1, var_2) %>%
+    summarise(counts = n())
+  
+  # remove unneeded strings
+  temp_data <- as.data.frame(temp_data)
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_2])),]
+  
+  # join them
+  temp_totals <- as.data.frame(tapply(temp_data$counts,temp_data[, var_1] , FUN=sum))
+  temp_totals$var_1 <- rownames(temp_totals)
+  names(temp_totals) <- c('total', 'var_1')
+  colnames(temp_data)[1] <- 'var_1'
+  colnames(temp_data)[2] <- 'var_2'
+  temp_new <- left_join(temp_data, temp_totals, by = 'var_1')
+  
+  # get percentage column
+  temp_new$per <- round((temp_new$counts/temp_new$total)*100, 2)
+  
+  temp_new$counts <- NULL
+  temp_new$total <- NULL
+  
+  # bar plot 
+  levels_of_var_1 <- length(unique(temp_new$var_1))
+  if(levels_of_var_1 == '2') {
+    cols <- c("#67001F", "#D1E5F0")
+  } else {
+    cols <- brewer.pal(levels_of_var_1, name = 'RdBu')
+  }
+  ggplot(temp_new, aes(var_2, per, fill = var_1)) + 
+    geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+    scale_fill_manual(name="", values = cols) +
+    xlab('') +
+    ylab('Percent') +
+    ggtitle(title) +
+    geom_text(aes(label=per), position=position_dodge(width=0.9), vjust=-0.25) +
+    theme_databrew()
+  
+}
+
+
+group_by_plot_numeric_2(var_1 = 'demo_gss13_sex' , 
+                        var_2 = 'demo_gss13_age_group',
+                        var_3 = 'sf_gss13_relatives_feel_close',
+                        title = 'Avg # of relatives respondent feels close to',
+                        dat = gss13)
+
+group_by_plot_numeric_2 <- function(var_1, var_2, var_3, dat, remove_string, title) {
+  
+  dat <- dat[, c(var_1, var_2, var_3)]
+  dat[, var_3] <- as.numeric(as.character(dat[, var_3]))
+  temp_data <- dat %>%
+    filter_all(all_vars(!is.na(.))) %>%
+    group_by_(var_1, var_2) %>%
+    summarise_all(funs(mean))
+  
+  
+  colnames(temp_data)[1] <- 'var_1'
+  colnames(temp_data)[2] <- 'var_2'
+  colnames(temp_data)[3] <- 'var_3'
+  
+  levels_of_var_1 <- length(unique(temp_data$var_1))
+  if(levels_of_var_1 == '2') {
+    cols <- c("#67001F", "#D1E5F0")
+  } else {
+    cols <- brewer.pal(levels_of_var_1, name = 'RdBu')
+  }
+  # bar plot 
+  ggplot(temp_data, aes(var_2, var_3, fill = var_1)) + 
+    geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+    scale_fill_manual(name="", values=cols) +
+    xlab('') +
+    ylab('Mean #') +
+    ggtitle(title) +
+    geom_text(aes(label=round(var_3, 2)), position=position_dodge(width=0.9), vjust=-0.25) +
+    theme_databrew()
+  
+}
+
+
+group_by_plot_numeric_1 <- function(var_1, var_2, dat,title) {
+  
+  dat <- dat[, c(var_1, var_2)]
+  dat[, var_2] <- as.numeric(as.character(dat[, var_2]))
+  temp_data <- dat %>%
+    filter_all(all_vars(!is.na(.))) %>%
+    group_by_(var_1) %>%
+    summarise_all(funs(mean))
+  
+  
+  temp_data$counts <- NULL
+  
+  colnames(temp_data)[1] <- 'var_1'
+  colnames(temp_data)[2] <- 'var_2'
+  
+  
+  # bar plot 
+  ggplot(temp_data, aes(var_1, var_2)) + 
+    geom_bar(stat = 'identity', alpha = 0.7, fill = 'black', colour = 'lightblue') +
+    xlab('') +
+    ylab('Mean #') +
+    ggtitle(title) +
+    geom_text(aes(label=round(var_2, 3)), position=position_dodge(width=0.9), vjust=-0.25) +
+    theme_databrew()
+  
+}
+
+
 
 
 ######################################################################################################################################
 # Physical activity 
 # hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency" 
 
-# get gss10 
-gss12 <- survey[[4]]
-summary(as.factor(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency))
-gss12 <- restructure_data_types(gss12, convert_from = 'factor')
-gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency <- as.numeric(ifelse(grepl('Not|Don', 
-                                                                                                    gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency),
-                                                                                              NA, 
-                                                                                              ifelse(grepl('Never', gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency,
-                                                                                                           gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency), 
-                                                                                                     '0', gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency)))
+gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency <- 
+  as.numeric(as.character(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency))
 
-# scatter plot men vs women freq physical activity 
-gss12 <- gss12[gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency < 30,]
-ggplot(gss12, aes(hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency, fill = demo_gss12_sex)) +
-  geom_histogram(alpha = 0.7, bins = 30, position = 'identity') +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('# time participated in moderate to vigorous physical activity in past week') +
-  ylab('Frequency') +
-  ggtitle('Physical activity by gender') +
-  theme_databrew()
-  
-  
-gss12$phys_recode <- ifelse(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency > 7, 'More than 7', 
-                            ifelse(is.na(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency), NA, 
+gss12$phys_recode <- ifelse(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency > 7, 'More than 7',
+                            ifelse(is.na(gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency), NA,
                                    gss12$hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency))
-# group by hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency and summarise gender
-temp_sex_group <- gss12 %>% 
-  filter(!is.na(demo_gss12_sex)) %>%
-  group_by(demo_gss12_sex) %>%
-  summarise(counts = n(),
-            '1' = round((sum(phys_recode == '1', na.rm = T)/counts*100), 2),
-            '2' = round((sum(phys_recode == '2', na.rm = T)/counts*100), 2),
-            '3' = round((sum(phys_recode == '3', na.rm = T)/counts*100), 2),
-            '4' = round((sum(phys_recode == '4', na.rm = T)/counts*100), 2),
-            '5' = round((sum(phys_recode == '5', na.rm = T)/counts*100), 2),
-            '6' = round((sum(phys_recode == '6', na.rm = T)/counts*100), 2),
-            '7' = round((sum(phys_recode == '7', na.rm = T)/counts*100), 2),
-            'More than 7' = round((sum(phys_recode == 'More than 7', na.rm = T)/counts*100), 2))
 
-temp_sex_group$counts <- NULL
-temp_sex_melt <- melt(temp_sex_group, id.vars = 'demo_gss12_sex')
+group_by_plot_factor(var_1 = 'demo_gss12_sex',
+                     var_2 = 'phys_recode' , 
+                     remove_string = 'Not|Don',
+                     title = '# of moderate to vigorous activites prior week',
+                     dat = gss12)
 
-# bar plot 
-ggplot(temp_sex_melt, aes(variable, value, fill = demo_gss12_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('# time participated in moderate to vigorous physical activity in past week') +
-  ylab('Percent') +
-  ggtitle('Physical activity by gender (%)') +
-  theme_databrew()
+group_by_plot_numeric_1(var_1 = 'demo_gss12_sex',
+                        var_2 = 'hw_gss12_participated_moderate_vigorous_physical_activity_past_week_frequency' , 
+                        title = '# of moderate to vigorous activites prior week',
+                        dat = gss12)
+
+
+##################################################################################################################
+# closeness to friends and relatives 
+
+group_by_plot_numeric_1(var_1 = 'demo_gss13_sex' , 
+                        var_2 = 'sf_gss13_relatives_feel_close',
+                        title = 'Relatives',
+                        dat = gss13)
+
+group_by_plot_numeric_2(var_1 = 'demo_gss13_sex' , 
+                        var_2 = 'demo_gss13_age_group',
+                        var_3 = 'sf_gss13_relatives_feel_close',
+                        title = 'Avg # of relatives respondent feels close to',
+                        dat = gss13)
+
+group_by_plot_factor(var_1 = 'demo_gss14_sex', 
+                     var_2 = 'hw_gss14_selfrated_general_health', 
+                     remove_string = 'Ref|Don|Vali|Not', 
+                     title = 'Self rated general health by sex', 
+                     dat = gss14)
+
 
 
 ######################################################################################################################
 # self percieved physical health
 
-gss10 <- survey[[2]]
-gss11 <- survey[[3]]
-gss12 <- survey[[4]]
-gss13 <- survey[[6]]
-gss14 <- as.data.frame(survey[[9]])
 
-summary(as.factor(gss10$hw_gss10_health))
-summary(as.factor(gss11$hw_gss11_self_reported_health))
-summary(as.factor(gss12$hw_gss12_self_reported_health))
-summary(as.factor(gss13$hw_gss13_general_health))
-summary(as.factor(gss14$hw_gss14_selfrated_general_health))
+group_by_plot_factor(var_1 = 'demo_gss14_sex', 
+                     var_2 = 'hw_gss14_selfrated_general_health', 
+                     dat = gss14, 
+                     remove_string = 'Don|Not', 
+                     title = 'Self rated general health by sex 2014')
+
+group_by_plot_factor(var_1 = 'demo_gss13_sex', var_2 = 'hw_gss13_self_rated_general_health', dat = gss13, remove_string = 'Don|Not', 
+                     title = 'Self rated general health by sex 2013')
 
 
-######## gss14
-temp_data <- gss14 %>%
-  filter(!is.na(demo_gss14_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss14_sex)) %>%
-  group_by(demo_gss14_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss14_selfrated_general_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss14_selfrated_general_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss14_selfrated_general_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss14_selfrated_general_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss14_selfrated_general_health == 'Poor', na.rm = T)/counts*100), 2))
+group_by_plot_factor(var_1 = 'demo_gss12_sex', var_2 = 'hw_gss12_self_reported_health', dat = gss12, remove_string = 'Don|Not', 
+                     title = 'Self rated general health by sex 2012')
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss14_sex')
+group_by_plot_factor(var_1 = 'demo_gss11_sex', var_2 = 'hw_gss11_self_reported_health', dat = gss11, remove_string = 'Don|Not', 
+                     title = 'Self rated general health by sex 2011')
 
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss14_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Physical health') +
-  ylab('Percent') +
-  ggtitle('Self rated physical health by gender 2014') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-######## gss13
-temp_data <- gss13 %>%
-  filter(!is.na(demo_gss13_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss13_sex)) %>%
-  group_by(demo_gss13_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss13_self_rated_general_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss13_self_rated_general_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss13_self_rated_general_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss13_self_rated_general_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss13_self_rated_general_health == 'Poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss13_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss13_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Physical health') +
-  ylab('Percent') +
-  ggtitle('Self rate physical health by gender 2013') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-######## gss12
-temp_data <- gss12 %>%
-  filter(!is.na(demo_gss12_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss12_sex)) %>%
-  group_by(demo_gss12_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss12_self_reported_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss12_self_reported_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss12_self_reported_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss12_self_reported_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss12_self_reported_health == 'Poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss12_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss12_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Physical health') +
-  ylab('Percent') +
-  ggtitle('Self rate physical health by gender 2012') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-######## gss11
-temp_data <- gss11 %>%
-  filter(!is.na(demo_gss11_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss11_sex)) %>%
-  group_by(demo_gss11_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss11_self_reported_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss11_self_reported_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss11_self_reported_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss11_self_reported_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss11_self_reported_health == 'Poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss11_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss11_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Physical health') +
-  ylab('Percent') +
-  ggtitle('Self rate physical health by gender 2011') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
+group_by_plot_factor(var_1 = 'demo_gss10_sex', var_2 = 'hw_gss10_health', dat = gss10, remove_string = 'Don|Not', 
+                     title = 'Self rated general health by sex 2010')
 
 
-######## gss10
-temp_data <- gss10 %>%
-  filter(!is.na(demo_gss10_sex)) %>%
-  filter(!grepl("Don't", demo_gss10_sex)) %>%
-  group_by(demo_gss10_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss10_health == 'excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss10_health == 'very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss10_health == 'good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss10_health == 'fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss10_health == 'poor', na.rm = T)/counts*100), 2))
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss10_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss10_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Physical health') +
-  ylab('Percent') +
-  ggtitle('Self rate physical health by gender 2010 ') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-  
 #########################################################################################################################################
 # self percieved mental health
 
-######## gss13
-temp_data <- gss13 %>%
-  filter(!is.na(demo_gss13_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss13_sex)) %>%
-  group_by(demo_gss13_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss13_self_rated_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss13_self_rated_mental_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss13_self_rated_mental_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss13_self_rated_mental_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss13_self_rated_mental_health== 'Poor', na.rm = T)/counts*100), 2))
+group_by_plot_factor(var_1 = 'demo_gss14_sex', var_2 = 'hw_gss14_selfrated_mental_health', dat = gss14, remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2014')
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss13_sex')
+group_by_plot_factor(var_1 = 'demo_gss13_sex', var_2 = 'hw_gss13_self_rated_mental_health', dat = gss13, remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2013')
 
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss13_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Mental health') +
-  ylab('Percent') +
-  ggtitle('Self rated mental health by gender 2013') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
+group_by_plot_factor(var_1 = 'demo_gss12_sex', var_2 = 'hw_gss12_self_reported_mental_health', dat = gss12, remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2012')
+
+group_by_plot_factor(var_1 = 'demo_gss11_sex', var_2 = 'hw_gss11_self_reported_mental_health', dat = gss11, remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2011')
+
+summary(as.factor(gss10$hw_gss10_mental_health))
+gss10$hw_gss10_mental_health <- factor(gss10$hw_gss10_mental_health, levels = c('excellent', 'very good', 'good', 'fair', 'poor', "Don't know"))
+group_by_plot_factor(var_1 = 'demo_gss10_sex', var_2 = 'hw_gss10_mental_health', dat = gss10, remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2010')
 
 
-######## gss12
-temp_data <- gss12 %>%
-  filter(!is.na(demo_gss12_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss12_sex)) %>%
-  group_by(demo_gss12_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss12_self_reported_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss12_self_reported_mental_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss12_self_reported_mental_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss12_self_reported_mental_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss12_self_reported_mental_health == 'Poor', na.rm = T)/counts*100), 2))
+summary(as.factor(osduhs$demo_osduhs_race))
+group_by_plot_factor(var_1 = 'demo_osduhs_race', var_2 = 'hw_osduhs_mental_health', dat = osduhs, remove_string = 'not sure', 
+                     title = 'Self rated mental health by sex 2010')
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss12_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss12_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Mental health') +
-  ylab('Percent') +
-  ggtitle('Self rated mental health by gender 2012') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-######## gss11
-temp_data <- gss11 %>%
-  filter(!is.na(demo_gss11_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss11_sex)) %>%
-  group_by(demo_gss11_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss11_self_reported_mental_health == 'Excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss11_self_reported_mental_health == 'Very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss11_self_reported_mental_health == 'Good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss11_self_reported_mental_health == 'Fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss11_self_reported_mental_health == 'Poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss11_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss11_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Mental health') +
-  ylab('Percent') +
-  ggtitle('Self rated mental health by gender 2011') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-
-####### gss10
-temp_data <- gss10 %>%
-  filter(!is.na(demo_gss10_sex)) %>%
-  filter(!grepl("Don't", demo_gss10_sex)) %>%
-  group_by(demo_gss10_sex) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_gss10_mental_health == 'excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_gss10_mental_health == 'very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_gss10_mental_health == 'good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_gss10_mental_health == 'fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_gss10_mental_health == 'poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_gss10_sex')
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_gss10_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", labels = c('Female', 'Male'), values=c('seagreen', 'lightblue')) +
-  xlab('Mental health') +
-  ylab('Percent') +
-  ggtitle('Self rated mental health by gender 2010 ') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-
-###### osduhs 15 
-osduhs <- survey[[10]]
-
-temp_data <- osduhs %>%
-  filter(!is.na(demo_osduhs_race)) %>%
-  filter(!grepl('not sure', demo_osduhs_race)) %>%
-  group_by(demo_osduhs_race) %>%
-  summarise(counts = n(),
-            excellent = round((sum(hw_osduhs_mental_health == 'excellent', na.rm = T)/counts*100), 2),
-            very_good = round((sum(hw_osduhs_mental_health == 'very good', na.rm = T)/counts*100), 2),
-            good = round((sum(hw_osduhs_mental_health == 'good', na.rm = T)/counts*100), 2),
-            fair = round((sum(hw_osduhs_mental_health == 'fair', na.rm = T)/counts*100), 2),
-            poor = round((sum(hw_osduhs_mental_health == 'poor', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = 'demo_osduhs_race')
-
-# bar plot 
-cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_osduhs_race)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", 
-                    breaks = c('aboriginal', 'black', 'chite', 'filipino', 'japanese', 'Korean', 'south asian', 'southeast asian', 'west asian / arab', 'whinese'), 
-                    labels = c('Aoriginal', 'Black', 'White', 'Filipino', 'Japanese', 'Korean', 'South asian', 'Southeast asian','West asian / Arab', 'Chinese'),
-                    values=cols) +
-  xlab('Mental health') +
-  ylab('Percent') +
-  ggtitle('Self rated mental health by gender 2010 ') +
-  scale_x_discrete(labels=c("excellent" = "Excellent", "very_good" = "Very good", "good" = "Good",
-                            "fair" = "Fair", "poor" = "Poor")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew()
 
 ######################################################################################################################################
 # caring for others 
@@ -388,90 +257,20 @@ ggplot(temp_melt, aes(variable, value, fill = demo_osduhs_race)) +
 summary(as.factor(gss13$cc_gss13_favour_for_neighbour_past_month))
 summary(as.factor(gss12$cc_gss12_done_favour_for_neighbour_past_month))
 
-######## gss13
-temp_data <- gss13 %>%
-  filter(!is.na(demo_gss13_sex)) %>%
-  filter(!grepl("Don't|Not|Ref|Valid", demo_gss13_sex)) %>%
-  group_by(demo_gss13_sex, demo_gss13_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(cc_gss13_favour_for_neighbour_past_month == 'Yes', na.rm = T)/counts*100), 2))
+group_by_plot_factor(var_1 = 'demo_gss13_sex', 
+                     var_2 = 'cc_gss13_favour_for_neighbour_past_month',
+                     dat = gss13,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = 'Favour for neightbor in past month 2013')
+
+group_by_plot_factor(var_1 = 'demo_gss12_sex', 
+                     var_2 = 'cc_gss12_done_favour_for_neighbour_past_month',
+                     dat = gss12,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = 'Favour for neightbor in past month 2012')
 
 
-# bar plot 
-ggplot(temp_data, aes(demo_gss13_sex, Yes, fill = demo_gss13_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=c('seagreen', 'lightblue')) +
-  xlab('Gender') +
-  ylab('Percent') +
-  ggtitle('Favour for neighbor in past month gss13') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
 
-######## gss12
-temp_data <- gss12 %>%
-  filter(!is.na(demo_gss12_sex)) %>%
-  filter(!grepl("Don't|Not|Ref|Valid", demo_gss12_sex)) %>%
-  group_by(demo_gss12_sex, demo_gss12_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(cc_gss12_done_favour_for_neighbour_past_month == 'Yes', na.rm = T)/counts*100), 2))
-
-
-# bar plot 
-cols <- brewer.pal(n = 4, name ='RdBu')
-
-ggplot(temp_data, aes(demo_gss12_sex, Yes, fill = demo_gss12_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=cols)  +
-  xlab('Gender') +
-  ylab('Percent') +
-  ggtitle('Favour for neighbor in past month gss12') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-
-# em_gss13_main_activity_last_12_months
-
-######## gss13
-temp_data <- gss13 %>%
-  filter(!is.na(demo_gss13_sex)) %>%
-  filter(!grepl("Don't|Not|Ref|Valid", demo_gss13_sex)) %>%
-  group_by(demo_gss13_sex, demo_gss13_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(em_gss13_main_activity_last_12_months == 'Caring for children', na.rm = T)/counts*100), 2))
-
-
-# bar plot 
-ggplot(temp_data, aes(demo_gss13_sex, Yes, fill = demo_gss13_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=c('seagreen', 'lightblue')) +
-  xlab('Gender') +
-  ylab('Percent') +
-  ggtitle('Last 12 months main activity caring for children gss13') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-######## gss12
-colnames(gss12)[grepl('activity', colnames(gss12))]
-summary(as.factor(gss12$demo_gss12_main_activity))
-temp_data <- gss12 %>%
-  filter(!is.na(demo_gss12_sex)) %>%
-  filter(!grepl("Don't|Not|Ref|Valid", demo_gss12_sex)) %>%
-  group_by(demo_gss12_sex, demo_gss12_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(demo_gss12_main_activity == 'Caring for children', na.rm = T)/counts*100), 2))
-
-
-# bar plot 
-cols <- brewer.pal(n = 4, name ='RdBu')
-
-ggplot(temp_data, aes(demo_gss12_sex, Yes, fill = demo_gss12_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=cols)  +
-  xlab('Gender') +
-  ylab('Percent') +
-  ggtitle('Last 12 months main activity caring for children gss12') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
 
 
 ######################################################################################################################################
@@ -538,26 +337,29 @@ ggplot(temp_data, aes(demo_gss14_sex, Yes, fill = demo_gss14_age_group)) +
 
 ######################################################################################################################################
 # financial knowledge
-# demo_cfc_rate_self_on_level_of_financ_knowledge
-# demo_cfc_financially_preparing_for_retirement"
+# demo_cfc_total_assets
+# demo_cfc_estimate_value_of_debts_and_liabil_grpd
 cfc <- survey[[7]]
-lapply(survey, function(x) colnames(x)[grepl('bank', colnames(x))])
+lapply(survey, function(x) colnames(x)[grepl('debt', colnames(x))])
 
-summary(as.factor(cfc$demo_cfc_rate_self_on_level_of_financ_knowledge))
+summary(as.factor(cfc$demo_cfc_estimate_value_of_debts_and_liabil_grpd))
+summary(as.factor(cfc$demo_cfc_total_assets))
 summary(as.factor(cfc$demo_cfc_aboriginal_status))
-summary(as.factor(cfc$demo_cfc_age_of_respondent_grouped))
 
 
-# demo_cfc_rate_self_on_level_of_financ_knowledge
+# debt
 
 temp_data <- cfc %>%
+  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_estimate_value_of_debts_and_liabil_grpd)) %>%
   filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
   group_by(demo_cfc_sex) %>%
   summarise(counts = n(),
-            very_knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Very knowledgeable', na.rm = T)/counts*100), 2),
-            knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Knowledgeable', na.rm = T)/counts*100), 2),
-            fairly_knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge== 'Fairly knowledgeable', na.rm = T)/counts*100), 2),
-            not_very_knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Not very knowledgeab', na.rm = T)/counts*100), 2))
+            one = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == 'Less than $50,000', na.rm = T)/counts*100), 2),
+             two = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$50,000 to $99,999', na.rm = T)/counts*100), 2),
+            three = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd== '$100,000 to $149,999', na.rm = T)/counts*100), 2),
+            four = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$150,000 to $199,999', na.rm = T)/counts*100), 2),
+            five = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$200,000 to $249,999', na.rm = T)/counts*100), 2),
+            six = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$250,000 or more', na.rm = T)/counts*100), 2))
 
 temp_data$counts <- NULL
 temp_melt <- melt(temp_data, id.vars = c('demo_cfc_sex'))
@@ -568,44 +370,120 @@ ggplot(temp_melt, aes(variable, value, fill = demo_cfc_sex)) +
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
   scale_fill_manual(name="Sex", 
                     values=c("#67001F", "#D1E5F0")) +
-  xlab('Financial knowledge') +
+  xlab('') +
   ylab('Percent') +
-  ggtitle('Self rated knowledge of finance for ages 18-24 (CFCS 2014)') +
-  scale_x_discrete(labels=c("very_knowledgeable" = "Very knowledgeable", 
-                            "knowledgeable" = "Knowledgeable", 
-                            "fairly_knowledgeable" = "Fairly knowledgeable",
-                            "not_very_knowledgeable" = "Not very knowledgeable")) +
+  ggtitle('Total debts and liabilities 18-24 (CFCS 2014)') +
+  scale_x_discrete(labels=c("one" = "< $50k", 
+                            "two" = "$50k to $99k", 
+                            "three" = "$100k to $149k",
+                            "four" = "$150k to $199k",
+                            "five" = "$200k to $249k",
+                            "six" = "> $250k")) +
   geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew()
-######
+  theme_databrew() 
+
+
+########## age
 
 temp_data <- cfc %>%
-  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
-  group_by(demo_cfc_aboriginal_status) %>%
+  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_estimate_value_of_debts_and_liabil_grpd)) %>%
+  group_by(demo_cfc_age_of_respondent_grouped) %>%
   summarise(counts = n(),
-            very_knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Very knowledgeable', na.rm = T)/counts*100), 2),
-            knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Knowledgeable', na.rm = T)/counts*100), 2),
-            fairly_knowledgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge== 'Fairly knowledgeable', na.rm = T)/counts*100), 2),
-            not_very_knowedgeable = round((sum(demo_cfc_rate_self_on_level_of_financ_knowledge == 'Not very knowledgeab', na.rm = T)/counts*100), 2))
+            one = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == 'Less than $50,000', na.rm = T)/counts*100), 2),
+            two = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$50,000 to $99,999', na.rm = T)/counts*100), 2),
+            three = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd== '$100,000 to $149,999', na.rm = T)/counts*100), 2),
+            four = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$150,000 to $199,999', na.rm = T)/counts*100), 2),
+            five = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$200,000 to $249,999', na.rm = T)/counts*100), 2),
+            six = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$250,000 or more', na.rm = T)/counts*100), 2))
 
 temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_aboriginal_status'))
+temp_melt <- melt(temp_data, id.vars = c('demo_cfc_age_of_respondent_grouped'))
 
 # bar plot 
 cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_aboriginal_status)) + 
+ggplot(temp_melt, aes(variable, value, fill = demo_cfc_age_of_respondent_grouped)) + 
   geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Aboriginal status", 
-                    values=c("#67001F", "#FDDBC7",  "#D1E5F0")) +
-  xlab('Financial knowledge') +
+  scale_fill_manual(name="", 
+                    values=c("#67001F", "#D1E5F0")) +
+  xlab('') +
   ylab('Percent') +
-  ggtitle('Self rate knowledge of finance (CFCS 2014)') +
-  scale_x_discrete(labels=c("very_knowledgeable" = "Very knowledgeable",
-                            "knowledgeable" = "Knowledgeable", 
-                            "fairly_knowledgeable" = "Fairly knowledgeable",
-                            "not_very_knowledgeable" = "Not very knowledgeable")) +
+  ggtitle('Total debts and liabilities 18-24 (CFCS 2014)') +
+  scale_x_discrete(labels=c("one" = "< $50k", 
+                            "two" = "$50k to $99k", 
+                            "three" = "$100k to $149k",
+                            "four" = "$150k to $199k",
+                            "five" = "$200k to $249k",
+                            "six" = "> $250k")) +
   geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew()
+  theme_databrew() 
+
+##########################################################################################
+# ASSETS
+summary(as.factor(cfc$demo_cfc_total_assets))
+
+temp_data <- cfc %>%
+  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_total_assets)) %>%
+  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
+  group_by(demo_cfc_sex) %>%
+  summarise(counts = n(),
+            one = round((sum(demo_cfc_total_assets == 'Less than $100,000', na.rm = T)/counts*100), 2),
+            two = round((sum(demo_cfc_total_assets == '$100,000 to under $200,000', na.rm = T)/counts*100), 2),
+            three = round((sum(demo_cfc_total_assets== '$200,000 to under $300,000', na.rm = T)/counts*100), 2),
+            four = round((sum(demo_cfc_total_assets == '$300,000 to under $500,000', na.rm = T)/counts*100), 2),
+            five = round((sum(demo_cfc_total_assets == '$500,000 or more', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = c('demo_cfc_sex'))
+
+# bar plot 
+cols <- brewer.pal(n = 10, name ='RdBu')
+ggplot(temp_melt, aes(variable, value, fill = demo_cfc_sex)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="Sex", 
+                    values=c("#67001F", "#D1E5F0")) +
+  xlab('') +
+  ylab('Percent') +
+  ggtitle('Total assets 18-24 (CFCS 2014)') +
+  scale_x_discrete(labels=c("one" = "< $100k", 
+                            "two" = "$100 to 199k", 
+                            "three" = "$200k to 299k",
+                            "four" = "$300k to $499k",
+                            "five" = "> $500k")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
+  theme_databrew() 
+
+
+########## age
+
+temp_data <- cfc %>%
+  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_total_assets)) %>%
+  group_by(demo_cfc_age_of_respondent_grouped) %>%
+  summarise(counts = n(),
+            one = round((sum(demo_cfc_total_assets == 'Less than $100,000', na.rm = T)/counts*100), 2),
+            two = round((sum(demo_cfc_total_assets == '$100,000 to under $200,000', na.rm = T)/counts*100), 2),
+            three = round((sum(demo_cfc_total_assets== '$200,000 to under $300,000', na.rm = T)/counts*100), 2),
+            four = round((sum(demo_cfc_total_assets == '$300,000 to under $500,000', na.rm = T)/counts*100), 2),
+            five = round((sum(demo_cfc_total_assets == '$500,000 or more', na.rm = T)/counts*100), 2))
+
+temp_data$counts <- NULL
+temp_melt <- melt(temp_data, id.vars = c('demo_cfc_age_of_respondent_grouped'))
+
+# bar plot 
+cols <- brewer.pal(n = 10, name ='RdBu')
+ggplot(temp_melt, aes(variable, value, fill = demo_cfc_age_of_respondent_grouped)) + 
+  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+  scale_fill_manual(name="", 
+                    values=c("#67001F", "#D1E5F0")) +
+  xlab('') +
+  ylab('Percent') +
+  ggtitle('Total assets 18-24 (CFCS 2014)') +
+  scale_x_discrete(labels=c("one" = "< $100k", 
+                            "two" = "$100 to 199k", 
+                            "three" = "$200k to 299k",
+                            "four" = "$300k to $499k",
+                            "five" = "> $500k")) +
+  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
+  theme_databrew() 
 
 
 ####################################################################################################################
