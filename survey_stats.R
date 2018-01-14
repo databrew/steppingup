@@ -32,7 +32,7 @@ gss11 <- survey[[3]]
 gss12 <- survey[[4]]
 gss13 <- survey[[6]]
 gss14 <- survey[[9]]
-cfcs <- survey[[7]]
+cfc <- survey[[7]]
 osduhs <- survey[[10]]
 
 
@@ -86,11 +86,89 @@ group_by_plot_factor <- function(var_1,
 }
 
 
-group_by_plot_numeric_2(var_1 = 'demo_gss13_sex' , 
-                        var_2 = 'demo_gss13_age_group',
-                        var_3 = 'sf_gss13_relatives_feel_close',
-                        title = 'Avg # of relatives respondent feels close to',
-                        dat = gss13)
+
+group_by_plot_factor_2 <- function(var_1, 
+                                   var_2, 
+                                   var_3,
+                                   dat, 
+                                   remove_string, 
+                                   title) {
+  
+  dat <- dat[,c(var_1, var_2, var_3)]
+  temp_data <- dat %>%
+    filter_all(all_vars(!is.na(.))) %>%
+    group_by_(var_1, var_2, var_3) %>%
+    summarise(counts = n())
+  
+  # remove unneeded strings
+  temp_data <- as.data.frame(temp_data)
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_2])),]
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_3])),]
+  
+  # join them
+  temp_totals <- as.data.frame(tapply(temp_data$counts,temp_data[, 1:2] , FUN=sum))
+  temp_totals$var_1 <- rownames(temp_totals)
+  temp_melt <- melt(temp_totals, id.vars = 'var_1')
+  temp_melt <- temp_melt[complete.cases(temp_melt),]
+  names(temp_melt) <- c('var_1', 'var_2', 'value')
+  colnames(temp_data)[1] <- 'var_1'
+  colnames(temp_data)[2] <- 'var_2'
+  colnames(temp_data)[3] <- 'var_3'
+  temp_new <- left_join(temp_data, temp_melt)
+  
+  # get percentage column
+  temp_new$per <- round((temp_new$counts/temp_new$value)*100, 2)
+  
+  temp_new$counts <- NULL
+  temp_new$value <- NULL
+  
+  # bar plot 
+  levels_of_var_1 <- length(unique(temp_new$var_1))
+  if(levels_of_var_1 == '2') {
+    cols <- c("#67001F", "#D1E5F0")
+  } else {
+    cols <- brewer.pal(levels_of_var_1, name = 'RdBu')
+  }
+  ggplot(temp_new, aes(var_2, per, group = interaction(var_1, var_3), fill = var_1)) + 
+    geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
+    scale_fill_manual(name="", values = cols) +
+    xlab('') +
+    ylab('Percent') +
+    ggtitle(title) +
+    geom_text(aes(label=per), position=position_dodge(width=0.9), vjust=-0.25) +
+    theme_databrew()
+  
+}
+
+
+
+group_by_plot_numeric_1 <- function(var_1, var_2, dat,title) {
+  
+  dat <- dat[, c(var_1, var_2)]
+  dat[, var_2] <- as.numeric(as.character(dat[, var_2]))
+  temp_data <- dat %>%
+    filter_all(all_vars(!is.na(.))) %>%
+    group_by_(var_1) %>%
+    summarise_all(funs(mean))
+  
+  
+  temp_data$counts <- NULL
+  
+  colnames(temp_data)[1] <- 'var_1'
+  colnames(temp_data)[2] <- 'var_2'
+  
+  
+  # bar plot 
+  ggplot(temp_data, aes(var_1, var_2)) + 
+    geom_bar(stat = 'identity', alpha = 0.7, fill = 'black', colour = 'lightblue') +
+    xlab('') +
+    ylab('Mean #') +
+    ggtitle(title) +
+    geom_text(aes(label=round(var_2, 3)), position=position_dodge(width=0.9), vjust=-0.25) +
+    theme_databrew()
+  
+}
+
 
 group_by_plot_numeric_2 <- function(var_1, var_2, var_3, dat, remove_string, title) {
   
@@ -124,33 +202,6 @@ group_by_plot_numeric_2 <- function(var_1, var_2, var_3, dat, remove_string, tit
   
 }
 
-
-group_by_plot_numeric_1 <- function(var_1, var_2, dat,title) {
-  
-  dat <- dat[, c(var_1, var_2)]
-  dat[, var_2] <- as.numeric(as.character(dat[, var_2]))
-  temp_data <- dat %>%
-    filter_all(all_vars(!is.na(.))) %>%
-    group_by_(var_1) %>%
-    summarise_all(funs(mean))
-  
-  
-  temp_data$counts <- NULL
-  
-  colnames(temp_data)[1] <- 'var_1'
-  colnames(temp_data)[2] <- 'var_2'
-  
-  
-  # bar plot 
-  ggplot(temp_data, aes(var_1, var_2)) + 
-    geom_bar(stat = 'identity', alpha = 0.7, fill = 'black', colour = 'lightblue') +
-    xlab('') +
-    ylab('Mean #') +
-    ggtitle(title) +
-    geom_text(aes(label=round(var_2, 3)), position=position_dodge(width=0.9), vjust=-0.25) +
-    theme_databrew()
-  
-}
 
 
 
@@ -280,24 +331,17 @@ group_by_plot_factor(var_1 = 'demo_gss12_sex',
 summary(as.factor(gss14$sf_gss14_child_victim_report_child_services))
 # summary(as.factor(gss14$hw_gss14_child_victim_sexual_assault_no_report))
 
-######## gss14
-temp_data <- gss14 %>%
-  filter(!is.na(demo_gss14_sex)) %>%
-  filter(!grepl("Don't|Not|Ref|Valid", demo_gss14_sex)) %>%
-  group_by(demo_gss14_sex, demo_gss14_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(sf_gss14_child_victim_report_child_services == 'Yes', na.rm = T)/counts*100), 2))
+group_by_plot_factor(var_1 = 'demo_gss14_sex', 
+                     var_2 = 'sf_gss14_child_victim_report_child_services',
+                     dat = gss14,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = '% of childhood abuses reported to child services')
 
-
-# bar plot 
-ggplot(temp_data, aes(demo_gss14_sex, Yes, fill = demo_gss14_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=c('seagreen', 'lightblue')) +
-  xlab('Gender') +
-  ylab('Percent reported') +
-  ggtitle('Reporting childhood victimization to child services') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
+group_by_plot_factor(var_1 = 'demo_gss14_age_group', 
+                     var_2 = 'sf_gss14_child_victim_report_child_services',
+                     dat = gss14,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = '% of childhood abuses reported to child services')
 
 
 
@@ -311,242 +355,75 @@ lapply(survey, function(x) colnames(x)[grepl('main', colnames(x))])
 # sf_gss14_homeless_longest_period_living_with_familyfriendscaretc
 
 # homeless by sex and age 
+group_by_plot_factor_2(var_1 = 'demo_gss14_sex', 
+                       var_2 = 'demo_gss14_age_group',
+                       var_3 = 'sf_gss14_homeless_ever_been_homeless',
+                       dat = gss14,
+                       remove_string = 'Just|Valid|Don|Refus|Not',
+                       title = '% of been homeless')
 
-######## gss14
-temp_data <- gss14 %>%
-  filter(!is.na(demo_gss14_sex)) %>%
-  filter(!grepl("Don't|Not", demo_gss14_sex)) %>%
-  group_by(demo_gss14_sex, demo_gss14_age_group) %>%
-  summarise(counts = n(),
-            Yes = round((sum(sf_gss14_homeless_ever_been_homeless == 'Yes', na.rm = T)/counts*100), 2))
-
-
-# bar plot 
-ggplot(temp_data, aes(demo_gss14_sex, Yes, fill = demo_gss14_age_group)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) + 
-  scale_fill_manual(name="Age Group", values=c('seagreen', 'lightblue')) +
-  xlab('Gender') +
-  ylab('Percent ever been homeless') +
-  ggtitle('Homelessness GSS14') +
-  geom_text(aes(label=Yes), position=position_dodge(width=0.9), vjust=-0.25) +
-  theme_databrew()
-
-
-
+# homeless by sex and age 
+group_by_plot_factor(var_1 = 'demo_gss14_age_group', 
+                       var_2 = 'sf_gss14_homeless_ever_been_homeless',
+                       dat = gss14,
+                       remove_string = 'Just|Valid|Don|Refus|Not',
+                       title = '% of been homeless')
 
 
 ######################################################################################################################################
 # financial knowledge
 # demo_cfc_total_assets
 # demo_cfc_estimate_value_of_debts_and_liabil_grpd
-cfc <- survey[[7]]
-lapply(survey, function(x) colnames(x)[grepl('debt', colnames(x))])
 
 summary(as.factor(cfc$demo_cfc_estimate_value_of_debts_and_liabil_grpd))
 summary(as.factor(cfc$demo_cfc_total_assets))
 summary(as.factor(cfc$demo_cfc_aboriginal_status))
 
+# homeless by sex and age 
+group_by_plot_factor_2(var_1 = 'demo_cfc_sex', 
+                     var_2 = 'demo_cfc_age_of_respondent_grouped',
+                     var_3 = 'demo_cfc_estimate_value_of_debts_and_liabil_grpd',
+                     dat = cfc,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = 'Estimate of value of debts and liabilities')
 
-# debt
-
-temp_data <- cfc %>%
-  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_estimate_value_of_debts_and_liabil_grpd)) %>%
-  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
-  group_by(demo_cfc_sex) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == 'Less than $50,000', na.rm = T)/counts*100), 2),
-             two = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$50,000 to $99,999', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd== '$100,000 to $149,999', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$150,000 to $199,999', na.rm = T)/counts*100), 2),
-            five = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$200,000 to $249,999', na.rm = T)/counts*100), 2),
-            six = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$250,000 or more', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_sex'))
-
-# bar plot 
-cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", 
-                    values=c("#67001F", "#D1E5F0")) +
-  xlab('') +
-  ylab('Percent') +
-  ggtitle('Total debts and liabilities 18-24 (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "< $50k", 
-                            "two" = "$50k to $99k", 
-                            "three" = "$100k to $149k",
-                            "four" = "$150k to $199k",
-                            "five" = "$200k to $249k",
-                            "six" = "> $250k")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew() 
+# homeless by sex and age 
+group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped', 
+                     var_2 = 'demo_cfc_estimate_value_of_debts_and_liabil_grpd',
+                     dat = cfc,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = 'Estimate of value of debts and liabilities')
 
 
-########## age
 
-temp_data <- cfc %>%
-  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_estimate_value_of_debts_and_liabil_grpd)) %>%
-  group_by(demo_cfc_age_of_respondent_grouped) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == 'Less than $50,000', na.rm = T)/counts*100), 2),
-            two = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$50,000 to $99,999', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd== '$100,000 to $149,999', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$150,000 to $199,999', na.rm = T)/counts*100), 2),
-            five = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$200,000 to $249,999', na.rm = T)/counts*100), 2),
-            six = round((sum(demo_cfc_estimate_value_of_debts_and_liabil_grpd == '$250,000 or more', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_age_of_respondent_grouped'))
-
-# bar plot 
-cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_age_of_respondent_grouped)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="", 
-                    values=c("#67001F", "#D1E5F0")) +
-  xlab('') +
-  ylab('Percent') +
-  ggtitle('Total debts and liabilities 18-24 (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "< $50k", 
-                            "two" = "$50k to $99k", 
-                            "three" = "$100k to $149k",
-                            "four" = "$150k to $199k",
-                            "five" = "$200k to $249k",
-                            "six" = "> $250k")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew() 
 
 ##########################################################################################
 # ASSETS
 summary(as.factor(cfc$demo_cfc_total_assets))
 
-temp_data <- cfc %>%
-  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_total_assets)) %>%
-  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
-  group_by(demo_cfc_sex) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_total_assets == 'Less than $100,000', na.rm = T)/counts*100), 2),
-            two = round((sum(demo_cfc_total_assets == '$100,000 to under $200,000', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_total_assets== '$200,000 to under $300,000', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_total_assets == '$300,000 to under $500,000', na.rm = T)/counts*100), 2),
-            five = round((sum(demo_cfc_total_assets == '$500,000 or more', na.rm = T)/counts*100), 2))
+# homeless by sex and age 
+group_by_plot_factor_2(var_1 = 'demo_cfc_sex', 
+                       var_2 = 'demo_cfc_age_of_respondent_grouped',
+                       var_3 = 'demo_cfc_total_assets',
+                       dat = cfc,
+                       remove_string = 'Just|Valid|Don|Refus|Not',
+                       title = 'Estimate of value of total assets')
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_sex'))
-
-# bar plot 
-cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", 
-                    values=c("#67001F", "#D1E5F0")) +
-  xlab('') +
-  ylab('Percent') +
-  ggtitle('Total assets 18-24 (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "< $100k", 
-                            "two" = "$100 to 199k", 
-                            "three" = "$200k to 299k",
-                            "four" = "$300k to $499k",
-                            "five" = "> $500k")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew() 
-
-
-########## age
-
-temp_data <- cfc %>%
-  filter(!grepl('Valid|Not|Refusa|Do', demo_cfc_total_assets)) %>%
-  group_by(demo_cfc_age_of_respondent_grouped) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_total_assets == 'Less than $100,000', na.rm = T)/counts*100), 2),
-            two = round((sum(demo_cfc_total_assets == '$100,000 to under $200,000', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_total_assets== '$200,000 to under $300,000', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_total_assets == '$300,000 to under $500,000', na.rm = T)/counts*100), 2),
-            five = round((sum(demo_cfc_total_assets == '$500,000 or more', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_age_of_respondent_grouped'))
-
-# bar plot 
-cols <- brewer.pal(n = 10, name ='RdBu')
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_age_of_respondent_grouped)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="", 
-                    values=c("#67001F", "#D1E5F0")) +
-  xlab('') +
-  ylab('Percent') +
-  ggtitle('Total assets 18-24 (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "< $100k", 
-                            "two" = "$100 to 199k", 
-                            "three" = "$200k to 299k",
-                            "four" = "$300k to $499k",
-                            "five" = "> $500k")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew() 
-
-
-####################################################################################################################
-# demo_cfc_number_total_bank_accounts
-summary(as.factor(cfc$demo_cfc_number_total_bank_accounts))
-
-
-temp_data <- cfc %>%
-  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
-  group_by(demo_cfc_sex) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_number_total_bank_accounts == '1 personal and joint account', na.rm = T)/counts*100), 2),
-            two = round((sum(demo_cfc_number_total_bank_accounts == '2 personal and joint accounts', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_number_total_bank_accounts == '3 personal and joint accounts', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_number_total_bank_accounts == '4 personal and joint accounts', na.rm = T)/counts*100), 2))
-
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_sex'))
-
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_sex)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Sex", 
-                    values=c("#67001F", "#FDDBC7")) +
-  xlab('Total bank accounts') +
-  ylab('Percent') +
-  ggtitle('Total joint and personal bank accounts (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "One",
-                            "two" = "Two", 
-                            "three" = "Three",
-                            "four" = "Four")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew()
+# homeless by sex and age 
+group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped', 
+                     var_2 = 'demo_cfc_total_assets',
+                     dat = cfc,
+                     remove_string = 'Just|Valid|Don|Refus|Not',
+                     title = 'Estimate of value of total assets')
 
 
 
-temp_data <- cfc %>%
-  filter(demo_cfc_age_of_respondent_grouped == '18 to 24') %>%
-  group_by(demo_cfc_aboriginal_status) %>%
-  summarise(counts = n(),
-            one = round((sum(demo_cfc_number_total_bank_accounts == '1 personal and joint account', na.rm = T)/counts*100), 2),
-            two = round((sum(demo_cfc_number_total_bank_accounts == '2 personal and joint accounts', na.rm = T)/counts*100), 2),
-            three = round((sum(demo_cfc_number_total_bank_accounts == '3 personal and joint accounts', na.rm = T)/counts*100), 2),
-            four = round((sum(demo_cfc_number_total_bank_accounts == '4 personal and joint accounts', na.rm = T)/counts*100), 2))
 
-temp_data$counts <- NULL
-temp_melt <- melt(temp_data, id.vars = c('demo_cfc_aboriginal_status'))
 
-# bar plot 
-ggplot(temp_melt, aes(variable, value, fill = demo_cfc_aboriginal_status)) + 
-  geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
-  scale_fill_manual(name="Aboriginal status", 
-                    values=c("#67001F", "#FDDBC7", "black")) +
-  xlab('Total bank accounts') +
-  ylab('Percent') +
-  ggtitle('Total joint and personal bank accounts (CFCS 2014)') +
-  scale_x_discrete(labels=c("one" = "One",
-                            "two" = "Two", 
-                            "three" = "Three",
-                            "four" = "Four")) +
-  geom_text(aes(label=value), position=position_dodge(width=0.9), vjust=-0.25, size = 3) +
-  theme_databrew()
 
+
+
+#
 # # function that takes an outcome (any variable by demo) and regresses on all demo variables
 # # default estimates a lasso
 # get_glm <- function(model_data = dat, 
