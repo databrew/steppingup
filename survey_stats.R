@@ -328,7 +328,7 @@ group_by_plot_factor(var_1 = 'demo_gss10_sex',
 #########################################################################################################################################
 # self percieved mental health
 
-group_by_plot_factor(var_1 = 'demo_gss14_sex', 
+group_by_plot_factor_2(var_1 = 'demo_gss14_sex', 
                      var_2 = 'demo_gss14_age_group',
                      var_3 = 'hw_gss14_selfrated_mental_health', 
                      dat = gss14, 
@@ -487,15 +487,16 @@ group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped',
 summary(as.factor(gss13$ce))
 colnames(gss10)[grepl('board',colnames(gss10))]
 
+summary(as.factor(gss13$ds_gss13_experienced_discrimination_ethnicity_culture))
 # homeless by sex and age 
-group_by_plot_factor(var_1 = 'demo_gss13_sex', 
-                     var_2 = 'ce_gss13_volunteered_last_12_months',
+group_by_plot_factor(var_1 = 'demo_gss13_birth_country',
+                     var_2 =  'ds_gss13_experienced_discrimination_ethnicity_culture',
                      dat = gss13,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Volunteer last year 18-24 gss13',
+                     title = 'Experienced discrimination by ethnicity or culture',
                      size_text = 3)
 
-
+str(gss13)
 
 
 # # function that takes an outcome (any variable by demo) and regresses on all demo variables
