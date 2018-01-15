@@ -1,0 +1,67 @@
+---
+title: "Survey stats for osduhs"
+author: "Ben Brew"
+date: "January 6, 2018"
+output: html_document
+---
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+###{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE, cache = FALSE}
+
+
+# If get_new_data is set to True,
+# make sure that you are working within the "insider" virtualenv
+
+# Libraries
+library(tidyverse)
+library(glmnet)
+library(knitr)
+library(Hmisc)
+library(RColorBrewer)
+library(plotly)
+library(databrew)
+library(ggmap)
+library(reshape2)
+library(memisc)
+library(texreg)
+
+
+# Turn off scientific notation
+options(scipen = '999')
+
+# Basic knitr options
+knitr::opts_chunk$set(comment = NA, 
+               echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, # Render report, even with errors
+               cache = F)
+
+# source functions
+source('../functions.R')
+
+# Get all locations
+if('preprocess_survey_data.RData' %in% dir('data')){
+  load('../data/preprocess_survey_data.RData')
+} else { 
+  source('../global.R')
+}
+ 
+ 
+```
+
+# Osduhs
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# get lfs data from survey list 
+osduhs <- survey[[10]]
+
+# make all characters
+osduhs <- restructure_data_types(osduhs, convert_from  = 'character')
+
+```
+
+

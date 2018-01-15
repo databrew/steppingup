@@ -1,0 +1,550 @@
+---
+title: "Survey models for Gss10"
+author: "Ben Brew"
+date: "January 6, 2018"
+output: html_document
+---
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+###{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE, cache = FALSE}
+
+
+# If get_new_data is set to True,
+# make sure that you are working within the "insider" virtualenv
+
+# Libraries
+library(tidyverse)
+library(glmnet)
+library(knitr)
+library(Hmisc)
+library(RColorBrewer)
+library(plotly)
+library(databrew)
+library(ggmap)
+library(reshape2)
+library(memisc)
+library(texreg)
+
+
+# Turn off scientific notation
+options(scipen = '999')
+
+# Basic knitr options
+knitr::opts_chunk$set(comment = NA, 
+               echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, # Render report, even with errors
+               cache = F)
+
+# source functions
+source('../functions.R')
+
+# Get all locations
+if('preprocess_survey_data.RData' %in% dir('data')){
+  load('../data/preprocess_survey_data.RData')
+} else { 
+  source('../global.R')
+}
+ 
+```
+
+# General Social Survey 2010
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# get lfs data from survey list 
+gss <- survey[[2]]
+
+# make all characters
+gss <- restructure_data_types(gss, convert_from  = 'character')
+
+colnames(gss)[grepl('vismin', colnames(gss))]
+
+
+```
+
+## Self reported physical health
+
+### health as a function of gender
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+summary(as.factor(gss$hw_gss10_mental_health))
+# first recod health to two levels 
+gss$hw_gss10_health_binary <- as.factor(ifelse(grepl('good|very|excellent', gss$hw_gss10_health), 
+                                       'good health', 
+                                       ifelse(grepl('poor|fair', gss$hw_gss10_health), 
+                                              'poor_fair', 
+                                              ifelse(grepl("Don't", gss$hw_gss10_health), 
+                                                     NA, gss$hw_gss10_health))))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+## health as a function of gender, age
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group' ,'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### health as a function of gender, age, highest edu
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group' , 'ed_gss10_highest_level_edu','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+### health as a function of gender, age, highest edu, type of parents
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group' , 'ed_gss10_highest_level_edu', 'demo_gss10_type_parents','demo_gss10_sample_weight'),
+                 outcome_var = 'hw_gss10_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+## Self reported mental health
+
+### mental health as a function of gender
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# first recod health to two levels 
+gss$hw_gss10_mental_health_binary <- as.factor(ifelse(grepl('very|excellent', gss$hw_gss10_mental_health), 
+                                       'very_good_excellent', 
+                                       ifelse(grepl('poor|fair', gss$hw_gss10_mental_health), 
+                                              'poor_fair_good', 
+                                              ifelse(gss$hw_gss10_mental_health == 'good', 'poor_fair_good',
+                                                     ifelse(grepl("Don't", gss$hw_gss10_mental_health), 
+                                                            NA, gss$hw_gss10_mental_health)))))
+
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group','demo_gss10_personal_income', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')                                            
+                
+```
+
+
+### mental health as a function of gender, age, income
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group','demo_gss10_personal_income', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+### mental health as a function of gender, age, income,edu
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group', 'demo_gss10_personal_income','demo_gss10_highest_level_edu','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### mental health as a function of gender, age, edu, marital status, income
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group', 'demo_gss10_highest_level_edu','demo_gss10_marital_status','demo_gss10_personal_income','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+### mental health as a function of gender, age, edu, marital status,inncome, active sports, active leisure
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group', 'demo_gss10_highest_level_edu','demo_gss10_marital_status','demo_gss10_personal_income' ,'hw_gss10_mins_active_sports', 'hw_gss10_mins_active_leisure','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+### mental health as a function of gender, age, edu, marital status,inncome, active sports, active leisure
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex','demo_gss10_age_group', 'demo_gss10_highest_level_edu','demo_gss10_marital_status','demo_gss10_personal_income' ,'hw_gss10_mins_active_sports', 'hw_gss10_mins_active_leisure', 'hw_gss10_workaholic','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_mental_health_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+## Self reported opinion oflife
+
+### life as a function of gender
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# first recode life variable - right now 1 is disatisfied and 10 very satisfied - remove everything else 
+gss$hw_gss10_life_binary <- ifelse(grepl('11|98|99', gss$hw_gss10_life), NA, gss$hw_gss10_life)
+gss$hw_gss10_life_binary <- as.factor(ifelse(gss$hw_gss10_life_binary >= 8, '8-10', '1-5'))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+### life as a function of gender, age
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### life as a function of gender, age, education
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### life as a function of gender, age, education, income, 
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### life as a function of gender, age, education, income, marital status
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### life as a function of gender, age, education, income, marital status, active sports, active leisure
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status', 'hw_gss10_mins_active_sports', 'hw_gss10_mins_active_leisure', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'hw_gss10_life_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+## Volunteering in last year
+
+### volunteering as a function of gender
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+### volunteering as a function of gender, age
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education, income
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education, income, marital status
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education, income, marital status, health, mental health
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status', 'hw_gss10_health','hw_gss10_mental_health', 'demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education, income, marital status, health, mental health, parents
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status', 'hw_gss10_health','hw_gss10_mental_health', 'demo_gss10_type_of_parents','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+
+
+### volunteering as a function of gender, age, education, income, marital status, health, mental health, parents,sleep, tv
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  ww_gss10_health, hw_gss10_mental_health, hw_gss10_life, gss$ce_gss10_vol_anywhere_last_year
+# predictors: hw_gss10_age, hw_gss10_sex, ed_gss10_highest_level_edu, demo_gss10_type_of_parents, demo_gss10_marital_status, hw_gss_10_mins_night_sleep, hw_gss10_mins_tv, sf_gss10_mins_at_someone_else_home,
+# hw_gss10_mins_active_sports, hw_gss10_mins_active_leisure, hw_gss10_workaholic, hw_gss10_main_source_stress, em_gss10_labour_force_status
+
+# remove don't know from volunteer 
+gss$ce_gss10_vol_binary <- as.factor(ifelse(grepl("Don't know", gss$ce_gss10_vol_anywhere_last_year), NA, 
+                                  gss$ce_gss10_vol_anywhere_last_year))
+
+custom_logit_mod(gss, 
+                 model_vars = c('demo_gss10_sex', 'demo_gss10_age_group','demo_gss10_highest_level_edu','demo_gss10_personal_income','demo_gss10_marital_status', 'hw_gss10_health','hw_gss10_mental_health', 'demo_gss10_type_of_parents','hw_gss_10_mins_night_sleep', 'hw_gss10_mins_tv','demo_gss10_sample_weight'), 
+                 outcome_var = 'ce_gss10_vol_binary', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+```
+
+## plots and visualizations
