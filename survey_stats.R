@@ -284,13 +284,15 @@ group_by_plot_factor(var_1 = 'demo_gss14_sex',
 
 ######################################################################################################################
 # self percieved physical health
-gss14 <- gss14 %>% filter(demo_gss14_age_group == '15 to 24')
-gss13 <- gss13 %>% filter(demo_gss13_age_group == '15 to 24 years')
+# gss14 <- gss14 %>% filter(demo_gss14_age_group == '15 to 24')
+# gss13 <- gss13 %>% filter(demo_gss13_age_group == '15 to 24 years')
 
 
-group_by_plot_factor(var_1 = 'demo_gss14_sex', 
-                     var_2 = 'hw_gss14_selfrated_general_health', 
+group_by_plot_factor_2(var_1 = 'demo_gss14_sex', 
+                       var_2 = 'demo_gss14_age_group',
+                     var_3 = 'hw_gss14_selfrated_general_health', 
                      dat = gss14, 
+                     facet_row = 1,
                      remove_string = 'Don|Not', 
                      title = 'Self rated general health by sex gss 2014',
                      size_text = 2.5)
@@ -327,8 +329,10 @@ group_by_plot_factor(var_1 = 'demo_gss10_sex',
 # self percieved mental health
 
 group_by_plot_factor(var_1 = 'demo_gss14_sex', 
-                     var_2 = 'hw_gss14_selfrated_mental_health', 
+                     var_2 = 'demo_gss14_age_group',
+                     var_3 = 'hw_gss14_selfrated_mental_health', 
                      dat = gss14, 
+                     facet_row = 1,
                      remove_string = 'Ref|Don|Not', 
                      title = 'Self rated mental health by sex gss 2014',
                      size_text = 2.5)
@@ -480,7 +484,8 @@ group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped',
 
 #####################################################################################
 
-summary(as.factor(pic$ed_pisa_activities_last_year_open_or_distance_education))
+summary(as.factor(gss13$ce))
+colnames(gss10)[grepl('board',colnames(gss10))]
 
 # homeless by sex and age 
 group_by_plot_factor(var_1 = 'demo_gss13_sex', 
