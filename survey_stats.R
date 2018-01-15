@@ -5,7 +5,6 @@ library(tidyverse)
 library(glmnet)
 library(reshape2)
 
-
 # source functions
 source('functions.R')
 
@@ -96,6 +95,7 @@ group_by_plot_factor_2 <- function(var_1,
                                    var_2, 
                                    var_3,
                                    dat, 
+                                   facet_row,
                                    remove_string, 
                                    title, 
                                    size_text) {
@@ -136,6 +136,7 @@ group_by_plot_factor_2 <- function(var_1,
     cols <- brewer.pal(levels_of_var_1, name = 'RdBu')
   }
   ggplot(temp_new, aes(var_2, per, group = interaction(var_1, var_3), fill = var_1)) + 
+    facet_wrap(~ var_3, nrow = facet_row) +
     geom_bar(stat = 'identity', position = 'dodge', alpha = 0.8) +
     scale_fill_manual(name="", values = cols) +
     xlab('') +
@@ -148,7 +149,12 @@ group_by_plot_factor_2 <- function(var_1,
 
 
 
-group_by_plot_numeric_1 <- function(var_1, var_2, dat,title, size_text) {
+group_by_plot_numeric_1 <- function(var_1, 
+                                    var_2, 
+                                    remove_string,
+                                    dat,
+                                    title, 
+                                    size_text) {
   
   dat <- dat[, c(var_1, var_2)]
   dat[, var_2] <- as.numeric(as.character(dat[, var_2]))
@@ -157,7 +163,10 @@ group_by_plot_numeric_1 <- function(var_1, var_2, dat,title, size_text) {
     group_by_(var_1) %>%
     summarise_all(funs(mean))
   
-  
+  # remove unneeded strings
+  temp_data <- as.data.frame(temp_data)
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_1])),]
+
   temp_data$counts <- NULL
   
   colnames(temp_data)[1] <- 'var_1'
@@ -176,7 +185,13 @@ group_by_plot_numeric_1 <- function(var_1, var_2, dat,title, size_text) {
 }
 
 
-group_by_plot_numeric_2 <- function(var_1, var_2, var_3, dat, remove_string, title) {
+group_by_plot_numeric_2 <- function(var_1, 
+                                    var_2, 
+                                    var_3, 
+                                    dat, 
+                                    remove_string, 
+                                    title,
+                                    size_text) {
   
   dat <- dat[, c(var_1, var_2, var_3)]
   dat[, var_3] <- as.numeric(as.character(dat[, var_3]))
@@ -184,6 +199,11 @@ group_by_plot_numeric_2 <- function(var_1, var_2, var_3, dat, remove_string, tit
     filter_all(all_vars(!is.na(.))) %>%
     group_by_(var_1, var_2) %>%
     summarise_all(funs(mean))
+  
+  # remove unneeded strings
+  temp_data <- as.data.frame(temp_data)
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_1])),]
+  temp_data <- temp_data[!grepl(remove_string, as.character(temp_data[,var_2])),]
   
   
   colnames(temp_data)[1] <- 'var_1'
@@ -223,13 +243,17 @@ group_by_plot_factor(var_1 = 'demo_gss12_sex',
                      var_2 = 'phys_recode' , 
                      remove_string = 'Not|Don',
                      title = '# of moderate to vigorous activites prior week',
-                     dat = gss12)
+                     dat = gss12,
+                     size_text = 2.5)
 
 group_by_plot_factor_2(var_1 = 'demo_gss12_sex',
                        var_2 = 'demo_gss12_age_group',
                        var_3 = 'phys_recode', 
+                       facet_row = 3,
+                       remove_string = 'Not|Don',
                        title = '# of moderate to vigorous activites prior week',
-                       dat = gss12)
+                       dat = gss12,
+                       size_text = 2.5)
 
 
 ##################################################################################################################
@@ -237,20 +261,24 @@ group_by_plot_factor_2(var_1 = 'demo_gss12_sex',
 
 group_by_plot_numeric_1(var_1 = 'demo_gss13_sex' , 
                         var_2 = 'sf_gss13_relatives_feel_close',
+                        remove_string = 'Don',
                         title = 'Relatives',
                         dat = gss13)
 
 group_by_plot_numeric_2(var_1 = 'demo_gss13_sex' , 
                         var_2 = 'demo_gss13_age_group',
                         var_3 = 'sf_gss13_relatives_feel_close',
+                        remove_string = 'Don|Not',
                         title = 'Avg # of relatives respondent feels close to',
-                        dat = gss13)
+                        dat = gss13,
+                        size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss14_sex', 
                      var_2 = 'hw_gss14_selfrated_general_health', 
                      remove_string = 'Ref|Don|Vali|Not', 
                      title = 'Self rated general health by sex', 
-                     dat = gss14)
+                     dat = gss14,
+                     size_text = 2.5)
 
 
 
@@ -264,65 +292,67 @@ group_by_plot_factor(var_1 = 'demo_gss14_sex',
                      var_2 = 'hw_gss14_selfrated_general_health', 
                      dat = gss14, 
                      remove_string = 'Don|Not', 
-                     title = 'Self rated general health by sex gss 2014')
+                     title = 'Self rated general health by sex gss 2014',
+                     size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss13_sex', 
                      var_2 = 'hw_gss13_self_rated_general_health', 
                      dat = gss13, remove_string = 'Don|Not', 
-                     title = 'Self rated general health by sex 2013')
+                     title = 'Self rated general health by sex 2013',
+                     size_text = 2.5)
 
 
 group_by_plot_factor(var_1 = 'demo_gss12_sex', 
                      var_2 = 'hw_gss12_self_reported_health', 
                      dat = gss12, remove_string = 'Don|Not', 
-                     title = 'Self rated general health by sex 2012')
+                     title = 'Self rated general health by sex 2012',
+                     size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss11_sex', 
                      var_2 = 'hw_gss11_self_reported_health', 
                      dat = gss11, remove_string = 'Don|Not', 
-                     title = 'Self rated general health by sex 2011')
+                     title = 'Self rated general health by sex 2011',
+                     size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss10_sex', 
                      var_2 = 'hw_gss10_health', 
                      dat = gss10, 
                      remove_string = 'Don|Not', 
-                     title = 'Self rated general health by sex 2010')
+                     title = 'Self rated general health by sex 2010',
+                     size_text = 2.5)
 
 
 
 #########################################################################################################################################
 # self percieved mental health
 
-group_by_plot_factor(var_1 = 'demo_gss14_sex', var_2 = 'hw_gss14_selfrated_mental_health', dat = gss14, remove_string = 'Ref|Don|Not', 
-                     title = 'Self rated mental health by sex gss 2014')
+group_by_plot_factor(var_1 = 'demo_gss14_sex', 
+                     var_2 = 'hw_gss14_selfrated_mental_health', 
+                     dat = gss14, 
+                     remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex gss 2014',
+                     size_text = 2.5)
 
-group_by_plot_factor(var_1 = 'demo_gss13_sex', var_2 = 'hw_gss13_self_rated_mental_health', dat = gss13, remove_string = 'Ref|Don|Not', 
-                     title = 'Self rated mental health by sex 2013')
+group_by_plot_factor(var_1 = 'demo_gss13_sex', 
+                     var_2 = 'hw_gss13_self_rated_mental_health', 
+                     dat = gss13, 
+                     remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2013',
+                     size_text = 2.5)
 
-group_by_plot_factor(var_1 = 'demo_gss12_sex', var_2 = 'hw_gss12_self_reported_mental_health', dat = gss12, remove_string = 'Ref|Don|Not', 
-                     title = 'Self rated mental health by sex 2012')
+group_by_plot_factor(var_1 = 'demo_gss12_sex', 
+                     var_2 = 'hw_gss12_self_reported_mental_health', 
+                     dat = gss12, 
+                     remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2012',
+                     size_text = 2.5)
 
-group_by_plot_factor(var_1 = 'demo_gss11_sex', var_2 = 'hw_gss11_self_reported_mental_health', dat = gss11, remove_string = 'Ref|Don|Not', 
-                     title = 'Self rated mental health by sex 2011')
-
-summary(as.factor(gss10$hw_gss10_mental_health))
-gss10$hw_gss10_mental_health <- factor(gss10$hw_gss10_mental_health, levels = c('excellent', 'very good', 'good', 'fair', 'poor', "Don't know"))
-group_by_plot_factor(var_1 = 'demo_gss10_sex', var_2 = 'hw_gss10_mental_health', dat = gss10, remove_string = 'Ref|Don|Not', 
-                     title = 'Self rated mental health by sex 2010')
-
-
-summary(as.factor(osduhs$hw_osduhs_mental_health))
-osduhs$dem<- factor(osduhs$demo_osduhs_race, 
-                                 levels = c('excellent', 'very good', 'good', 'fair', 'poor'))
-
-osduhs$hw_osduhs_mental_health <- factor(osduhs$hw_osduhs_mental_health, 
-                                         levels = c('excellent', 'very good', 'good', 'fair', 'poor'))
-group_by_plot_factor(var_1 = 'demo_osduhs_race', 
-                     var_2 = 'hw_osduhs_mental_health', 
-                     dat = osduhs, 
-                     remove_string = 'not sure', 
-                     title = 'Self rated mental health by sex 2010',
-                     size_text = 2)
+group_by_plot_factor(var_1 = 'demo_gss11_sex', 
+                     var_2 = 'hw_gss11_self_reported_mental_health', 
+                     dat = gss11, 
+                     remove_string = 'Ref|Don|Not', 
+                     title = 'Self rated mental health by sex 2011',
+                     size_text = 2.5)
 
 
 ######################################################################################################################################
@@ -335,13 +365,15 @@ group_by_plot_factor(var_1 = 'demo_gss13_sex',
                      var_2 = 'cc_gss13_favour_for_neighbour_past_month',
                      dat = gss13,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Favour for neightbor in past month 2013')
+                     title = 'Favour for neightbor in past month 2013',
+                     size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss12_sex', 
                      var_2 = 'cc_gss12_done_favour_for_neighbour_past_month',
                      dat = gss12,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Favour for neightbor in past month 2012')
+                     title = 'Favour for neightbor in past month 2012',
+                     size_text = 2.5)
 
 
 ######################################################################################################################################
@@ -355,19 +387,20 @@ group_by_plot_factor(var_1 = 'demo_gss14_sex',
                      var_2 = 'sf_gss14_child_victim_report_child_services',
                      dat = gss14,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = '% of childhood abuses reported to child services')
+                     title = '% of childhood abuses reported to child services',
+                     size_text = 2.5)
 
 group_by_plot_factor(var_1 = 'demo_gss14_age_group', 
                      var_2 = 'sf_gss14_child_victim_report_child_services',
                      dat = gss14,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = '% of childhood abuses reported to child services')
+                     title = '% of childhood abuses reported to child services',
+                     size_text = 2.5)
 
 
 
 ######################################################################################################################################
 # homelessness 
-lapply(survey, function(x) colnames(x)[grepl('main', colnames(x))])
 
 # sf_gss14_homeless_ever_been_homeless
 # sf_gss14_homeless_longest_period_of_time_for_which_you_have_been_homeless
@@ -379,15 +412,18 @@ group_by_plot_factor_2(var_1 = 'demo_gss14_sex',
                        var_2 = 'demo_gss14_age_group',
                        var_3 = 'sf_gss14_homeless_ever_been_homeless',
                        dat = gss14,
+                       facet_row= 1,
                        remove_string = 'Just|Valid|Don|Refus|Not',
-                       title = '% of been homeless')
+                       title = '% of been homeless',
+                       size_text = 2)
 
 # homeless by sex and age 
 group_by_plot_factor(var_1 = 'demo_gss14_age_group', 
                        var_2 = 'sf_gss14_homeless_ever_been_homeless',
                        dat = gss14,
                        remove_string = 'Just|Valid|Don|Refus|Not',
-                       title = '% of been homeless')
+                       title = '% of been homeless',
+                     size_text = 2.5)
 
 
 ######################################################################################################################################
@@ -405,14 +441,16 @@ group_by_plot_factor_2(var_1 = 'demo_cfc_sex',
                      var_3 = 'demo_cfc_estimate_value_of_debts_and_liabil_grpd',
                      dat = cfc,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Estimate of value of debts and liabilities')
+                     title = 'Estimate of value of debts and liabilities',
+                     size_text = 2.5)
 
 # homeless by sex and age 
 group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped', 
                      var_2 = 'demo_cfc_estimate_value_of_debts_and_liabil_grpd',
                      dat = cfc,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Estimate of value of debts and liabilities')
+                     title = 'Estimate of value of debts and liabilities',
+                     size_text = 2.5)
 
 
 
@@ -426,15 +464,18 @@ group_by_plot_factor_2(var_1 = 'demo_cfc_sex',
                        var_2 = 'demo_cfc_age_of_respondent_grouped',
                        var_3 = 'demo_cfc_total_assets',
                        dat = cfc,
+                       facet_row = 1,
                        remove_string = 'Just|Valid|Don|Refus|Not',
-                       title = 'Estimate of value of total assets')
+                       title = 'Estimate of value of total assets',
+                       size_text = 2.5)
 
 # homeless by sex and age 
 group_by_plot_factor(var_1 = 'demo_cfc_age_of_respondent_grouped', 
                      var_2 = 'demo_cfc_total_assets',
                      dat = cfc,
                      remove_string = 'Just|Valid|Don|Refus|Not',
-                     title = 'Estimate of value of total assets')
+                     title = 'Estimate of value of total assets',
+                     size_text = 2.5)
 
 
 #####################################################################################

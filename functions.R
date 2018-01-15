@@ -26,7 +26,6 @@ get_survey_data <- function() {
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
   var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
-  
   removals <- c()
  
   # create list to store results
@@ -81,11 +80,11 @@ get_survey_data <- function() {
         # clean by recoding factors or numerics (bare minimum right now)
         if(grepl('lfs', temp_data)) {
           
-          temp_sub <- clean_lfs(temp_sub)
+          # temp_sub <- clean_lfs(temp_sub)
           
         } else if (grepl('gss_2010', temp_data)) {
           
-          temp_sub <- clean_gss10(temp_sub)
+          # temp_sub <- clean_gss10(temp_sub)
           
         } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
 
@@ -123,18 +122,18 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
         } else if (grepl('sduhs', temp_data)) {
-          
-          # restructure data
-          temp_sub <- restructure_data_types(temp_sub, convert_from = 'factor')
+          # 
+          # # restructure data
+          # temp_sub <- restructure_data_types(temp_sub, convert_from = 'factor')
           
           # make first letter capital
           # temp_sub <- get_capital_osduhs(temp_sub)
-          
-          # get date, and date and time of start and finish
-          temp_sub <- get_date_and_time_osduhs(temp_sub)
-          
-          # recode body weight variable
-          temp_sub <- get_body_weight_osduhs(temp_sub)
+          # 
+          # # get date, and date and time of start and finish
+          # temp_sub <- get_date_and_time_osduhs(temp_sub)
+          # 
+          # # recode body weight variable
+          # temp_sub <- get_body_weight_osduhs(temp_sub)
           
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
@@ -242,6 +241,7 @@ time_chart <- function(x,y,
   return(g)
 }
 
+colnames(survey[[2]])[grepl('', colnames(survey[[2]]))]
 # Function for map
 ontario_map <- function(x){
   require(dplyr)
