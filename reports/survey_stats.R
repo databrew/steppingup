@@ -10,11 +10,10 @@ source('../functions.R')
 
 # Get all locations
 if('preprocess_survey_data.RData' %in% dir('data')){
-  load('../data/preprocess_survey_data.RData')
+  load('../data/processed_survey_data.RData')
 } else { 
   source('../global.R')
 }
-
 
 # get folder names
 path_to_data <-  'data/survey_data'
