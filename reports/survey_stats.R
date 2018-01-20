@@ -9,7 +9,7 @@ library(reshape2)
 source('../functions.R')
 
 # Get all locations
-if('preprocess_survey_data.RData' %in% dir('data')){
+if('processed_survey_data.RData' %in% dir('data')){
   load('../data/processed_survey_data.RData')
 } else { 
   source('../global.R')
