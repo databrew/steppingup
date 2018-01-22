@@ -1,0 +1,187 @@
+---
+title: "preliminary_stats"
+author: "Ben Brew"
+date: "January 5, 2018"
+output: html_document
+---
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE}
+###{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, error= FALSE, cache = FALSE}
+
+
+# If get_new_data is set to True,
+# make sure that you are working within the "insider" virtualenv
+
+# Libraries
+library(tidyverse)
+library(glmnet)
+library(knitr)
+library(Hmisc)
+library(RColorBrewer)
+library(plotly)
+library(databrew)
+library(ggmap)
+library(reshape2)
+library(memisc)
+library(texreg)
+
+
+# Turn off scientific notation
+options(scipen = '999')
+
+# Basic knitr options
+knitr::opts_chunk$set(comment = NA, 
+               echo = FALSE, 
+               warning = FALSE, 
+               message = FALSE, 
+               error = TRUE, # Render report, even with errors
+               cache = F)
+
+# source functions
+source('../functions.R')
+
+# Get all locations
+if('processed_survey_data.RData' %in% dir('data')){
+  load('../data/processed_survey_data.RData')
+} else { 
+  source('../global.R')
+}
+```
+
+# Labour Force Survey 
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# get lfs data from survey list 
+lfs <- survey[[1]]
+
+# make all characters
+lfs <- restructure_data_types(lfs, convert_type = 'character')
+
+
+```
+
+## Unemployment
+
+### Unemployment as a function of gender
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+mod <- custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_unemployed_only', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+
+```
+
+
+### Unemployment as a function of gender and age
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_unemployed_only', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+
+```
+
+
+
+### Unemployment as a function of gender, age, and student status
+
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'ed_lfs_non_student','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_unemployed_only', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+
+```
+
+
+### Unemployment as a function of gender, age, student status, and education
+
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'ed_lfs_non_student','ed_lfs_highest_edu','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_unemployed_only', 
+                 weights = FALSE, 
+                 mod_type = 'binomial')
+
+
+```
+
+
+## Hourly wage as a function of gender
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+```
+
+## Hourly wage as a function of gender and age
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+```
+
+## Hourly wage as a function of gender, age, and education
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','ed_lfs_highest_edu','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+```
+
+# Hourly wage as a function of gender, age, education, and class of worker 
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','ed_lfs_highest_edu','em_lfs_class_of_worker','demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+```
+
+# Hourly wage as a function of gender, age, education, class of worker, and union
+em_lfs_class_of_worker  
+```{r, echo = FALSE, warning = FALSE, message = FALSE, comment = NA, results = 'asis',error= FALSE}
+# outcomes :  em_lfs_hourly_wages, em_lfs_neet, em_lfs_actual_hours_per_week_main_job, em_lfs_unemployed_only
+custom_logit_mod(lfs, 
+                 model_vars = c('demo_lfs_sex', 'demo_lfs_age','ed_lfs_highest_edu','em_lfs_class_of_worker', 'em_lfs_union_membership' ,'demo_lfs_sample_weight'), 
+                 outcome_var = 'em_lfs_hourly_wages', 
+                 weights = FALSE, 
+                 mod_type = 'gaussian')
+
+
+
+```

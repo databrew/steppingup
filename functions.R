@@ -21,18 +21,22 @@ library(memisc)
 # Define function for reading survey data
 get_survey_data <- function() {
   path_to_data <- 'data/survey_data'
-  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
   
-  removals <- c()
-  var_names <- as.character(var_summary$variable_name)
   survey_folders <- list.files(path_to_data)
   # remove var_summary.csv from the list so that there are 10 unique folders pertaining to each survey
   survey_folders <- survey_folders[!grepl('var_summary', survey_folders)]
+  var_summary <- read_csv(paste0(path_to_data, '/var_summary.csv'))
+  removals <- c()
+ 
   # create list to store results
   result_list <- list()
 
   # loop through each folder and read in all data in that folder (either 1 or 3)
   for(i in 1:length(survey_folders)) {
+    
+    # i moved this down here (Was a few lines above) because of shared original names in data
+    # this way it only subset if that name is in the data AND same survey
+    var_names <- as.character(var_summary$variable_name[which(var_summary$data_name == survey_folders[i])])
     message('Starting ', i, ': ', survey_folders[i])
     temp_folder <- survey_folders[i]
     survey_data <- list.files(paste(path_to_data, temp_folder, sep = '/'))
@@ -69,16 +73,18 @@ get_survey_data <- function() {
         
         # remove in column name that has .1 in it because its a duplicate 
         temp_sub <- temp_sub[,!grepl('.1', colnames(temp_sub), fixed = TRUE)]
+        temp_sub <- temp_sub[,!grepl('.2', colnames(temp_sub), fixed = TRUE)]
+        
         
         # clean data - don't recode variable names because the current ones are linked to a data dictionary 
         # clean by recoding factors or numerics (bare minimum right now)
         if(grepl('lfs', temp_data)) {
           
-          temp_sub <- clean_lfs(temp_sub)
+          # temp_sub <- clean_lfs(temp_sub)
           
         } else if (grepl('gss_2010', temp_data)) {
           
-          temp_sub <- clean_gss10(temp_sub)
+          # temp_sub <- clean_gss10(temp_sub)
           
         } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
 
@@ -115,13 +121,26 @@ get_survey_data <- function() {
           
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
-        } else if(grepl('sduhs', temp_data)) {
+        } else if (grepl('sduhs', temp_data)) {
+          # 
+          # # restructure data
+          # temp_sub <- restructure_data_types(temp_sub, convert_from = 'factor')
+          
+          # make first letter capital
+          # temp_sub <- get_capital_osduhs(temp_sub)
+          # 
+          # # get date, and date and time of start and finish
+          # temp_sub <- get_date_and_time_osduhs(temp_sub)
+          # 
+          # # recode body weight variable
+          # temp_sub <- get_body_weight_osduhs(temp_sub)
+          
           # Need to combine all race variables into one
           temp_sub <- temp_sub %>%
             mutate(race = ifelse(white_which_of_the_following_best_describes_your_background == 'yes',
-                                 'white',
+                                 'chite',
                                  ifelse(chinese_which_of_the_following_best_describes_your_background == 'yes',
-                                        'chinese',
+                                        'whinese',
                                         ifelse(south_asian_which_of_the_following_best_describes_your_background == 'yes',
                                                'south asian',
                                                ifelse(black_which_of_the_following_best_describes_your_background == 'yes',
@@ -135,7 +154,7 @@ get_survey_data <- function() {
                                                                            ifelse(west_asian_or_arab_which_of_the_following_best_describes_your_background == 'yes',
                                                                                   'west asian / arab',
                                                                                   ifelse(korean_which_of_the_following_best_describes_your_background == 'yes',
-                                                                                         'korean',
+                                                                                         'Korean',
                                                                                          ifelse(japanese_which_of_the_following_best_describes_your_background == 'yes',
                                                                                                 'japanese',
                                                                                                 ifelse(not_sure_which_of_the_following_best_describes_your_background == 'yes',
@@ -145,17 +164,23 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[,!grepl('which_of_the_following_best_describes_your_background', names(temp_sub))]
         }
         
-        new_names <- data.frame(variable_name = names(temp_sub),
+        new_names <- data.frame(variable_name = as.character(names(temp_sub)),
                                 data_name = temp_folder)
+        
+        # remove 'X' and duplicated from both new_names$new_variable and names(temp_sub)
+        new_names$variable_name <- gsub('X', '', new_names$variable_name)
         new_names <- left_join(new_names, var_summary)
+        # new_names$new_variable[duplicated(new_names$new_variable)]
+        new_names <- new_names[!duplicated(new_names$new_variable),]
+
         names(temp_sub) <- new_names$new_variable
         data_list[[j]] <-  temp_sub
       }
     }
     
     if(length(data_list) > 1) {
-      the_data <- left_join(data_list[[2]],
-                          data_list[[1]])
+      the_data <- left_join(data_list[[1]],
+                          data_list[[2]])
     } else {
       the_data <- data_list[[1]]
     }
@@ -181,7 +206,6 @@ get_survey_data <- function() {
   }
   return(list(result_list, removals))
 }
-
 
 # Define a function for creating a crazy looking map
 crazy_map <- function(){
@@ -217,6 +241,7 @@ time_chart <- function(x,y,
   return(g)
 }
 
+colnames(survey[[2]])[grepl('', colnames(survey[[2]]))]
 # Function for map
 ontario_map <- function(x){
   require(dplyr)
@@ -909,10 +934,14 @@ relevel_factor_one_lfs <- function(dat_var) {
 }
 
 # restructure data types
-restructure_data_types <- function(temp) {
+restructure_data_types <- function(temp, convert_from) {
   for(i in 1:ncol(temp)) {
-    if(grepl('factor', class(temp[, i]))) {
-      temp[, i] <- as.character(temp[, i])
+    if(grepl(convert_from, class(temp[, i]))) {
+      if(convert_from == 'character') {
+        temp[, i] <- as.factor(temp[, i])
+      } else {
+        temp[, i] <- as.character(temp[, i])
+      }
     } else {
       temp[, i] <- as.numeric(temp[, i])
     }
@@ -923,7 +952,7 @@ restructure_data_types <- function(temp) {
 clean_lfs <- function(temp_clean) {
   
   # turn factors to characters, and everything else numeric
-  temp_clean <- restructure_data_types(temp_clean)
+  temp_clean <- restructure_data_types(temp_clean, convert_from = 'factor')
 
   # if the level of a factor is 1, then that factor only has "yes" coded and should replace NA with "NO"
   temp_clean$job_seeker_checked_wemployers_directly <- relevel_factor_one_lfs(temp_clean$job_seeker_checked_wemployers_directly)
@@ -1042,6 +1071,7 @@ clean_lfs <- function(temp_clean) {
   # remove the NA from the level "Spouse present,NA" 
   temp_clean$spouses_class_of_worker_at_main_job <- gsub(',NA', '', temp_clean$spouses_class_of_worker_at_main_job)
   
+  
   return(temp_clean)
   
 }
@@ -1059,7 +1089,7 @@ clean_lfs <- function(temp_clean) {
 clean_gss10 <- function(temp_clean) {
   
   # first restructure so factors are characters, else numeric
-  temp_clean <- restructure_data_types(temp_clean)
+  temp_clean <- restructure_data_types(temp_clean, convert_from = 'factor')
   # this function will fill any variable that has "Not stated" or "Not answered" with NA, but for time being, I'll keep "Not asked" levels as they are.
   temp_clean <- get_na_gss10(temp_clean)
   
@@ -1182,11 +1212,11 @@ remove_extra_white_spaces_gss10 <- function(temp_clean_column){
 }
 
 
-make_first_captial_gss10 <- function(x) {
-  s <- strsplit(x, " ")[[1]]
-  paste(toupper(substring(s, 1,1)), substring(s, 2),
-        sep="", collapse=" ")
-}
+# make_first_captial <- function(x) {
+#   s <- strsplit(x, " ")[[1]]
+#   paste(toupper(substring(s, 1,1)), substring(s, 2),
+#         sep="", collapse=" ")
+# }
 
 
 recode_scale_vars_gss10 <- function(temp_clean_column) {
@@ -1200,14 +1230,15 @@ recode_scale_vars_gss10 <- function(temp_clean_column) {
 remove_and_capitalize_gss10 <- function(temp_clean_column) {
   temp_clean_column <- gsub('... ', '', temp_clean_column , fixed = TRUE)
   temp_clean_column <- gsub('?', '', temp_clean_column , fixed = TRUE)
-  temp_clean_column <- 
-    sapply(temp_clean_column, make_first_captial_gss10)
+  # temp_clean_column <- 
+  #   sapply(temp_clean_column, make_first_captial)
   return(temp_clean_column)
   
 }
 
 # clean levels of education
 clean_education_var_gss10 <- function(temp_clean_column, spouse) {
+  
   temp_clean_column <- gsub('Dipl/certif from com coll or trade/technica' ,
                             'Dip/cert from trade/technical school or college', 
                             temp_clean_column)
@@ -1238,3 +1269,289 @@ get_na_gss10 <- function(temp_clean) {
   }
   return(temp_clean)
 }
+
+
+##########
+# osduhs functions
+##########
+
+get_date_and_time_osduhs <- function(temp_clean) {
+  # get survey data, and start and finsih time
+  survey_date <- trimws(temp_clean$date_of_survey_administration, 'both')
+  survey_begin_time <- trimws(temp_clean$time_started_survey_written_by_student, 'both')
+  survey_end_time <- trimws(temp_clean$time_ended_survey_written_by_student, 'both')
+  
+  for(i in 1:nrow(temp_clean)){
+    temp_survey_date <- survey_date[i]
+    temp_survey_begin_time <- survey_begin_time[i]
+    temp_survey_end_time <- survey_end_time[i]
+    
+    if(is.na(temp_survey_date)) {
+      temp_survey_date <- NA
+    } else if (nchar(temp_survey_date) == 7) {
+      temp_survey_date <- gsub('^(.{1})(.*)$', '\\1/\\2', temp_survey_date)
+      temp_survey_date <- gsub('^(.{4})(.*)$', '\\1/\\2', temp_survey_date)
+    } else {
+      temp_survey_date <- gsub('^(.{2})(.*)$', '\\1/\\2', temp_survey_date)
+      temp_survey_date <- gsub('^(.{5})(.*)$', '\\1/\\2', temp_survey_date)
+    }
+    
+    if(is.na(temp_survey_begin_time)) {
+      temp_survey_begin_time <- NA
+    } else if(nchar(temp_survey_begin_time) == 3) {
+      temp_survey_begin_time <- gsub('^(.{1})(.*)$', '\\1:\\2', temp_survey_begin_time)
+    } else {
+      temp_survey_begin_time <- gsub('^(.{2})(.*)$', '\\1:\\2', temp_survey_begin_time)
+    }
+
+    if(is.na(temp_survey_end_time)){
+      temp_survey_end_time <- NA
+    } else if(nchar(temp_survey_end_time) == 3) {
+      temp_survey_end_time <- gsub('^(.{1})(.*)$', '\\1:\\2', temp_survey_end_time)
+    } else {
+      temp_survey_end_time <- gsub('^(.{2})(.*)$', '\\1:\\2', temp_survey_end_time)
+    }
+   
+    survey_date[i] <- temp_survey_date
+    survey_begin_time[i] <- temp_survey_begin_time
+    survey_end_time[i] <- temp_survey_end_time
+    
+    print(i)
+  }
+  
+  temp_clean$date_of_survey_administration <- as.Date(survey_date, format = '%d/%m/%Y')
+  temp_clean$time_started_survey_written_by_student<- as.POSIXct(paste(survey_date, survey_begin_time, sep = ' '), format="%d/%m/%Y %H:%M")
+  temp_clean$time_ended_survey_written_by_student <- as.POSIXct(paste(survey_date, survey_end_time, sep = ' '), format="%d/%m/%Y %H:%M")
+
+  return(temp_clean)
+}
+
+# # make first letter capital 
+# get_capital_osduhs <- function(temp_clean) {
+#   
+#   for(num_col in 1:ncol(temp_clean)) {
+#     temp_col <- temp_clean[, num_col]
+#     if(grepl('character', class(temp_col))) {
+#       temp_col <- sapply(temp_col, make_first_captial)
+#     }
+#     temp_clean[, num_col] <- temp_col
+#     temp_clean[, num_col] <- gsub('NANA', NA, temp_clean[, num_col])
+#   }
+#   
+#   temp_clean[grepl('NANA', temp_clean)] <- NA
+#   return(temp_clean)
+#   
+# }
+
+
+get_body_weight_osduhs <- function(temp_clean){
+  # temp <- unlist(lapply(strsplit(as.character(dat$hw_osduhs_weight), 
+  #                         '/', 
+  #                         fixed = TRUE), function(x){
+  #                           x[1]
+  #                         }))
+  unique_pounds <- as.character(unique(sort(temp_clean$what_is_your_current_weight_without_shoes)))
+  
+  # take bottom to put back on top
+  bottom_5 <- unique_pounds[38:length(unique_pounds)]
+  unique_pounds <- unique_pounds[-c(38:length(unique_pounds))]
+  unique_pounds <- c(bottom_5, unique_pounds)
+  
+  
+  temp <- as.data.frame(cbind(pounds = unique_pounds, 
+                              sequence = seq(1, length(unique_pounds), 1)))
+  temp$sequence <- as.numeric(sort(temp$sequence))
+  
+  # split into 5 categories using sequence 
+  temp$new_weight <- ifelse(temp$sequence > 0 & temp$sequence <=6, '80_105',
+                            ifelse(temp$sequence > 6 & temp$sequence <=12, '106_135', 
+                                   ifelse(temp$sequence > 12 & temp$sequence <= 18, '136_165',
+                                          ifelse(temp$sequence > 18 & temp$sequence <=24, '166_195',
+                                                 ifelse(temp$sequence > 24 & temp$sequence <= 30, '196_225',
+                                                        ifelse(temp$sequence > 30 & temp$sequence <=36, '226_255', '255_up'))))))
+  
+  temp$sequence <- NULL
+  temp_clean <- left_join(temp_clean, temp, by = c('what_is_your_current_weight_without_shoes' = 'pounds'))
+  temp_clean$what_is_your_current_weight_without_shoes <- NULL
+  colnames(temp_clean)[ncol(temp_clean)] <- 'what_is_your_current_weight_without_shoes'
+  return(temp_clean)
+  
+}
+
+# 
+# temp_data <- lfs
+# model_vars = c('demo_lfs_sex', 'demo_lfs_age', 'em_lfs_class_of_worker','demo_lfs_sample_weight')
+# outcome_var = 'em_lfs_hourly_wages'
+# weights = FALSE
+# mod_type = 'gaussian'
+# for now weights are broken
+custom_logit_mod <- function(temp_data, 
+                             model_vars,
+                             outcome_var,
+                             mod_type = 'binomial', 
+                             weights = FALSE) {
+  
+  pred_sub <- temp_data[, colnames(temp_data) %in% model_vars]
+  pred_sub$outcome_y <- temp_data[, outcome_var]
+  pred_sub <- pred_sub[complete.cases(pred_sub),]
+  if(!weights) {
+    weight_var <- rep.int(1, nrow(pred_sub))
+  } else {
+    weight_var <- pred_sub$demo_lfs_sample_weight
+  }
+  
+  # remove outcome and weight variable, so only predictors are in pred_sub
+  pred_sub[, grepl('weight', colnames(pred_sub))] <- NULL
+  
+  # get target_class
+  if(class(pred_sub$outcome_y) == 'numeric') {
+    target_class <- 'numeric_regression'
+  } else {
+    target_class <- sort(unique(pred_sub$outcome_y))[2]
+  }
+  
+  # loop though colnames (without demo) and estimate logit
+  model_result <- glm(outcome_y ~., family = mod_type, weights = weight_var, data = pred_sub)
+  
+  if(mod_type == 'binomial') {
+    
+    model_result <- cbind(tidy(model_result), odds_ratio = exp(model_result$coefficients))
+    model_result$target_class <- target_class
+    model_result$statistic <- NULL
+    model_result$std.error <- NULL
+    model_result$p.value <- round(model_result$p.value, 4)
+    model_result$outcome_var <- outcome_var
+    
+    model_result
+    
+  } else {
+    tidy_object <- tidy(model_result)
+    tidy_object
+
+  }
+  
+  return(model_result)
+}
+
+
+# # function that takes an outcome (any variable by demo) and regresses on all demo variables
+# # default estimates a lasso
+# get_glm <- function(model_data = dat, 
+#                     model_type, 
+#                     weights = NULL) {
+#   
+#   # get list to store dta
+#   result_list <- list()
+#   
+#   # remove NAS
+#   model_data <- as.data.frame(model_data[complete.cases(model_data),])
+#   
+#   # get weight vector
+#   weight_index <- grepl('demo_osduhs_pop_weight', colnames(model_data))
+#   weight_vector <-model_data[, weight_index]
+#   
+#   if(!is.null(weights)) {
+#     weights <- weight_vector
+#   }
+#   # remove weight from data 
+#   model_data <- model_data[, !grepl('demo_osduhs_pop_weight', colnames(model_data))]
+#   
+#   # for the time being remove any factors that have more than 10 levels (ill clean them later, just rushed to      get this to xing)
+#   model_data <- model_data[, apply(model_data, 2, function(x) length(unique(x)) < 12)]
+#   
+#   # get outcome and feature data (for time being anything that is demo is feature)
+#   outcome_data <- model_data[, !grepl('^demo', colnames(model_data))]
+#   
+#   # add in head_injury, school_days_breakfast, , energy_drinks, soft_drinks, tv_video_games, phy_activity_60
+#   # get_along (includeds father and mother), avg_marks, close_with_people_at_school, safe_at_school. 
+#   predictor_variables <- '^demo|head_injury|school_days_breakfast|energy_drinks|soft_drinks|tv_video_games|phy_activity_60|get_along|avg_marks|close_with_people_at_school|safe_at_school'
+#   demo_data <- model_data[, grepl(predictor_variables, colnames(model_data))]
+#   
+#   # only keep outcome variable that have two levels
+#   outcome_data <- outcome_data[, apply(outcome_data, 2, function(x) length(unique(x)) < 3)]
+#   
+#   # loop through outcome_dat and bind each outcome variable with feature dat
+#   for(i in 1:ncol(outcome_data)){
+#     
+#     # get outcome variable and the name (to store later)
+#     y_outcome <- outcome_data[,i]
+#     y_outcome_name <- names(outcome_data)[i]
+#     
+#     # get target class (always second in alphabetical order so you can store this as well)
+#     target_class <- sort(unique(y_outcome))[2]
+#     
+#     # set the alpha parameter based on model type
+#     if(model_type == 'lasso') {
+#       alpha_val <- 1
+#     } 
+#     if(model_type =='ridge'){
+#       alpha_val <- 0
+#     }
+#     
+#     # do ridge or lasso
+#     if(grepl('lasso|ridge', model_type)){
+#       
+#       if(!is.null(weights)) {
+#         weights <- weight_vector
+#       } else {
+#         weights <- rep.int(1, nrow(demo_data))
+#       }
+#       
+#       # runs model with 5 fold cv and we keep the lambda with minimum cv error
+#       cv_model = cv.glmnet(model.matrix(~.,demo_data), 
+#                            nfolds = 5,
+#                            y_outcome,
+#                            alpha = alpha_val, 
+#                            family = 'binomial',
+#                            weights = weights,
+#                            parallel = TRUE)
+#       
+#       lambda_index = which(cv_model$lambda == cv_model$lambda.min) 
+#       
+#       # creat result table with odds ratios tha correspond to the best lamnd (minimum)
+#       model_result <- data.frame(outcome_name = y_outcome_name, target_class = target_class, coef.name = dimnames(coef(cv_model))[[1]], coef.value = matrix(exp(coef(cv_model, s = "lambda.min"))))
+#       
+#     } else {
+#       
+#       # do normal logit with no regularization
+#       temp_mod_data <- as.data.frame(cbind(y_outcome = y_outcome, demo_data))
+#       
+#       # loop though colnames (without demo) and estimate logit
+#       model_result <- glm(y_outcome~. , family = 'binomial', weights = weights, data = temp_mod_data)
+#       model_result <- cbind(tidy(model_result), odds_ratio = exp(model_result$coefficients), target_class = target_class)
+#       model_result$odds_ratio.names <- NULL
+#       model_result$outcome_var <- y_outcome_name
+#       model_result$sig <- ifelse(model_result$p.value < 0.05, 'significant', 'not_statistically_significant')
+#       
+#     }
+#     
+#     result_list[[i]] <- model_result
+#     print(i)
+#   }
+#   
+#   logit_results <- do.call(rbind, result_list)
+#   
+#   return(logit_results)
+# }
+# 
+# # # get all variable levels for xing so she can interpret
+# # predictor_variables <- '^demo|head_injury|school_days_breakfast|energy_drinks|soft_drinks|tv_video_games|phy_activity_60|get_along|avg_marks|close_with_people_at_school|safe_at_school'
+# # temp_demo <- dat[, grepl(predictor_variables, colnames(dat))]
+# # temp_demo <- temp_demo[, apply(temp_demo, 2, function(x) length(unique(x)) < 15)]
+# # temp_demo <- apply(temp_demo, 2, function(x) unique(x))
+# # temp_demo <- as.data.frame(do.call(rbind, temp_demo))
+# # temp_demo$var <- rownames(temp_demo)
+# # write_csv(temp_demo, '~/Desktop/temp_demo.csv')
+# 
+# # logistic regression
+# logit_results <- get_glm(model_data = dat, model_type = 'no_regularization', weights = NULL)
+# write_csv(logit_results, '~/Desktop/logit_results.csv')
+# 
+# 
+# # maybe dont use these
+# lasso_results <- get_glm(model_data = dat, model_type = 'lasso', weights = NULL)
+# write_csv(lasso_results, '~/Desktop/lasso_results.csv')
+# ridge_results <- get_glm(model_data = dat, model_type = 'ridge', weights = NULL)
+# write_csv(ridge_results, '~/Desktop/ridge_results.csv')
+
+

@@ -21,7 +21,7 @@ library(knitr)
 ##########
 # read in and finish cleaning census data 
 ##########
-dat <- read_feather('data/census_all.feather')
+# dat <- read_feather('../data/census_all.feather')
 
 
 

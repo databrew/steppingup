@@ -615,6 +615,7 @@ for(i in 1:nrow(race_gender_dictionary)){
       survey[[which(names(survey) == this_data_name)]] <- this_data
     }
   }
+  print(i)
 }
 
 # # Perform a check to ensure that all race/gender variables are in their respective datasets
