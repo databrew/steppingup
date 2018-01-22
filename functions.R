@@ -1422,15 +1422,15 @@ custom_logit_mod <- function(temp_data,
     model_result$p.value <- round(model_result$p.value, 4)
     model_result$outcome_var <- outcome_var
     
-    tab <- kable(model_result, digits = 4, format = 'html')
+    model_result
     
   } else {
     tidy_object <- tidy(model_result)
-    tab <- kable(tidy_object, digits = 4, format = 'html')
+    tidy_object
 
   }
   
-  return(tab)
+  return(model_result)
 }
 
 
