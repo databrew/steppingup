@@ -93,21 +93,6 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # "2011_nhs_employment_toronto.csv"
 
 ##########
-# all survey data
-##########
-# survey_data folder
-# 1) "1987_2015_labour_force_survey"
-# 2) "2010_general_social_survey"
-# 3) "2011_general_social_survey"
-# 4) "2012_general_social_survey"
-# 5) "2012_program_for_international_assessment_of_adult_comptencies"
-# 6) "2013_general_social_survey"
-# 7) "2014_cananda_financial_capabilities_survey"
-# 8) "2014_employment_insurance_coverage_survey"
-# 9) "2014_general_social_survey"
-# 10) "2015_ontario_student_drug_use_and_health_survey"
-
-##########
 # This function will be used in the get_data function to clean columns and make long
 ##########
 
@@ -123,70 +108,99 @@ get_census_data <- function() {
   # function that loops through each name in for census data and read into a list
   for (i in 1: length( sub_names)) {
     name <- sub_names[i]
+    
+    # treat 2016 data seperately - 4 data sets in one folder
+    if(grepl('2016', sub_names)){
+      # list to store results
+      data_2016_list <- list()
+      data_2016_names <- list.files('data/census_data/2016_census')
+      for(j in 1:length(data_2016_names)){
+        data_name <- data_2016_names[j]
+        temp_data <- read_csv(paste0('data/census_data/2016_census/', data_name))
+        
+        # the first data set is the only one with this mistake, otherwise all columns are the same
+        if(grepl('_1', data_name)) {
+          names(temp_data)[names(temp_data) == 'Immigration Sta'] <- 'Immigration St'
+        }
+        data_2016_list[[j]] <- temp_data
+      }
+      # combine data
+      temp_data <- do.call(rbind, data_2016_list)
+      
+      # remove duplicates from these columns
+      df_dups <- temp_data[c('Geography', 'Age Groups', 'Sex (3)', 'Place of Birth', 'Visible minori', 'Immigration St')]
+      temp_data <- temp_data[!duplicated(df_dups),]
+      
+    }
     temp_data <- read_csv(paste0('data/census_data/', name))
+    
     # Declare that the encoding is all screwed up for this file
     Encoding(temp_data$Geography) <- "latin1"
-    # Address the weirdness with "New Credit (Part)"
-    temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
-    # Keep only the first part of the name (what is with the %?)
-    temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE),
-                                                function(x){x[1]})), ')')
     
-    # give Ontario four digit number to subset by.
-    temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
-    
-    #subset to Ontarios and 4 digit geo codes
-    geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
-                                        '(', fixed = TRUE),
-                               function(x){
-                                 gsub(')', '', x[2], fixed = TRUE)}))
-    
-    # (those wih NA for the geo_code are all ontario) - give it 3500 so we can subset
-    # entirely by 4 digit geo_code
-    temp_data$geo_code <- geo_codes
-    temp_data$geo_code[is.na(temp_data$geo_code)] <- '3500'
-    
-    # keep only rows that have 4 number
-    temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
-    
-    # add year
-    year <- as.numeric(substr(name, 1, 4))
-    temp_data$year <- year
-    
-    # Throw away variables depending on the year (since not available in other years)
-    # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
-    # Therefore, we force the names from 2001 onto 2006
-    names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
-    if(year == 2001){
-      temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
-      names_2001 <- names(temp_data)
-    } else if (year == 2006){
-      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
-      names(temp_data) <- names_2001
-    } else if (year == 2011){
-      temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
-      # Keep those columns which are shared
-      shared <- temp_data[,names(temp_data) %in% names_2001]
-      not_shared <- temp_data[,!names(temp_data) %in% names_2001]
-      # Get rid of subsidized data
-      not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
-      # Get rid of employment rate
-      not_shared <- not_shared[,!grepl('Employment rate %', names(not_shared), fixed = TRUE)]
-      not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
-      # Rename total diploma to match with other years
-      names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+      # Address the weirdness with "New Credit (Part)"
+      temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
+      # Keep only the first part of the name (what is with the %?)
+      temp_data$Geography <- paste0(unlist(lapply(strsplit(temp_data$Geography, ')', fixed = TRUE),
+                                                  function(x){x[1]})), ')')
       
-      library(stringdist)
-      fuzzy <- stringdistmatrix(a = names(not_shared),
-                                b = names_2001)
-      best_matches <- apply(fuzzy, 1, which.min)
-      best_names <- names_2001[best_matches]
-      names(not_shared) <- best_names
-      temp_data <- bind_cols(shared, not_shared)
+      # give Ontario four digit number to subset by.
+      temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
+      
+      #subset to Ontarios and 4 digit geo codes
+      geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
+                                          '(', fixed = TRUE),
+                                 function(x){
+                                   gsub(')', '', x[2], fixed = TRUE)}))
+      
+      # (those wih NA for the geo_code are all ontario) - give it 3500 so we can subset
+      # entirely by 4 digit geo_code
+      temp_data$geo_code <- geo_codes
+      temp_data$geo_code[is.na(temp_data$geo_code)] <- '3500'
+      
+      # keep only rows that have 4 number
+      temp_data <- temp_data[nchar(temp_data$geo_code) == 4,]
+      
+      # add year
+      year <- as.numeric(substr(name, 1, 4))
+      temp_data$year <- year
+      
+      # Throw away variables depending on the year (since not available in other years)
+      # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
+      # Therefore, we force the names from 2001 onto 2006
+      names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
+      if(year == 2001){
+        temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
+        names_2001 <- names(temp_data)
+      } else if (year == 2006){
+        temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+        names(temp_data) <- names_2001
+      } else if (year == 2011){
+        temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+        # Keep those columns which are shared
+        shared <- temp_data[,names(temp_data) %in% names_2001]
+        not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+        # Get rid of subsidized data
+        not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
+        # Get rid of employment rate
+        not_shared <- not_shared[,!grepl('Employment rate %', names(not_shared), fixed = TRUE)]
+        not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
+        # Rename total diploma to match with other years
+        names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+        
+        library(stringdist)
+        fuzzy <- stringdistmatrix(a = names(not_shared),
+                                  b = names_2001)
+        best_matches <- apply(fuzzy, 1, which.min)
+        best_names <- names_2001[best_matches]
+        names(not_shared) <- best_names
+        temp_data <- bind_cols(shared, not_shared)
+        
+        
+        # store in list
+        data_list[[i]] <- temp_data
     }
+      
     
-    # store in list
-    data_list[[i]] <- temp_data
   }
   census <- bind_rows(data_list)
   # clean column names
