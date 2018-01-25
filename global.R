@@ -224,24 +224,20 @@ get_census_data <- function() {
         temp_data <- bind_cols(shared, not_shared)
         
         
-        save.image('~/Desktop/temp_2016.RData')
+        load('~/Desktop/temp_2016.RData')
         
-        # HERE get geo code from 2011 data (geo_code_2011)
-        geo_code_2011$V3 <- unlist(lapply(strsplit(as.character(geo_code_2011$V2), '(', fixed = TRUE),
+        # recode 2011 names so that only names 
+        geo_code_2011$Geography <- unlist(lapply(strsplit(as.character(geo_code_2011$V2), '(', fixed = TRUE),
                                                   function(x){x[1]}))
-        geo_2016 <- unlist(lapply(strsplit(as.character(unique(temp_data$Geography)), '0', fixed = TRUE),
-                                  function(x){x[1]}))
+        # remove white spacees
+        geo_code_2011$Geography <- trimws(geo_code_2011$Geography)
         
-        fuzzy_geo <- stringdistmatrix(a = geo_2016,
-                                      b = geo_code_2011$V3)
-        
-        bad_match <- apply(fuzzy_geo, 1, function(x) min(x) >= 6)
-        best_matches <- apply(fuzzy_geo, 1, which.min)
-        best_names <- geo_code_2011$V3[best_matches]
-        best_names <- best_names[!bad_match]
-        # combine best names with geo_code_2011
-        geo_code_2011$V3
-        temp_data <- bind_cols(shared, not_shared)
+        # recode 2016 geography so only names
+        temp_data$Geography <- unlist(lapply(strsplit(as.character(temp_data$Geography), ' ', fixed = TRUE),
+                                             function (x) x[1]))
+      
+        temp <- inner_join(temp_data, geo_code_2011, by = 'Geography')
+
     }
       # store in list
       data_list[[i]] <- temp_data
