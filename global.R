@@ -14,6 +14,8 @@ library(feather)
 library(foreign)
 library(sas7bdat)
 library(rmapshaper)
+library(stringdist)
+
 
 
 ##########
@@ -108,9 +110,8 @@ get_census_data <- function() {
   # function that loops through each name in for census data and read into a list
   for (i in 1: length( sub_names)) {
     name <- sub_names[i]
-    
     # treat 2016 data seperately - 4 data sets in one folder
-    if(grepl('2016', sub_names)){
+    if(grepl('2016', name)){
       # list to store results
       data_2016_list <- list()
       data_2016_names <- list.files('data/census_data/2016_census')
@@ -122,6 +123,8 @@ get_census_data <- function() {
         if(grepl('_1', data_name)) {
           names(temp_data)[names(temp_data) == 'Immigration Sta'] <- 'Immigration St'
         }
+        Encoding(temp_data$Geography) <- "latin1"
+        
         data_2016_list[[j]] <- temp_data
       }
       # combine data
@@ -131,12 +134,16 @@ get_census_data <- function() {
       df_dups <- temp_data[c('Geography', 'Age Groups', 'Sex (3)', 'Place of Birth', 'Visible minori', 'Immigration St')]
       temp_data <- temp_data[!duplicated(df_dups),]
       
-    }
-    temp_data <- read_csv(paste0('data/census_data/', name))
-    
-    # Declare that the encoding is all screwed up for this file
-    Encoding(temp_data$Geography) <- "latin1"
-    
+      # add year
+      year <- as.numeric(substr(name, 1, 4))
+      temp_data$year <- year
+      
+    } else {
+      temp_data <- read_csv(paste0('data/census_data/', name))
+      
+      # Declare that the encoding is all screwed up for this file
+      Encoding(temp_data$Geography) <- "latin1"
+      
       # Address the weirdness with "New Credit (Part)"
       temp_data$Geography <- gsub('(Part) ', '', temp_data$Geography, fixed = TRUE)
       # Keep only the first part of the name (what is with the %?)
@@ -168,6 +175,8 @@ get_census_data <- function() {
       # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
       # Therefore, we force the names from 2001 onto 2006
       names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
+    }
+    
       if(year == 2001){
         temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
         names_2001 <- names(temp_data)
@@ -175,6 +184,8 @@ get_census_data <- function() {
         temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
         names(temp_data) <- names_2001
       } else if (year == 2011){
+        # get geo_code for 2016 data
+        geo_code_2011 <- as.data.frame(cbind(unique(temp_data$geo_code), unique(temp_data$Geography)))
         temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
         # Keep those columns which are shared
         shared <- temp_data[,names(temp_data) %in% names_2001]
@@ -187,7 +198,24 @@ get_census_data <- function() {
         # Rename total diploma to match with other years
         names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
         
-        library(stringdist)
+        fuzzy <- stringdistmatrix(a = names(not_shared),
+                                  b = names_2001)
+        best_matches <- apply(fuzzy, 1, which.min)
+        best_names <- names_2001[best_matches]
+        names(not_shared) <- best_names
+        temp_data <- bind_cols(shared, not_shared)
+        
+      } else if(year == 2016) {
+        # Keep those columns which are shared
+        shared <- temp_data[,names(temp_data) %in% names_2001]
+        not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+        # Get rid of subsidized data
+        not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
+        # Get rid of employment rate
+        not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
+        # Rename total diploma to match with other years
+        names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+        
         fuzzy <- stringdistmatrix(a = names(not_shared),
                                   b = names_2001)
         best_matches <- apply(fuzzy, 1, which.min)
@@ -196,10 +224,27 @@ get_census_data <- function() {
         temp_data <- bind_cols(shared, not_shared)
         
         
-        # store in list
-        data_list[[i]] <- temp_data
+        save.image('~/Desktop/temp_2016.RData')
+        
+        # HERE get geo code from 2011 data (geo_code_2011)
+        geo_code_2011$V3 <- unlist(lapply(strsplit(as.character(geo_code_2011$V2), '(', fixed = TRUE),
+                                                  function(x){x[1]}))
+        geo_2016 <- unlist(lapply(strsplit(as.character(unique(temp_data$Geography)), '0', fixed = TRUE),
+                                  function(x){x[1]}))
+        
+        fuzzy_geo <- stringdistmatrix(a = geo_2016,
+                                      b = geo_code_2011$V3)
+        
+        bad_match <- apply(fuzzy_geo, 1, function(x) min(x) >= 6)
+        best_matches <- apply(fuzzy_geo, 1, which.min)
+        best_names <- geo_code_2011$V3[best_matches]
+        best_names <- best_names[!bad_match]
+        # combine best names with geo_code_2011
+        geo_code_2011$V3
+        temp_data <- bind_cols(shared, not_shared)
     }
-      
+      # store in list
+      data_list[[i]] <- temp_data
     
   }
   census <- bind_rows(data_list)
