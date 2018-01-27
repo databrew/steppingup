@@ -226,18 +226,50 @@ get_census_data <- function() {
         
         load('~/Desktop/temp_2016.RData')
         
-        # recode 2011 names so that only names 
-        geo_code_2011$Geography <- unlist(lapply(strsplit(as.character(geo_code_2011$V2), '(', fixed = TRUE),
-                                                  function(x){x[1]}))
-        # remove white spacees
-        geo_code_2011$Geography <- trimws(geo_code_2011$Geography)
+        # vector of old names
+        geo_unique_2011 <- as.character(unique(geo_code_2011$V2))
         
-        # recode 2016 geography so only names
-        temp_data$Geography <- unlist(lapply(strsplit(as.character(temp_data$Geography), ' ', fixed = TRUE),
-                                             function (x) x[1]))
+        # vector of new names
+        geo_unique_2016 <- unique(geo_2016)
+        
+        # remove paranthesis 
+        geo_unique_2011 <- unlist(lapply(strsplit(as.character(geo_unique_2011), '(', fixed = TRUE),
+                      function(x){x[1]}))
+        geo_unique_2011 <- trimws(geo_unique_2011, 'both')
+        
+        # remove paranthesis 
+        x <- unlist(lapply(lapply(strsplit(geo_unique_2016, ' '), function(x){
+          x[1:(length(x)-1)]
+        }), function(x){
+          paste0(x, collapse = ' ')
+        }))
+        
+        x <- gsub('[[:digit:]]+', '', x)
+        geo_unique_2016 <- x
       
-        temp <- inner_join(temp_data, geo_code_2011, by = 'Geography')
+        
 
+        # fuzzy matrix
+        fuzzy_geo <- stringdistmatrix(a = geo_unique_2011,
+                                      b = geo_unique_2016)
+        
+        x <- apply(fuzzy_geo, 1, function(x){
+          # get the index of the best match(es)
+          #best_match <- which.min(x)
+          the_min <- min(x)
+          best_match <- which(x < (the_min + 5))
+          
+          # extract the best match from geo_unique_2011
+          best_names <- geo_unique_2016[best_match]
+          
+          # paste together the best names
+          best_names <- paste0(best_names, collapse = ';')
+        
+        })
+        
+        fuzzy_dict <- data_frame(name_2011 = geo_unique_2011, 
+                                 name_2016 = x)
+        
     }
       # store in list
       data_list[[i]] <- temp_data
