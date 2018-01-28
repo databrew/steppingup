@@ -131,15 +131,18 @@ get_census_data <- function() {
       
       # clean geography variabe so it matches the variable in the dictrionay
       temp_data$Geography <- unlist(lapply(strsplit(as.character(temp_data$Geography), '0', fixed = TRUE),
-                         function(x){x[1]}))        
-      # get last word
-      temp_data$Geography <- unlist(lapply(lapply(strsplit(temp_data$Geography, ' '), function(x){
-        x[1:(length(x)-1)]
-      }), function(x){
-        paste0(x, collapse = ' ')
-      }))
+                         function(x){x[1]}))    
+      
       temp_data$Geography <- gsub('[[:digit:]]+', '', temp_data$Geography)
       
+      temp_data <- temp_data %>% filter(!grepl('(Part)|Unorganized|IRI|TP|MU|NO|S-|CV|VL| T |CY| 2 )', Geography))
+      # get last word
+      # temp_data$Geography <- unlist(lapply(lapply(strsplit(temp_data$Geography, ' '), function(x){
+      #   x[1:(length(x)-1)]
+      # }), function(x){
+      #   paste0(x, collapse = ' ')
+      # }))
+
       # add year
       year <- as.numeric(substr(name, 1, 4))
       temp_data$year <- year
