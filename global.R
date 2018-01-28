@@ -16,8 +16,6 @@ library(sas7bdat)
 library(rmapshaper)
 library(stringdist)
 
-
-
 ##########
 # Source databrew package files
 ##########
@@ -119,20 +117,28 @@ get_census_data <- function() {
         data_name <- data_2016_names[j]
         temp_data <- read_csv(paste0('data/census_data/2016_census/', data_name))
         
-        # the first data set is the only one with this mistake, otherwise all columns are the same
-        if(grepl('_1', data_name)) {
-          names(temp_data)[names(temp_data) == 'Immigration Sta'] <- 'Immigration St'
-        }
         Encoding(temp_data$Geography) <- "latin1"
         
         data_2016_list[[j]] <- temp_data
       }
+      
       # combine data
       temp_data <- do.call(rbind, data_2016_list)
       
       # remove duplicates from these columns
-      df_dups <- temp_data[c('Geography', 'Age Groups', 'Sex (3)', 'Place of Birth', 'Visible minori', 'Immigration St')]
+      df_dups <- temp_data[c('Geography', 'Age Groups', 'Sex (3)', 'Place of Birth', 'Visible minori')]
       temp_data <- temp_data[!duplicated(df_dups),]
+      
+      # clean geography variabe so it matches the variable in the dictrionay
+      temp_data$Geography <- unlist(lapply(strsplit(as.character(temp_data$Geography), '0', fixed = TRUE),
+                         function(x){x[1]}))        
+      # get last word
+      temp_data$Geography <- unlist(lapply(lapply(strsplit(temp_data$Geography, ' '), function(x){
+        x[1:(length(x)-1)]
+      }), function(x){
+        paste0(x, collapse = ' ')
+      }))
+      temp_data$Geography <- gsub('[[:digit:]]+', '', temp_data$Geography)
       
       # add year
       year <- as.numeric(substr(name, 1, 4))
@@ -206,15 +212,36 @@ get_census_data <- function() {
         temp_data <- bind_cols(shared, not_shared)
         
       } else if(year == 2016) {
+        
+       
+        # remove this because its a duplicate
+        temp_data$`Not in low income (LICO before tax)`<-NULL
+
+        # recode data
+        names(temp_data)[names(temp_data) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
+        names(temp_data)[names(temp_data) == 'Total - Place of residence 5 years ago'] <- 'Population 15 years and over by Place of Residence 5 years ago'
+        names(temp_data)[names(temp_data) == 'Total - Legal marital status'] <- 'Total - Population 15 years and over by legal marital status'
+        names(temp_data)[names(temp_data) == 'Widowed (including living common law)'] <- 'Widowed'
+        names(temp_data)[names(temp_data) == 'Divorced (including living common law)'] <- 'Divorced'
+        names(temp_data)[names(temp_data) == 'Legally married and separated (including living common law)'] <- 'Legally married and separated'
+        names(temp_data)[names(temp_data) == 'Legally married and separated (including living common law)'] <- 'Legally married and separated'
+        names(temp_data)[names(temp_data) == 'Total - Population by low income status (LICO)'] <- 'Total - Income status (LICO)'
+        names(temp_data)[names(temp_data) == 'Not applicable (persons who have never worked, or worked before Jan 1, 2015)'] <- 'Class of worker - Not applicable'
+        
+        temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
+        temp_data <- temp_data[,!grepl('living arra', names(temp_data))]
+        
+        
+        # HERE look at how columns are getting extra "1" added to them
         # Keep those columns which are shared
         shared <- temp_data[,names(temp_data) %in% names_2001]
         not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+        # recode by removing the extra () in some variables so they look more like their 2001 couterpart
         # Get rid of subsidized data
         not_shared <- not_shared[,!grepl('subsidized', tolower(names(not_shared)))]
         # Get rid of employment rate
         not_shared <- not_shared[,!grepl('Employee', names(not_shared), fixed = TRUE)]
         # Rename total diploma to match with other years
-        names(not_shared)[names(not_shared) == 'Total - Highest certificate, diploma or degree'] <- 'Total - Population by highest certificate, diploma or degree'
         
         fuzzy <- stringdistmatrix(a = names(not_shared),
                                   b = names_2001)
@@ -223,58 +250,69 @@ get_census_data <- function() {
         names(not_shared) <- best_names
         temp_data <- bind_cols(shared, not_shared)
         
-        
-        load('~/Desktop/temp_2016.RData')
-        
-        # vector of old names
-        geo_unique_2011 <- as.character(unique(geo_code_2011$V2))
-        
+      
+        # fuzzy match geography to get all the census tracks from the other census data and drop the sub census tracks
+        # Not need for a data dictionary - we can perfectly match with the script and no manual choosing.
+        geo_unique_2011_old <- as.character(unique(geo_code_2011$V2))
         # vector of new names
-        geo_unique_2016 <- unique(geo_2016)
-        
-        # remove paranthesis 
-        geo_unique_2011 <- unlist(lapply(strsplit(as.character(geo_unique_2011), '(', fixed = TRUE),
+        geo_unique_2016 <- unique(temp_data$Geography)
+        # remove paranthesis
+        geo_unique_2011 <- unlist(lapply(strsplit(as.character(geo_unique_2011_old), '(', fixed = TRUE),
                       function(x){x[1]}))
         geo_unique_2011 <- trimws(geo_unique_2011, 'both')
         
-        # remove paranthesis 
-        x <- unlist(lapply(lapply(strsplit(geo_unique_2016, ' '), function(x){
-          x[1:(length(x)-1)]
-        }), function(x){
-          paste0(x, collapse = ' ')
-        }))
-        
-        x <- gsub('[[:digit:]]+', '', x)
-        geo_unique_2016 <- x
-      
-        
-
         # fuzzy matrix
         fuzzy_geo <- stringdistmatrix(a = geo_unique_2011,
                                       b = geo_unique_2016)
-        
         x <- apply(fuzzy_geo, 1, function(x){
           # get the index of the best match(es)
           #best_match <- which.min(x)
           the_min <- min(x)
-          best_match <- which(x < (the_min + 5))
-          
+          best_match <- which(x  == the_min)
           # extract the best match from geo_unique_2011
           best_names <- geo_unique_2016[best_match]
-          
           # paste together the best names
           best_names <- paste0(best_names, collapse = ';')
-        
         })
-        
-        fuzzy_dict <- data_frame(name_2011 = geo_unique_2011, 
+        # matching 
+        fuzzy_dict <- data_frame(name_2011 = geo_unique_2011,
                                  name_2016 = x)
+        # add 2011 old
+        fuzzy_dict$old_2011 <- geo_unique_2011_old
         
+        # keep only the 2016 name and the original 2011 names
+        fuzzy_dict$name_2011 <- NULL
+        # change name of variable you want to join (2016) into "Geography"
+        colnames(fuzzy_dict)[1] <- 'Geography'
+        temp_data <- inner_join(fuzzy_dict, temp_data, by = 'Geography')
+      
+        # make old_2011 variable the new geography variable and remove geography
+        temp_data$Geography <- NULL
+        names(temp_data)[names(temp_data) == 'old_2011'] <- 'Geography'
+        
+        
+        # now get geo code from old_2011 
+        # give Ontario four digit number to subset by.
+        temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
+        
+        #subset to Ontarios and 4 digit geo codes
+        geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
+                                            '(', fixed = TRUE),
+                                   function(x){
+                                     gsub(')', '', x[2], fixed = TRUE)}))
+        
+        # (those wih NA for the geo_code are all ontario) - give it 3500 so we can subset
+        # entirely by 4 digit geo_code
+        temp_data$geo_code <- geo_codes
+        temp_data$geo_code[is.na(temp_data$geo_code)] <- '3500'
+        
+        # remove columns that are duplicates (children in lone parent families 1 and 2)
     }
       # store in list
       data_list[[i]] <- temp_data
     
   }
+  
   census <- bind_rows(data_list)
   # clean column names
   names(census)[2:3] <- c('Age group', 'Sex')
