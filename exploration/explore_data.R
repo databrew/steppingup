@@ -152,18 +152,34 @@ temp_11 <- as.data.frame(result_list[[11]])
 
 
 
+# # census data - group by year, geography, and get total population
+# "Total - Population"
+#
 
+# MAKE TEMP TABLE FOR XING, NO NEED TO REVIEW THIS
+temp <- census %>%
+  filter(grepl('2006|2016', year))
+temp <- temp %>%
+  group_by(year, Geography) %>%
+  summarise(tot_pop = sum(`Total - Population`, na.rm = T))
+#
+temp_16 <- temp %>%
+  filter(year == '2016')
 
+temp_06 <- temp %>%
+  filter(year == '2006')
+#
+temp <- inner_join(temp_16, temp_06, by = 'Geography')
 
+colnames(temp)
+temp <- temp[ , c('Geography', 'tot_pop.x', 'tot_pop.y')]
+colnames(temp) <- c('Geography', 'pop_2016', 'pop_2006')
 
+temp$percent <- round(((temp$pop_2016 - temp$pop_2006)/temp$pop_2016)*100, 2)
 
+temp <- temp[order(temp$percent, decreasing = TRUE),]
 
-
-
-
-
-
-
+write_csv(temp, '~/Desktop/pop.csv')
 
 
 

@@ -137,7 +137,8 @@ osduhs$ed_osduhs_avg_marks <- relevel(osduhs$ed_osduhs_avg_marks, ref = 'below 7
 # avg_marks, race, mental_health, close_with_people_at_school, mother_edu, father_edu, mother_type_at_home, father_type_at_home
 # run model
 temp <- custom_logit_mod(osduhs, 
-                 model_vars = c('demo_osduhs_sex', 'demo_osduhs_grade','demo_osduhs_race','ed_osduhs_avg_marks','demo_osduhs_father_type_at_home','demo_osduhs_pop_weight'),
+                 model_vars = c('demo_osduhs_sex', 'demo_osduhs_grade','demo_osduhs_race','ed_osduhs_avg_marks',
+                                'demo_osduhs_father_type_at_home','demo_osduhs_mother_edu','demo_osduhs_pop_weight'),
                  outcome_var = 'used_cannabis_ever', 
                  weights = FALSE, 
                  mod_type = 'binomial')
