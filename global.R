@@ -213,7 +213,7 @@ get_census_data <- function() {
         
       } else if(year == 2016) {
         
-       
+       # colnames(temp_data)[grepl('Population', colnames(temp_data))]
         # remove this because its a duplicate
         temp_data$`Not in low income (LICO before tax)`<-NULL
 
