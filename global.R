@@ -197,10 +197,12 @@ get_census_data <- function() {
         # Rename total diploma to match with other years
         fuzzy <- stringdistmatrix(a = names(not_shared),
                                   b = names_2001)
+        
+        fuzzy <- fuzzy[apply(fuzzy, 1, function(x) min(x) < 12),]
         best_matches <- apply(fuzzy, 1, which.min)
         best_names <- names_2001[best_matches]
         best_names <- best_names[!duplicated(best_names)]
-        left_out <- names_2001[!(names_2001 %in% best_names)]
+        left_out <- names_2001[!names_2001 %in% best_names]
         left_out <- left_out[!left_out %in% colnames(shared)]
         names(not_shared) <- best_names
         temp_data <- bind_cols(shared, not_shared)
