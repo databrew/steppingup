@@ -17,7 +17,6 @@ library(memisc)
 
 # data <- as.data.set(spss.system.file('filename.sav'))
 
-
 # Define function for reading survey data
 get_survey_data <- function() {
   path_to_data <- 'data/survey_data'
