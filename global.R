@@ -187,11 +187,23 @@ get_census_data <- function() {
     }
     
       if(year == 2001){
-        temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
+        # temp_data <- temp_data[,!grepl('school part time|school full time', names(temp_data))]
         names_2001 <- names(temp_data)
       } else if (year == 2006){
-        temp_data <- temp_data[,!grepl('after tax', names(temp_data))]
-        names(temp_data) <- names_2001
+        # Keep those columns which are shared
+        shared <- temp_data[,names(temp_data) %in% names_2001]
+        not_shared <- temp_data[,!names(temp_data) %in% names_2001]
+        
+        # Rename total diploma to match with other years
+        fuzzy <- stringdistmatrix(a = names(not_shared),
+                                  b = names_2001)
+        best_matches <- apply(fuzzy, 1, which.min)
+        best_names <- names_2001[best_matches]
+        best_names <- best_names[!duplicated(best_names)]
+        left_out <- names_2001[!(names_2001 %in% best_names)]
+        left_out <- left_out[!left_out %in% colnames(shared)]
+        names(not_shared) <- best_names
+        temp_data <- bind_cols(shared, not_shared)
       } else if (year == 2011){
         # get geo_code for 2016 data
         geo_code_2011 <- as.data.frame(cbind(unique(temp_data$geo_code), unique(temp_data$Geography)))
