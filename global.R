@@ -100,6 +100,18 @@ get_census_data <- function() {
   
   # first get vector of data set names to loop through later
   data_names <- list.files('data/census_data')
+  # get 2001, 2011, and 2016 dictionaries (2006 is the base reference)
+  dict_folder <- list.files('dictionaries/census_variables_dict')
+  census_vars_dict <- list()
+  # loop through and load all variable dictionaries 
+  for(i in 1:length(dict_folder)){
+    dict_name <- dict_folder[i]
+    temp_dict <-  read_csv(paste0('dictionaries/census_variables_dict/', dict_name))
+    temp_dict$X1 <-NULL
+    temp_dict$year <- gsub('.csv', '', gsub('temp_', '', dict_name))
+    census_vars_dict[[i]] <- temp_dict
+  }
+
   # cread empty list to store data
   data_list <- list()
   total_list <- list()
@@ -162,6 +174,7 @@ get_census_data <- function() {
       # give Ontario four digit number to subset by.
       temp_data$Geography <- ifelse(grepl('Ontario', temp_data$Geography), 'Ontario', temp_data$Geography)
       
+      
       #subset to Ontarios and 4 digit geo codes
       geo_codes <- unlist(lapply(strsplit(temp_data$Geography,
                                           '(', fixed = TRUE),
@@ -180,10 +193,15 @@ get_census_data <- function() {
       year <- as.numeric(substr(name, 1, 4))
       temp_data$year <- year
       
-      # Throw away variables depending on the year (since not available in other years)
-      # We've checked that the "different" names between 2001 and 2006 are just due to spelling, etc.
-      # Therefore, we force the names from 2001 onto 2006
-      names(temp_data)[names(temp_data) == 'Total - Low income status (LICO thresholds revised to be comparable to 2006)'] <- 'Total - Income status (LICO)'
+      # use data dictionary for each year to get correct (overlapping) variable names
+      list_number <- which(grepl(year, dict_folder))
+      census_variables <- as.data.frame(census_vars_dict[[list_number]])
+      
+      # now overwite temp_data with names from variable list
+      colnames(temp_data)[!colnames(temp_data) == census_variables$old]
+      stopifnot(colnames(temp_data) == census_variables$old)
+      colnames(temp_data) <- census_variables$new
+     
     }
     
       if(year == 2001){
