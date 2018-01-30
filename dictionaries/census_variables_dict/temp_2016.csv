@@ -1,0 +1,79 @@
+,old,new
+1,Geography,Geography
+2,Sex (3),Sex (3)
+3,Age Groups,Age groups (5)
+4,Place of Birth,Place of Birth
+5,Visible minori,Visible minorit
+6,Total - Legal marital status,Total - Population 15 years and over by legal marital status
+7,Never married (single) 15 years and over,Never married (single) 15 years and over
+8,Legally married and not separated,Legally married and not separated
+9,Legally married and separated (including living common law),Legally married and separated
+10,Divorced (including living common law),Divorced
+11,Widowed (including living common law),Widowed
+12,Total - Knowledge of official languages,Total - Knowledge of official language
+13,English only,English only
+14,French only,French only
+15,English and French,Both English and French
+16,Neither English nor French,Neither English nor French
+17,Total - Place of residence 5 years ago,Total - Population 15 years and over by Place of Residence 5 years ago
+18,Non-movers,Non-movers
+19,Movers,Movers
+20,Non-migrants,Non-migrants
+21,Migrants,Migrants
+22,Internal migrants,Internal migrants
+23,Intraprovincial migrants,Intraprovincial migrants
+24,Interprovincial migrants,Interprovincial migrants
+25,External migrants,External migrants
+26,Total - Household living arrangements,Total - Census family status
+27,Persons in census families,Persons in census families
+28,Spouses and common law partners,Spouses and common law partners
+29,Lone parents,Lone parents
+30,Children in couple families,Children in couple families
+31,Children in lone parent families,Children in lone parent families
+32,Persons not in census families,Persons not in census families
+33,Living with relatives,Living with relatives
+34,Living with non-relatives,Living with non-relatives
+35,Living alone,Living alone
+36,Total - School attendance,Total - School attendance
+37,Attended school,Attended school
+38,Did not attend school,Did not attend school
+39,"Total - Highest certificate, diploma or degree","Total - Population by highest certificate, diploma or degree"
+40,"No certificate, diploma or degree","No certificate, diploma or degree"
+41,"Certificate, diploma or degree","Certificate, diploma or degree"
+42,High school or equivalent,High school or equivalent
+43,Apprenticeship or trades certificate or diploma,Apprenticeship or trades certificate or diploma
+44,"College, CEGEP or other non-university certificate or diploma","College, CEGEP or other non-university certificate or diploma"
+45,"University certificate, diploma or degree","University certificate, diploma or degree"
+46,University certificate or diploma below bachelor level,University certificate below bachelor level
+47,"University certificate, diploma or degree at bachelor level or above","University certificate, diploma or degree at bachelor's or above"
+48,Total - Labour force status,Population 15 years and over by labour force activity
+49,In the labour force,In the labour force
+50,Employed,Employed
+51,Unemployed,Unemployed
+52,Not in the labour force,Not in labour force
+53,Unemployment rate %,Unemployment rate %
+54,Employment/population ratio %,Employment/population ratio %
+55,Participation rate %,Participation rate %
+56,Total - Labour force by class of worker,Total - Labour force by class of worker
+57,"Not applicable (persons who have never worked, or worked before Jan 1, 2015)",Class of worker - not applicable
+58,All classes of worker,All classes of worker
+59,Paid workers,Paid workers
+60,Employee,Employee
+61,Self employed incorporated,Self employed incorporated
+62,Self employed unincorporated,Self employed unincorporated
+63,Unpaid family workers,Unpaid family workers
+64,Total - Population by low income status (LICO),Total - Income status (LICO)
+65,Population for the low income status variable,Population for the low income status variable
+66,In low income (LICO before tax),Low income (LICO before tax)
+67,Not in low income (LICO before tax),Not low income (LICO before tax)
+68,Low income (LICO after tax),Low income (LICO after tax)
+69,Not low income (LICO after tax),Not low income (LICO after tax)
+70,Population - concept not applicable,Population - concept not applicable
+71,Total - Household tenure,Total - Housing tenure
+72,Living in owner-occupied dwelling,Living in owner occupied dwelling
+73,Living in rented dwelling,Living in rented dwelling
+74,Subsidized housing,Subsidized housing
+75,Non-subsidized housing,Non-subsidized housing
+76,Living in band housing,Living in band housing
+,year,year
+,geo_code,geo_code

@@ -97,15 +97,14 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 ##########
 
 get_census_data <- function() {
-  
   # first get vector of data set names to loop through later
   data_names <- list.files('data/census_data')
   # get 2001, 2011, and 2016 dictionaries (2006 is the base reference)
   dict_folder <- list.files('dictionaries/census_variables_dict')
   census_vars_dict <- list()
   # loop through and load all variable dictionaries 
-  for(dict_level in 1:length(dict_folder)){
-    dict_name <- dict_folder[dict_level]
+  for(i in 1:length(dict_folder)){
+    dict_name <- dict_folder[i]
     temp_dict <-  read_csv(paste0('dictionaries/census_variables_dict/', dict_name))
     temp_dict$X1 <-NULL
     # temp_dict$year <- gsub('.csv', '', gsub('temp_', '', dict_name))
@@ -207,9 +206,9 @@ get_census_data <- function() {
       list_number <- which(grepl(as.character(year), dict_folder))
       census_variables <- as.data.frame(census_vars_dict[[list_number]])
       
-      # now overwite temp_data with names from variable list
-      colnames(temp_data)[!colnames(temp_data) == census_variables$old]
-      
+      # # now overwite temp_data with names from variable list
+      # colnames(temp_data)[!colnames(temp_data) == census_variables$old]
+      # 
       stopifnot(colnames(temp_data) == census_variables$old)
       colnames(temp_data) <- census_variables$new
       

@@ -1,0 +1,94 @@
+,old,new
+1,Geography,Geography
+2,Age groups (5),Age groups (5)
+3,Sex (3),Sex (3)
+4,Place of birth,Place of Birth
+5,Visible minorit,Visible minorit
+6,Total - Population 15 years and over by legal marital status,Total - Population 15 years and over by legal marital status
+7,Never married (single) 15 years and over,Never married (single) 15 years and over
+8,Legally married and not separated,Legally married and not separated
+9,Legally married and separated,Legally married and separated
+10,Divorced,Divorced
+11,Widowed,Widowed
+12,Total - Knowledge of official language,Total - Knowledge of official language
+13,English only,English only
+14,French only,French only
+15,Both English and French,Both English and French
+16,Neither English nor French,Neither English nor French
+17,Population 15 years and over by Place of Residence 5 years ago,Total - Population 15 years and over by Place of Residence 5 years ago
+18,Non-movers,Non-movers
+19,Movers,Movers
+20,Non-migrants,Non-migrants
+21,Migrants,Migrants
+22,Internal migrants,Internal migrants
+23,Intraprovincial migrants,Intraprovincial migrants
+24,Interprovincial migrants,Interprovincial migrants
+25,External migrants,External migrants
+26,Total - Census family status,Total - Census family status
+27,Persons in census families,Persons in census families
+28,Spouses and common-law partners,Spouses and common law partners
+29,Lone parents,Lone parents
+30,Children,Children
+31,Children in couple families,Children in couple families
+32,Children in lone parent families,Children in lone parent families
+33,Person not in census families,Persons not in census families
+34,Living with relatives,Living with relatives
+35,Living with non-relatives,Living with non-relatives
+36,Living alone,Living alone
+37,"Total - Population by highest certificate, diploma or degree","Total - Population by highest certificate, diploma or degree"
+38,"No certificate, diploma or degree","No certificate, diploma or degree"
+39,"Certificate, diploma or degree","Certificate, diploma or degree"
+40,High school or equivalent,High school or equivalent
+41,Apprenticeship or trades certificate or diploma,Apprenticeship or trades certificate or diploma
+42,"College, CEGEP or other non-university certificate or diploma","College, CEGEP or other non-university certificate or diploma"
+43,"University certificate, diploma or degree","University certificate, diploma or degree"
+44,University certificate or diploma below bachelor level,University certificate below bachelor level
+45,"University certificate, diploma or degree at bachelor's or above","University certificate, diploma or degree at bachelor's or above"
+46,Bachelor's degree,Bachelor's degree
+47,University certificate above bachelor level,University certificate above bachelor level
+48,"Degree in medicine, dentistry, veterinary medicine or optometry","Degree in medicine, dentistry, veterinary medicine or optometry"
+49,Master's degree,Master's degree
+50,Earned doctorate,Earned doctorate
+51,Total - School attendance,Total - School attendance
+52,Attended school,Attended school
+53,Attended school part time,Attended school part time
+54,Attended school full time,Attended school full time
+55,Did not attend school,Did not attend school
+56,Population 15 years and over by labour force activity,Population 15 years and over by labour force activity
+57,In the labour force,In the labour force
+58,Employed,Employed
+59,Unemployed,Unemployed
+60,Not in the labour force,Not in labour force
+61,Unemployment rate %,Unemployment rate %
+62,Employment to population ratio %,Employment/population ratio %
+63,Participation rate %,Participation rate %
+64,Total - Labour force by class of worker,Total - Labour force by class of worker
+65,Class of worker - Not applicable,Class of worker - not applicable
+66,All classes of worker,All classes of worker
+67,Paid workers,Paid workers
+68,"Working for wages, salary, tips or commission","Working for wages, salary, tips or commission"
+69,Self employed incorporated,Self employed incorporated
+70,Self employed unincorporated,Self employed unincorporated
+71,Unpaid family workers,Unpaid family workers
+72,Population 15 and over by hours of unpaid housework,Total - Population by hours of unpaid housework
+73,None,None
+74,Some,Some
+75,Population 15 and over by hours of unpaid childcare,Total - Population by hours of unpaid childcare
+76,None_1,None_1
+77,Some_1,Some_1
+78,Population 15 and over by hours of unpaid care to seniors,Total - Population 15 years and over by hours of unpaid care to seniors
+79,None_2,None_2
+80,Some_2,Some_2
+81,Average household income $,Average household income before tax $
+82,Standard error of average household income $,Standard error of average household income before tax $
+83,Total - Low income status (LICO thresholds revised to be comparable to 2006),Total - Income status (LICO)
+84,Population for the low income status variable,Population for the low income status variable
+85,Low income (LICO before tax only),Low income (LICO before tax)
+86,Not low income (LICO before tax only),Not low income (LICO before tax)
+87,Population - concept not applicable,Population - concept not applicable
+88,Total - Housing tenure,Total - Housing tenure
+89,Living in owner occupied dwelling,Living in owner occupied dwelling
+90,Living in rented dwelling,Living in rented dwelling
+91,Living in band housing,Living in band housing
+,geo_code,geo_code
+,year,year
