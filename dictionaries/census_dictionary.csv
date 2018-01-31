@@ -13,8 +13,8 @@ Legally married and not separated,marital status,marital status
 Legally married and separated,marital status,marital status
 Divorced,marital status,marital status
 Widowed,marital status,marital status
-Total - Knowledge of official language,marital status,marital status
-English only,marital status,marital status
+Total - Knowledge of official language,knowledge of official languages,knowledge of official languages
+English only,knowledge of official languages,knowledge of official languages
 French only,knowledge of official languages,knowledge of official languages
 Both English and French,knowledge of official languages,knowledge of official languages
 Neither English nor French,knowledge of official languages,knowledge of official languages
