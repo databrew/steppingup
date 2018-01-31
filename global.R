@@ -200,20 +200,21 @@ get_census_data <- function() {
       
     }
     
-    # 2006 names were the reference year, so no need for data dictionary
+    # 2006 names were the reference year, so no need to get data dictionary for that year
     if(year != 2006){
-      # use data dictionary for each year to get correct (overlapping) variable names
+      # get the index of the list to access the dictionary list generated before
       list_number <- which(grepl(as.character(year), dict_folder))
       census_variables <- as.data.frame(census_vars_dict[[list_number]])
       
       # # now overwite temp_data with names from variable list
       # colnames(temp_data)[!colnames(temp_data) == census_variables$old]
       # 
+      # stop if these two are not equal: the uncleaned column name and the old variables 
       stopifnot(colnames(temp_data) == census_variables$old)
       colnames(temp_data) <- census_variables$new
       
       if(year == 2016){
-        # get unique geogarphy for mapping to 2011
+        # get unique geogarphy 
         geo_unique_2016 <- unique(temp_data$Geography)
         # fuzzy matrix
         fuzzy_geo <- stringdistmatrix(a = geo_unique_2011,
@@ -244,7 +245,6 @@ get_census_data <- function() {
         # make old_2011 variable the new geography variable and remove geography
         temp_data$Geography <- NULL
         names(temp_data)[names(temp_data) == 'old_2011'] <- 'Geography'
-        
         
         # now get geo code from old_2011
         # give Ontario four digit number to subset by.
