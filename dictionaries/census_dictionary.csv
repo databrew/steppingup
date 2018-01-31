@@ -7,17 +7,17 @@ Sex,demographic,demographic
 Place of Birth,demographic,demographic
 Visible minority,demographic,demographic
 Aboriginal identity,demographic,demographic
-Total - Population 15 years and over by legal marital status,marriage,marriage
-Never married (single) 15 years and over,marriage,marriage
-Legally married and not separated,marriage,marriage
-Legally married and separated,marriage,marriage
-Divorced,marriage,marriage
-Widowed,marriage,marriage
-Total - Knowledge of official language,language,language
-English only,language,language
-French only,language,language
-Both English and French,language,language
-Neither English nor French,language,language
+Total - Population 15 years and over by legal marital status,marital status,marital status
+Never married (single) 15 years and over,marital status,marital status
+Legally married and not separated,marital status,marital status
+Legally married and separated,marital status,marital status
+Divorced,marital status,marital status
+Widowed,marital status,marital status
+Total - Knowledge of official language,knowledge of official languages,knowledge of official languages
+English only,knowledge of official languages,knowledge of official languages
+French only,knowledge of official languages,knowledge of official languages
+Both English and French,knowledge of official languages,knowledge of official languages
+Neither English nor French,knowledge of official languages,knowledge of official languages
 Total - Population 15 years and over by Place of Residence 5 years ago,migration,migration
 Non-movers,migration,migration
 Movers,migration,migration
@@ -27,31 +27,31 @@ Internal migrants,migration,migration
 Intraprovincial migrants,migration,migration
 Interprovincial migrants,migration,migration
 External migrants,migration,migration
-Total - Census family status,family,family
-Persons in census families,family,family
-Spouses and common law partners,family,family
-Lone parents,family,family
-Children,family,family
-Children in couple families,family,family
-Children in lone parent families,family,family
-Persons not in census families,family,family
-Living with relatives,family,family
-Living with non-relatives,family,family
-Living alone,family,family
-"Total - Population by highest certificate, diploma or degree",education,education
-"No certificate, diploma or degree",education,education
-"Certificate, diploma or degree",education,education
-High school or equivalent,education,education
-Apprenticeship or trades certificate or diploma,education,education
-"College, CEGEP or other non-university certificate or diploma",education,education
-"University certificate, diploma or degree",education,education
-University certificate below bachelor level,education,education
-"University certificate, diploma or degree at bachelor's or above",education,education
-Bachelor's degree,education,education
-University certificate above bachelor level,education,education
-"Degree in medicine, dentistry, veterinary medicine or optometry",education,education
-Master's degree,education,education
-Earned doctorate,education,education
+Total - Census family status,family status,family status
+Persons in census families,family status,family status
+Spouses and common law partners,family status,family status
+Lone parents,family status,family status
+Children,family status,family status
+Children in couple families,family status,family status
+Children in lone parent families,family status,family status
+Persons not in census families,family status,family status
+Living with relatives,family status,family status
+Living with non-relatives,family status,family status
+Living alone,family status,family status
+"Total - Population by highest certificate, diploma or degree",education,highest education attained
+"No certificate, diploma or degree",education,highest education attained
+"Certificate, diploma or degree",education,highest education attained
+High school or equivalent,education,highest education attained
+Apprenticeship or trades certificate or diploma,education,highest education attained
+"College, CEGEP or other non-university certificate or diploma",education,highest education attained
+"University certificate, diploma or degree",education,highest education attained
+University certificate below bachelor level,education,highest education attained
+"University certificate, diploma or degree at bachelor's or above",education,highest education attained
+Bachelor's degree,education,highest education attained
+University certificate above bachelor level,education,highest education attained
+"Degree in medicine, dentistry, veterinary medicine or optometry",education,highest education attained
+Master's degree,education,highest education attained
+Earned doctorate,education,highest education attained
 Total - School attendance,education,school_attendance
 Attended school,education,school_attendance
 Attended school part time,education,school_attendance
@@ -96,5 +96,5 @@ Not low income (LICO after tax),income,low_income_status
 Employee,employment,employment
 Subsidized housing,housing,housing
 Non-subsidized housing,housing,housing
-Population,population,population
-Total - Population,population,population
+Population,total population count,total population count
+Total - Population,total population count,total population count
