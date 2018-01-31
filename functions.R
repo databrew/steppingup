@@ -669,11 +669,11 @@ censify <- function(df = census,
   # pob
   if(pob){
     df <- df %>%
-      filter(!grepl('Total', `Place of birth`))
+      filter(!grepl('Total', `Place of Birth`))
   } else {
     df <- df %>%
-      filter(grepl('Total', `Place of birth`))
-    df$`Place of birth` <- NULL
+      filter(grepl('Total', `Place of Birth`))
+    df$`Place of Birth` <- NULL
   }
   
   # vm
@@ -811,7 +811,7 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
       if(no_year){
         st <- 'You must select at least one year'
       } else {
-        st <- 'Variables can be Age group, Sex, Place of birth, Visible minority, Geography and Year(s)'
+        st <- 'Variables can be Age group, Sex, Place of Birth, Visible minority, Geography and Year(s)'
       }
       if(too_many_variables){
         the_title <- 'Pick only one variable in the upper right to view a plot'

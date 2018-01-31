@@ -107,7 +107,7 @@ ui <- dashboardPage(skin = 'blue',
                                                               value = TRUE)),
                                          column(2,
                                                 checkboxInput('pob',
-                                                              'Place of birth')),
+                                                              'Place of Birth')),
                                          column(2,
                                                 checkboxInput('vm',
                                                               'Visible minority')),
@@ -848,7 +848,7 @@ server <- function(input, output) {
     
     if(input$pob & !is.null(input$pob_filter)) {
       if(!'All' %in% input$pob_filter) {
-        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
+        x <- x %>% filter(`Place of Birth` %in% input$pob_filter)
       }
     }
     
@@ -912,7 +912,7 @@ server <- function(input, output) {
     
     if(input$pob & !is.null(input$pob_filter)) {
       if(!'All' %in% input$pob_filter) {
-        x <- x %>% filter(`Place of birth` %in% input$pob_filter)
+        x <- x %>% filter(`Place of Birth` %in% input$pob_filter)
       }
     }
     
@@ -1024,7 +1024,7 @@ server <- function(input, output) {
   # Place of birth filter
   output$pob_filter <- renderUI({
     if(input$pob){
-      choices <-  sort(unique(census$`Place of birth`))
+      choices <-  sort(unique(census$`Place of Birth`))
       choices <- c('All', choices)
       choices <- choices[!grepl('Total', choices)]
       selectInput('pob_filter',

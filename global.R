@@ -629,7 +629,7 @@ category_choices <- sort(unique(census_dict$category))
 category_choices <- category_choices[!category_choices %in% c('demographic', 'geo_code', 'year')]
 names(category_choices) <- Hmisc::capitalize(category_choices)
 
-head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of birth','Visible minority', 'Aboriginal identity', 'Total')
+head_vector <- c('Geography', 'geo_code', 'year', 'Age group', 'Sex', 'Place of Birth','Visible minority', 'Aboriginal identity', 'Total')
 
 # Eliminate everywhere references to 15 and over
 names(census) <- gsub(' 15 and over', '', names(census))
