@@ -146,7 +146,10 @@ get_census_data <- function() {
       
       temp_data$Geography <- gsub('[[:digit:]]+', '', temp_data$Geography)
       
-      temp_data <- temp_data %>% filter(!grepl('(Part)|Unorganized|IRI|TP|MU|NO|S-|CV|VL| T |CY| 2 )', Geography))
+      temp_data <- temp_data %>% filter(!grepl('(Part)|Unorganized|IRI|TP|MU|NO|S-|CV|VL| T |CY| C |2| M |)', Geography))
+      temp_data$Geography <- trimws(temp_data$Geography)
+      
+      # clean geography up 
       # get last word
       # temp_data$Geography <- unlist(lapply(lapply(strsplit(temp_data$Geography, ' '), function(x){
       #   x[1:(length(x)-1)]
@@ -271,6 +274,9 @@ get_census_data <- function() {
   }
   
   census <- bind_rows(data_list)
+  temp <- census[census$year == 2016,]
+  unique(temp$Geography)
+  
   
   # clean column names
   names(census)[2:3] <- c('Age group', 'Sex')
