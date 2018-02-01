@@ -988,6 +988,8 @@ server <- function(input, output) {
   output$geography_filter <- renderUI({
     if(input$geography){
       choices <-  sort(unique(census$Geography))
+      #remove ontario
+      choices <- choices[!grepl('Ontario', choices)]
       choices <- c('All', choices)
       choices <- choices[!grepl('Total', choices)]
       selectInput('geography_filter',
