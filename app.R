@@ -12,7 +12,7 @@ library(shinythemes)
 
 source('global.R')
 
-ui <- dashboardPage(skin = 'blue',
+ui <- dashboardPage(skin = 'purple',
                     
                     
                     dashboardHeader(
@@ -50,32 +50,16 @@ ui <- dashboardPage(skin = 'blue',
                       ),
                       tabItems(
                         tabItem(tabName = 'welcome',
-                                jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
-                                          button = FALSE
+                                jumbotron("Ontario Youth Compass", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. 
+                                           This web app allows for easy exploration, visualization, 
+                                           and access to data from the last four Canadian Censuses (2001, 2006, 2011, 2016), as well as various 
+                                           other national and province-wide surveys. This web app is meant to accompany 'The Ontario Youth Compass: 
+                                           A Databook on Youth Wellbeing report published by YouthREX in 2018'.",
+                                           button = FALSE
                                           # buttonLabel = "Explore!"
-                                ),
-                                fluidRow(
-                                  column(6, panel_div(class_type = "primary", panel_title = "App Directions",
-                                                      content = "There will soon be instructions here.")),
-                                  column(6, panel_div("success", "App Maintenance",
-                                                      "Email us: <a href='mailto:xing@databrew.cc?Subject=Stepping%20Up%20App' target='_top'>Xing Brew</a>"))
-                                ),  # end of fluidRow
-                                fluidRow(
-                                  column(6, panel_div("info", "App Status", "Up and running with the most recent data!")),
-                                  column(6, panel_div("danger", "App Design and Support", "Copyright 2017, <a href='http://databrew.cc'>DataBrew Consulting Services</a>")),
-                                  
-                                  #### FAVICON TAGS SECTION ####
-                                  tags$head(tags$link(rel="shortcut icon", href="favicon.ico"))#,
-                                  
-                                  #### JAVASCRIPT TAGS SECTION #### - ENABLE WHEN READY
-                                  # tags$head(tags$script(src='pl.js')), # comment this out?
-                                  
-                                  # bsModal("modalExample", "Instructional Video", "tabBut", size = "large" ,
-                                  #         p("Additional text and widgets can be added in these modal boxes. Video plays in chrome browser"),
-                                  #         iframe(width = "560", height = "315", url_link = "https://www.youtube.com/embed/X192OYoqiiM")
-                                  # )
-                                  
-                                )),
+                                )
+                        ),
+
                         tabItem(tabName = "census",
                                 h2('Explore census data'),
                                 helpText('I\'m looking for data about:'),
@@ -212,7 +196,7 @@ ui <- dashboardPage(skin = 'blue',
                                                 selectInput('survey_download',
                                                             'Choose a survey dataset to download',
                                                             choices = survey_download_choices))),
-
+                                
                                 downloadButton('downloadSurvey', 'Download'),
                                 br()),
                         tabItem(
@@ -235,7 +219,7 @@ ui <- dashboardPage(skin = 'blue',
                         )
                         
                       )))
-                    
+
 
 
 
@@ -276,7 +260,7 @@ server <- function(input, output) {
       HTML(as.character(icon("arrow-circle-right", "fa-4x")))
     } else {
       NULL
-  }
+    }
   })
   
   # reactive data set NAME based on the input$theme_var
@@ -586,19 +570,19 @@ server <- function(input, output) {
     out <- NULL
     theme_word <- input$theme_word
     if(!is.null(theme_word)){
-        x <- survey_dictionary
-        x <- x %>% filter(display_name %in% theme_word)
-        x <- x %>%
-          dplyr::select(display_name, theme_name)
-        x <- left_join(x, theme_dictionary,
-                       by = c('theme_name' = 'short_name'))
-        x <- x %>%
-          filter(theme_name != 'demo')
-        x <- x %>% dplyr::select(-theme_name) %>%
-          dplyr::rename(Theme = long_name) %>%
-          dplyr::rename(Variable = display_name)
-        x <- x %>% filter(!is.na(Theme))
-        out <- DT::datatable(x,options = list(dom = 't'), rownames = FALSE)
+      x <- survey_dictionary
+      x <- x %>% filter(display_name %in% theme_word)
+      x <- x %>%
+        dplyr::select(display_name, theme_name)
+      x <- left_join(x, theme_dictionary,
+                     by = c('theme_name' = 'short_name'))
+      x <- x %>%
+        filter(theme_name != 'demo')
+      x <- x %>% dplyr::select(-theme_name) %>%
+        dplyr::rename(Theme = long_name) %>%
+        dplyr::rename(Variable = display_name)
+      x <- x %>% filter(!is.na(Theme))
+      out <- DT::datatable(x,options = list(dom = 't'), rownames = FALSE)
     } 
     return(out)
   })
@@ -620,7 +604,7 @@ server <- function(input, output) {
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
     
-
+    
     
     if(!is.null(df)){
       if(!is.null(input$theme_gender)){
@@ -674,7 +658,7 @@ server <- function(input, output) {
         
         # Keep only the relevant variables
         df <- df[,names(df) %in% unique(c(demo_keepers, keep_vars)), drop = FALSE] 
-
+        
         if(is.null(df)){
           return(NULL)
         }
