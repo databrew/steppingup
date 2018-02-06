@@ -51,6 +51,10 @@ ui <- dashboardPage(skin = 'purple',
                                            A Databook on Youth Wellbeing report published by YouthREX in 2018'.",
                                            button = FALSE
                                           # buttonLabel = "Explore!"
+                                ),
+                                fluidRow(
+                                  div(img(src='youthrex_logo_clear.png', align = "center", width = '400'), style="text-align: center;"),
+                                  br()
                                 )
                         ),
 
