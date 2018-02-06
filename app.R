@@ -12,7 +12,7 @@ library(shinythemes)
 
 source('global.R')
 
-ui <- dashboardPage(skin = 'blue',
+ui <- dashboardPage(skin = 'purple',
                     
                     
                     dashboardHeader(
@@ -44,8 +44,12 @@ ui <- dashboardPage(skin = 'blue',
                       ),
                       tabItems(
                         tabItem(tabName = 'welcome',
-                                jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
-                                          button = FALSE
+                                jumbotron("Ontario Youth Compass", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. 
+                                           This web app allows for easy exploration, visualization, 
+                                           and access to data from the last four Canadian Censuses (2001, 2006, 2011, 2016), as well as various 
+                                           other national and province-wide surveys. This web app is meant to accompany 'The Ontario Youth Compass: 
+                                           A Databook on Youth Wellbeing report published by YouthREX in 2018'.",
+                                           button = FALSE
                                           # buttonLabel = "Explore!"
                                 ),
                                 fluidRow(
