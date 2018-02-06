@@ -728,6 +728,17 @@ censify <- function(df = census,
         # identify indices of numerator columns
         ni <- (denom_column + 1):ncol(df)
         
+        # Only convert to percentage those columns which don't already
+        # have the words "ratio", "rate" or "%" in them
+        ni_names <- names(df)[ni]
+        already_percentage <- 
+          ni_names[
+            grepl('ratio', ni_names) |
+              grepl('rate', ni_names) |
+              grepl('%', ni_names, fixed = TRUE)]
+        already_percentage <- which(names(df) %in% already_percentage)
+        ni <- ni[!ni %in% already_percentage]
+        
         # make temp data frame 
         col_names <- names(df)
         
@@ -735,14 +746,14 @@ censify <- function(df = census,
         
         if(percent == 'Percentage'){
           for(j in ni) {
-            df[,j] <- (df[, j]/denom)*100
+              df[,j] <- (df[, j]/denom)*100
           }
         } else if(percent == 'Both'){
           for(j in ni) {
-            n <- df[,j]
-            p <- (df[, j]/denom)*100
-            df[,j] <- paste0(prettyNum(n, big.mark = ','), ' (',
-                             round(p, 2), '%)')
+              n <- df[,j]
+              p <- (df[, j]/denom)*100
+              df[,j] <- paste0(prettyNum(n, big.mark = ','), ' (',
+                               round(p, 2), '%)')
           }
         }
         
