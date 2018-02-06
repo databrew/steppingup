@@ -41,7 +41,7 @@ ui <- dashboardPage(skin = 'blue',
                                        br(),br(),br(),br(),
                                        fluidRow(
                                          br(),
-                                         div(img(src='YouthREX_logo.png', align = "center"), style="text-align: center;"),
+                                         div(img(src='youthrex_logo_clear.png', align = "center"), style="text-align: center;"),
                                          br()
                                        ))),
                     dashboardBody(
