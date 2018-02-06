@@ -37,7 +37,13 @@ ui <- dashboardPage(skin = 'blue',
                                        #          icon = icon("suitcase")),
                                        menuItem("About",
                                                 icon = icon('folder-open'),
-                                                tabName = "about"))),
+                                                tabName = "about"),
+                                       br(),br(),br(),br(),
+                                       fluidRow(
+                                         br(),
+                                         div(img(src='YouthREX_logo.png', align = "center"), style="text-align: center;"),
+                                         br()
+                                       ))),
                     dashboardBody(
                       tags$head(
                         tags$link(rel = "stylesheet", type = "text/css", href = "custom.css")
