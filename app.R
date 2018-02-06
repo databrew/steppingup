@@ -44,11 +44,16 @@ ui <- dashboardPage(skin = 'purple',
                       ),
                       tabItems(
                         tabItem(tabName = 'welcome',
-                                jumbotron("Welcome!", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. This web app allows for easy exploration, visualization, and access to data about youth in Ontario.",
-                                          button = FALSE
+                                jumbotron("Ontario Youth Compass", "The Ontario Youth Compass tracks the wellbeing of youth across the province using data from a variety trusted sources. 
+                                           This web app allows for easy exploration, visualization, 
+                                           and access to data from the last four Canadian Censuses (2001, 2006, 2011, 2016), as well as various 
+                                           other national and province-wide surveys. This web app is meant to accompany 'The Ontario Youth Compass: 
+                                           A Databook on Youth Wellbeing report published by YouthREX in 2018'.",
+                                           button = FALSE
                                           # buttonLabel = "Explore!"
                                 )
                         ),
+
                         tabItem(tabName = "census",
                                 h2('Explore census data'),
                                 helpText('I\'m looking for data about:'),
@@ -188,9 +193,24 @@ ui <- dashboardPage(skin = 'purple',
                                 
                                 downloadButton('downloadSurvey', 'Download'),
                                 br()),
-                        tabItem(tabName = "about",
-                                h2("About"),
-                                h4('A collaboration with www.databrew.cc'))
+                        tabItem(
+                          tabName = 'about',
+                          fluidPage(
+                            fluidRow(
+                              div(img(src='logo_clear.png', align = "center"), style="text-align: center;"),
+                              h4('Built in partnership with ',
+                                 a(href = 'http://databrew.cc',
+                                   target='_blank', 'Databrew'),
+                                 align = 'center'),
+                              p('Empowering research and analysis through collaborative data science.', align = 'center'),
+                              div(a(actionButton(inputId = "email", label = "info@databrew.cc", 
+                                                 icon = icon("envelope", lib = "font-awesome")),
+                                    href="mailto:info@databrew.cc",
+                                    align = 'center')), 
+                              style = 'text-align:center;'
+                            )
+                          )
+                        )
                         
                       )))
 
@@ -967,6 +987,8 @@ server <- function(input, output) {
   output$geography_filter <- renderUI({
     if(input$geography){
       choices <-  sort(unique(census$Geography))
+      #remove ontario
+      choices <- choices[!grepl('Ontario', choices)]
       choices <- c('All', choices)
       choices <- choices[!grepl('Total', choices)]
       selectInput('geography_filter',
