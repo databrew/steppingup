@@ -623,18 +623,7 @@ clean_subset_survey <- function(temp, get_year, folder) {
 
 # define function for filtering data by inputs
 # year Numeric vector of length 1 or 3. For example, c(2001, 2006) to keep data from both years
-df <- census
-dict <- census_dict
-age = FALSE
-sex = FALSE
-pob = FALSE
-vm = FALSE
-ai = FALSE
-geo_code = FALSE
-years = 2001
-sc = "total population count"
-percent = "Percentage"
-category <- "total population count"
+
 censify <- function(df = census,
                     dict = census_dict,
                     age = FALSE, 
