@@ -79,11 +79,11 @@ get_survey_data <- function() {
         # clean by recoding factors or numerics (bare minimum right now)
         if(grepl('lfs', temp_data)) {
           
-          # temp_sub <- clean_lfs(temp_sub)
+          temp_sub <- clean_lfs(temp_sub)
           
         } else if (grepl('gss_2010', temp_data)) {
           
-          # temp_sub <- clean_gss10(temp_sub)
+          temp_sub <- clean_gss10(temp_sub)
           
         } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
 
@@ -1097,11 +1097,19 @@ clean_lfs <- function(temp_clean) {
 # "Not answered" level
 # which turns to NA when converted to numbers.
 clean_gss10 <- function(temp_clean) {
+  # "don't know" was recoded as 8 (98 or 998, etc.) and refusals were 
+  # recoded as "Not Stated", i.e. 9 (99 or 999, etc.). 
+  temp_clean$how_feel_about_your_life_as_whole <- gsub('99', 'Not stated', 
+                                                       temp_clean$how_feel_about_your_life_as_whole)
   
+  temp_clean$how_feel_about_your_life_as_whole <- gsub('98', 'Dont know', 
+                                                       temp_clean$how_feel_about_your_life_as_whole)
+  
+  temp_clean$how_feel_about_your_life_as_whole <- as.factor(temp_clean$how_feel_about_your_life_as_whole)
   # first restructure so factors are characters, else numeric
   temp_clean <- restructure_data_types(temp_clean, convert_from = 'factor')
-  # this function will fill any variable that has "Not stated" or "Not answered" with NA, but for time being, I'll keep "Not asked" levels as they are.
-  temp_clean <- get_na_gss10(temp_clean)
+  # # this function will fill any variable that has "Not stated" or "Not answered" with NA, but for time being, I'll keep "Not asked" levels as they are.
+  # temp_clean <- get_na_gss10(temp_clean)
   
   # make columns that have mins or occur all numeric
   temp_clean <- cols_numeric_gss10(temp_clean, keyword = 'mins')
@@ -1112,37 +1120,37 @@ clean_gss10 <- function(temp_clean) {
   
   # recode young child age - can conver to numeric and fill Nas with zero since only 
   # characters will become NAs, and all character represent zero (i checked this)
-  temp_clean$age_of_respndnts_youngest_child_in_hhld <- 
-    numeric_add_zero_gss10(temp_clean$age_of_respndnts_youngest_child_in_hhld)
-  
-  # same thing 
-  temp_clean$age_of_youngest_member_in_respdnts_hhld <- 
-    numeric_add_zero_gss10(temp_clean$age_of_youngest_member_in_respdnts_hhld)
+  # temp_clean$age_of_respndnts_youngest_child_in_hhld <- 
+  #   numeric_add_zero_gss10(temp_clean$age_of_respndnts_youngest_child_in_hhld)
+  # 
+  # # same thing 
+  # temp_clean$age_of_youngest_member_in_respdnts_hhld <- 
+  #   numeric_add_zero_gss10(temp_clean$age_of_youngest_member_in_respdnts_hhld)
   
   # remove extra white spaces  
   temp_clean$household_size_of_r <- remove_extra_white_spaces_gss10(temp_clean$household_size_of_r)
   
-  # remove elipses, ?, and make first letters capital
-  temp_clean$how_often_not_know_what_to_do_with_your_free_time <-
-    remove_and_capitalize_gss10(temp_clean$how_often_not_know_what_to_do_with_your_free_time)
-  
-  temp_clean$in_general_would_you_say_your_health_is <-
-    remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_health_is)
-  
-  temp_clean$in_general_would_you_say_your_mental_health_is <-
-    remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_mental_health_is)
-  
-  temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services <- 
-    remove_and_capitalize_gss10(temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services)
-  
+  # # remove elipses, ?, and make first letters capital
+  # temp_clean$how_often_not_know_what_to_do_with_your_free_time <-
+  #   remove_and_capitalize_gss10(temp_clean$how_often_not_know_what_to_do_with_your_free_time)
+  # 
+  # temp_clean$in_general_would_you_say_your_health_is <-
+  #   remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_health_is)
+  # 
+  # temp_clean$in_general_would_you_say_your_mental_health_is <-
+  #   remove_and_capitalize_gss10(temp_clean$in_general_would_you_say_your_mental_health_is)
+  # 
+  # temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services <- 
+  #   remove_and_capitalize_gss10(temp_clean$in_past_month_how_often_use_the_internet_to_buy_goods_or_services)
+  # 
   # clean "hour" variables - "not stated" level should be filled with NA, Not answered as well.
-  # so all you have to do is make these variables numeric and it will generate NA for you
-  temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld <- 
-    as.numeric(as.character(temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld))
-  
-  # recoed variables that are on scale from 1-10 as happiness level - 98 (dont know) or 99 (not stated) sho
-  temp_clean$how_feel_about_your_life_as_whole <-
-    recode_scale_vars_gss10(temp_clean$how_feel_about_your_life_as_whole)
+  # # so all you have to do is make these variables numeric and it will generate NA for you
+  # temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld <- 
+  #   as.numeric(as.character(temp_clean$last_week_hrs_unpaid_care_to1_seniors_not_in_hhld))
+  # 
+  # # recoed variables that are on scale from 1-10 as happiness level - 98 (dont know) or 99 (not stated) sho
+  # temp_clean$how_feel_about_your_life_as_whole <-
+  #   recode_scale_vars_gss10(temp_clean$how_feel_about_your_life_as_whole)
   
   # recode last_week_was_your_main_activity 
   temp_clean$last_week_was_your_main_activity <- gsub("Working at a paid job or busi", 'Working at a paid job', temp_clean$last_week_was_your_main_activity)
@@ -1155,32 +1163,32 @@ clean_gss10 <- function(temp_clean) {
   temp_clean$main_activity_of_the_r_in_the_last_12_months <- 
     gsub(' or busi', '', temp_clean$main_activity_of_the_r_in_the_last_12_months)
   
-  # clean education variables
-  temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups <-
-    clean_education_var_gss10(temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups, spouse = FALSE)
-  temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups <-
-    clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups, spouse = TRUE)
-  temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups <-
-    clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups, spouse = FALSE)
+  # # clean education variables
+  # temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups <-
+  #   clean_education_var_gss10(temp_clean$highest_level_of_edu_obtained_by_the_r_5_groups, spouse = FALSE)
+  # temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups <-
+  #   clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_spousepartner_5_groups, spouse = TRUE)
+  # temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups <-
+  #   clean_education_var_gss10(temp_clean$highest_level_of_educ_obtained_by_the_rs_mother_5_groups, spouse = FALSE)
+  # 
+  # # clean would_you_say_that_you_know_the_ppl_in_your_neighbhood
+  # temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood <-
+  #   gsub(' in your n', '', temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood)
   
-  # clean would_you_say_that_you_know_the_ppl_in_your_neighbhood
-  temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood <-
-    gsub(' in your n', '', temp_clean$would_you_say_that_you_know_the_ppl_in_your_neighbhood)
-  
-  # clean main_source_of_inc_during_the_yr_ending_dec_31_2009
-  temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009 <- ifelse(grepl('Employment-sal', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009), 
-                                                                         'Employment salary, commission, tips', 
-                                                                         ifelse(grepl('Self-employ',temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
-                                                                                'Self employed, unincorporated',
-                                                                                ifelse(grepl('Invest', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
-                                                                                       'Investment income, interest, or net rents',
-                                                                                       ifelse(grepl('Retiremnt', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
-                                                                                              'Retirement pension or annuitites',
-                                                                                              ifelse(grepl('Guaranteed Inc', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
-                                                                                                     'Guaranteed income supplement',
-                                                                                                     ifelse(grepl('Prov Territ', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
-                                                                                                            'Provincial/municipal social assistance', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009))))))
-  
+  # # clean main_source_of_inc_during_the_yr_ending_dec_31_2009
+  # temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009 <- ifelse(grepl('Employment-sal', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009), 
+  #                                                                        'Employment salary, commission, tips', 
+  #                                                                        ifelse(grepl('Self-employ',temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+  #                                                                               'Self employed, unincorporated',
+  #                                                                               ifelse(grepl('Invest', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+  #                                                                                      'Investment income, interest, or net rents',
+  #                                                                                      ifelse(grepl('Retiremnt', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+  #                                                                                             'Retirement pension or annuitites',
+  #                                                                                             ifelse(grepl('Guaranteed Inc', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+  #                                                                                                    'Guaranteed income supplement',
+  #                                                                                                    ifelse(grepl('Prov Territ', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009),
+  #                                                                                                           'Provincial/municipal social assistance', temp_clean$main_source_of_inc_during_the_yr_ending_dec_31_2009))))))
+  # 
   
   return(temp_clean)
   # 

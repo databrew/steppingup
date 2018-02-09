@@ -16,6 +16,8 @@ library(sas7bdat)
 library(rmapshaper)
 library(stringdist)
 
+# temp <- survey[[1]]
+# str(temp)
 ##########
 # Source databrew package files
 ##########
