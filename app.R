@@ -1231,6 +1231,7 @@ server <- function(input, output) {
     if(length(input$variable) == 0 | ng) {
       out
     } else {
+      x$geo_code <- NULL
       prettify(x, download_options = TRUE) 
     }
   })
