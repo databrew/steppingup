@@ -388,7 +388,7 @@ get_census_data <- function() {
   # Change "All others" in vm to "white"
   census <- 
     census %>%
-    mutate(`Visible minority` = ifelse(`Visible minority` == 'All others', 'White', `Visible minority`))
+    mutate(`Visible minority` = ifelse(`Visible minority` == 'All others', 'Not visible minority', `Visible minority`))
   return(census)
 }
 
