@@ -294,7 +294,12 @@ server <- function(input, output) {
         filter(short_name == the_name) %>%
         .$long_name
       x <- survey[[which(names(survey) == full_name)]]
+      # remove weight and ids
+      x <- x[, !grepl('weigh', colnames(x))]
+      x <- x[, !grepl('_ids', colnames(x))]
+      
       x
+    
     }
   })
   
@@ -556,7 +561,7 @@ server <- function(input, output) {
           }
         } 
         g <- g +
-          theme(axis.text.x = element_text(angle = 90))
+          theme(axis.text.x = element_text(angle = 45, hjust = 1))
         return(g)
         
       }
