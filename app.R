@@ -248,6 +248,7 @@ server <- function(input, output) {
     input$tabs # just run to refresh
     x <- theme_choices()
     names(x) <- theme_choices_labels()
+    # x <- x[!grepl('weigh', x)]
     selectInput('theme_var',
                 'Choose a variable to explore',
                 choices = x)
