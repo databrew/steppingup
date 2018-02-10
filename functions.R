@@ -84,13 +84,9 @@ get_survey_data <- function() {
         if(grepl('lfs', temp_data)) {
           
           temp_sub <- clean_lfs(temp_sub)
-          #remove unneed columns 
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          
+
         } else if (grepl('gss_2010', temp_data)) {
           
-          #remove unneed columns 
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
           temp_sub <- clean_gss10(temp_sub)
           
         } else if (grepl('gss_2010_1|gss_2012_1', temp_data)) {
@@ -98,9 +94,7 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                       temp_sub$age_group_of_the_respondent_groups_of_5),]
           
-          #remove unneed columns 
-          temp_sub$demo_gss12_person_weight <- NULL
-          
+
         } else if (grepl('gss_2010_2', temp_data)) {
           
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
@@ -110,20 +104,15 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[grepl('15 to 17|18 to 19|20 to 24|25 to 29', 
                                      temp_sub$age_group_of_r_grps_of_5),]
           
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          
         } else if (grepl('piaac', temp_data)) {
           temp_sub <- temp_sub[grepl('24 or less|25-34', 
                                       temp_sub$age_in_10_year_bands_derived),]
-          
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          
+         
         } else if (grepl('gss_2013|gss_2014', temp_data)) {
           
           # make weight numeric
           temp_sub$person_weight <- as.numeric(as.character(temp_sub$person_weight))
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          
+        d
           
           temp_sub <- temp_sub[grepl('15 to 24|25 to 34', 
                                       temp_sub$age_group_of_respondent_groups_of_10),]
@@ -133,15 +122,12 @@ get_survey_data <- function() {
           temp_sub <- temp_sub[grepl('18 to 24|25 to 34', 
                                       temp_sub$age_of_respondent_grouped),]
           
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          
+
         } else if (grepl('eics_1', temp_data)) {
           
           temp_sub <- temp_sub[!grepl('15-24 years', 
                                       temp_sub$age_of_respondent_groups),]
           
-          temp_sub <- temp_sub[,!grepl('weight', colnames(temp_sub))]
-          # temp_sub$em_eic_weight_format_124_99999999999 <- NULL
         } else if (grepl('sduhs', temp_data)) {
           # 
           # # restructure data
