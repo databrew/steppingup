@@ -994,7 +994,7 @@ server <- function(input, output) {
     } else {
       if(is.null(input$variable) | length(input$variable) == 0){
         ggplot() +
-          theme_databrew() +
+          theme_databrew() + 
           labs(title = 'You must select a variable to plot')
       } else {
         plotter(censified_plot(), variable = input$variable, show_labels = input$show_labels)

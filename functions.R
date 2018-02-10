@@ -867,7 +867,7 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
       if(show_labels){
         g <- g +
           geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
-                    position = position_dodge(width = 1))
+                    position = position_dodge(width = 1), vjust = -0.5)
       }
       if(plot_variables == 2){
         cols <- colorRampPalette(brewer.pal(n = 9, 'Spectral'))(length(unique(df$var2)))
@@ -885,7 +885,7 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
         if(show_labels){
           g <- g +
             geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
-                      position = position_dodge(width = 1))
+                      position = position_dodge(width = 1), vjust = -0.5)
         }
       }
       if(plot_variables == 3){
@@ -905,7 +905,7 @@ plotter <- function(df, variable = NULL, show_labels = TRUE){
         if(show_labels){
           g <- g +
             geom_text(aes(label = round(y, digits = 2)), alpha = 0.4,
-                      position = position_dodge(width = 1))
+                      position = position_dodge(width = 1), vjust = -0.5)
         }
       }
     }
