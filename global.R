@@ -96,6 +96,7 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # This function will be used in the get_data function to clean columns and make long
 ##########
 
+i = 1
 get_census_data <- function() {
   # first get vector of data set names to loop through later
   data_names <- list.files('data/census_data')
@@ -274,9 +275,6 @@ get_census_data <- function() {
   }
   
   census <- bind_rows(data_list)
-  temp <- census[census$year == 2016,]
-  unique(temp$Geography)
-  
   
   # clean column names
   names(census)[2:3] <- c('Age group', 'Sex')
@@ -306,7 +304,6 @@ get_census_data <- function() {
     dplyr::select(geo_code, Geography) %>% 
     filter(!duplicated(geo_code))
   
-  # HERE
   # join dictionary to census
   census <- census %>% 
     dplyr::select(-Geography) %>% 
@@ -335,9 +332,22 @@ get_census_data <- function() {
   
   # Create a new total youth only for ages 15 to 29
   census <- census %>% filter(`Age group` != 'Total - 15 years and over')
-  total_rows <- census %>% dplyr::select(-`Age group`) %>% 
+  
+  total_rows_all <- census %>% dplyr::select(-c(`Age group`, contains('%'))) %>% 
     group_by(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`) %>% summarise_all(.funs = sum) %>% 
     mutate(`Age group` = 'Total - 15 to 29 years')
+  
+  total_rows_percent <- census %>% dplyr::select(-`Age group`) %>% 
+    dplyr::select(c(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`, contains('%'))) %>%
+    group_by(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`) %>% summarise_all(.funs = mean) %>% 
+    mutate(`Age group` = 'Total - 15 to 29 years')
+  
+  total_rows <- bind_cols(total_rows_all, total_rows_percent)
+  
+  # remove extra cols froom bind
+  total_rows$Geography1 <- total_rows$geo_code1 <- total_rows$year1 <- total_rows$Sex1 <- total_rows$`Place of Birth1` <- 
+    total_rows$`Visible minority1` <- total_rows$`Age group1` <- NULL
+  
   census <- bind_rows(census,
                       total_rows)
   
