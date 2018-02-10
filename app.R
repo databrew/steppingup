@@ -415,7 +415,7 @@ server <- function(input, output) {
   output$theme_plot <- renderPlot({
     input$tabs # just run to refresh
     df <- theme_data()
-    df_full <- df
+    # df_full <- df
     v1 <- input$theme_var
     v2 <- input$theme_var_2
     has_two <- input$want_another_var & !is.null(input$theme_var_2)
@@ -474,7 +474,7 @@ server <- function(input, output) {
         # All operations go here
         # Keep only the relevant variables
         df <- df[,names(df) %in% keep_vars, drop = FALSE]
-        print(head(df))
+        # print(head(df))
         
         if(has_two & ncol(df) >= 2){
           names(df)[1:2] <- c('v1', 'v2')
@@ -510,15 +510,26 @@ server <- function(input, output) {
           }
           
           if(!type_1_numeric & !type_2_numeric){
+            
+            # get percentages for plot
+            out <- df %>%
+              group_by(v1, v2) %>%
+              summarise(observations = n()) %>%
+              ungroup %>%
+              mutate(percentage = round(observations / sum(observations) * 100, digits = 2))
+            
+            # plot data
             cols <- colorRampPalette(brewer.pal(9, 'Spectral'))(length(unique(df$v2)))
-            g <- ggplot(data = df,
+            g <- ggplot(data = out,
                         aes(x = v1,
+                            y = percentage,
                             group = v2,
                             fill = v2)) +
-              geom_bar(position = 'dodge') +
+              geom_bar(position = 'dodge', stat = 'identity') +
               labs(x = v2_label) +
               scale_fill_manual(name = v1_label,
                                 values = cols) 
+            
           }
           g <- g + theme_databrew() +
             labs(title = v1_label,
