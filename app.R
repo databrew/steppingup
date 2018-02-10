@@ -296,7 +296,9 @@ server <- function(input, output) {
       x <- survey[[which(names(survey) == full_name)]]
       # remove weight and ids
       x <- x[, !grepl('weigh', colnames(x))]
-      x <- x[, !grepl('_ids', colnames(x))]
+      x <- x[, !grepl('_id', colnames(x))]
+      x <- x[, !grepl('999', colnames(x), fixed = T)]
+      
       
       x
     
