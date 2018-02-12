@@ -742,7 +742,7 @@ censify <- function(df = census,
         already_percentage <- 
           ni_names[
             grepl('ratio', ni_names) |
-              grepl('rate', ni_names) |
+              grepl(' rate', ni_names) |
               grepl('%', ni_names, fixed = TRUE)]
         already_percentage <- which(names(df) %in% already_percentage)
         ni <- ni[!ni %in% already_percentage]

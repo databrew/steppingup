@@ -54,7 +54,7 @@ ui <- dashboardPage(skin = 'purple',
                                 ),
                                 fluidRow(
                                   br(), br(), br(), br(),
-                                  div(img(src='youthrex_logo_clear.png', align = "left", width = '200'), style="text-align: left;")
+                                  div(img(src='youthrex_logo_clear.png', align = "left", width = '200'), style="text-align: left; margin-left:10px;")
                                 )
                         ),
 
