@@ -98,7 +98,6 @@ ont_fortified <- ont_fortified %>% left_join(ont2@data %>%
 # This function will be used in the get_data function to clean columns and make long
 ##########
 
-i = 1
 get_census_data <- function() {
   # first get vector of data set names to loop through later
   data_names <- list.files('data/census_data')
@@ -127,7 +126,8 @@ get_census_data <- function() {
       # list to store results
       data_2016_list <- list()
       data_2016_names <- list.files('data/census_data/2016_census')
-      for(j in 1:length(data_2016_names)){
+      # loop by length -1 because we don't want to read in the income data until later on
+      for(j in 1:(length(data_2016_names) - 1)){
         data_name <- data_2016_names[j]
         temp_data <- read_csv(paste0('data/census_data/2016_census/', data_name))
         
@@ -142,6 +142,17 @@ get_census_data <- function() {
       # remove duplicates from these columns
       df_dups <- temp_data[c('Geography', 'Age Groups', 'Sex (3)', 'Place of Birth', 'Visible minori')]
       temp_data <- temp_data[!duplicated(df_dups),]
+      
+      # read in census_2016_5.csv which has income data and is indentical to the four other 2016 datasets once they are aggregated, 
+      # allowing for an easy join.
+      temp_data_income <- read_csv(paste0('data/census_data/2016_census/census_2016_5.csv'))
+      
+      # recode income datasets vismin column name to match the others and change encoding
+      names(temp_data_income)[5] <- "Visible minori" 
+      Encoding(temp_data_income$Geography) <- "latin1"
+      
+      # join to other 2016 data
+      temp_data <- inner_join(temp_data, temp_data_income)
       
       # clean geography variabe so it matches the variable in the dictrionay
       temp_data$Geography <- unlist(lapply(strsplit(as.character(temp_data$Geography), '0', fixed = TRUE),

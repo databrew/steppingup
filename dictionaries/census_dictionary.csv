@@ -83,6 +83,7 @@ Total - Population 15 years and over by hours of unpaid care to seniors,employme
 None_2,employment,job_unpaid_seniorcare
 Some_2,employment,job_unpaid_seniorcare
 Average household income before tax $,income,income
+# of Primary household maintainers,income,income
 Standard error of average household income before tax $,income,low_income_status
 Total - Income status (LICO),income,low_income_status
 Low income (LICO before tax),income,low_income_status
