@@ -1,101 +1,101 @@
 variable,category,sub_category
-Geography,NA,NA
-geo_code,NA,NA
-year,NA,NA
-Age group,NA,NA
-Sex,NA,NA
-Place of Birth,NA,NA
-Visible minority,NA,NA
-Aboriginal identity,NA,NA
-Total - Population 15 years and over by legal marital status,NA,NA
-Never married (single) 15 years and over,NA,NA
-Legally married and not separated,NA,NA
-Legally married and separated,NA,NA
-Divorced,NA,NA
-Widowed,NA,NA
-Total - Knowledge of official language,NA,NA
-English only,NA,NA
-French only,NA,NA
-Both English and French,NA,NA
-Neither English nor French,NA,NA
-Total - Population 15 years and over by Place of Residence 5 years ago,NA,NA
-Non-movers,NA,NA
-Movers,NA,NA
-Non-migrants,NA,NA
-Migrants,NA,NA
-Internal migrants,NA,NA
-Intraprovincial migrants,NA,NA
-Interprovincial migrants,NA,NA
-External migrants,NA,NA
-Total - Census family status,NA,NA
-Persons in census families,NA,NA
-Spouses and common law partners,NA,NA
-Lone parents,NA,NA
-Children,NA,NA
-Children in couple families,NA,NA
-Children in lone parent families,NA,NA
-Persons not in census families,NA,NA
-Living with relatives,NA,NA
-Living with non-relatives,NA,NA
-Living alone,NA,NA
-"Total - Population by highest certificate, diploma or degree",NA,NA
-"No certificate, diploma or degree",NA,NA
-"Certificate, diploma or degree",NA,NA
-High school or equivalent,NA,NA
-Apprenticeship or trades certificate or diploma,NA,NA
-"College, CEGEP or other non-university certificate or diploma",NA,NA
-"University certificate, diploma or degree",NA,NA
-University certificate below bachelor level,NA,NA
-"University certificate, diploma or degree at bachelor's or above",NA,NA
-Bachelor's degree,NA,NA
-University certificate above bachelor level,NA,NA
-"Degree in medicine, dentistry, veterinary medicine or optometry",NA,NA
-Master's degree,NA,NA
-Earned doctorate,NA,NA
-Total - School attendance,NA,NA
-Attended school,NA,NA
-Attended school part time,NA,NA
-Attended school full time,NA,NA
-Did not attend school,NA,NA
-Total - Population 15 years and over by labour force activity,NA,NA
-In the labour force,NA,NA
-Employed,NA,NA
-Unemployed,NA,NA
-Not in labour force,NA,NA
-Unemployment rate %,NA,NA
-Employment/population ratio %,NA,NA
-Participation rate %,NA,NA
-Total - Labour force by class of worker,NA,NA
-Class of worker - not applicable,NA,NA
-All classes of worker,NA,NA
-Paid workers,NA,NA
-"Working for wages, salary, tips or commission",NA,NA
-Self employed incorporated,NA,NA
-Self employed unincorporated,NA,NA
-Unpaid family workers,NA,NA
-Total - Population by hours of unpaid housework,NA,NA
-None,NA,NA
-Some,NA,NA
-Total - Population by hours of unpaid childcare,NA,NA
-None_1,NA,NA
-Some_1,NA,NA
-Total - Population 15 years and over by hours of unpaid care to seniors,NA,NA
-None_2,NA,NA
-Some_2,NA,NA
-Average household income before tax $,NA,NA
-Standard error of average household income before tax $,NA,NA
-Total - Income status (LICO),NA,NA
-Low income (LICO before tax),NA,NA
-Not low income (LICO before tax),NA,NA
-Total - Housing tenure,NA,NA
-Living in owner occupied dwelling,NA,NA
-Living in rented dwelling,NA,NA
-Living in band housing,NA,NA
-Low income (LICO after tax),NA,NA
-Not low income (LICO after tax),NA,NA
-Employee,NA,NA
-Subsidized housing,NA,NA
-Non-subsidized housing,NA,NA
-# of Primary household maintainers,NA,NA
-Population,NA,NA
-Total - Population,NA,NA
+Geography,demographic,demographic
+geo_code,demographic,demographic
+year,year,year
+Age group,demographic,demographic
+Sex,demographic,demographic
+Place of Birth,demographic,demographic
+Visible minority,demographic,demographic
+Aboriginal identity,demographic,demographic
+Total - Population 15 years and over by legal marital status,marital status,marital status
+Never married (single) 15 years and over,marital status,marital status
+Legally married and not separated,marital status,marital status
+Legally married and separated,marital status,marital status
+Divorced,marital status,marital status
+Widowed,marital status,marital status
+Total - Knowledge of official language,knowledge of official languages,knowledge of official languages
+English only,knowledge of official languages,knowledge of official languages
+French only,knowledge of official languages,knowledge of official languages
+Both English and French,knowledge of official languages,knowledge of official languages
+Neither English nor French,knowledge of official languages,knowledge of official languages
+Total - Population 15 years and over by Place of Residence 5 years ago,migration,migration
+Non-movers,migration,migration
+Movers,migration,migration
+Non-migrants,migration,migration
+Migrants,migration,migration
+Internal migrants,migration,migration
+Intraprovincial migrants,migration,migration
+Interprovincial migrants,migration,migration
+External migrants,migration,migration
+Total - Census family status,family status,family status
+Persons in census families,family status,family status
+Spouses and common law partners,family status,family status
+Lone parents,family status,family status
+Children,family status,family status
+Children in couple families,family status,family status
+Children in lone parent families,family status,family status
+Persons not in census families,family status,family status
+Living with relatives,family status,family status
+Living with non-relatives,family status,family status
+Living alone,family status,family status
+"Total - Population by highest certificate, diploma or degree",education,highest education attained
+"No certificate, diploma or degree",education,highest education attained
+"Certificate, diploma or degree",education,highest education attained
+High school or equivalent,education,highest education attained
+Apprenticeship or trades certificate or diploma,education,highest education attained
+"College, CEGEP or other non-university certificate or diploma",education,highest education attained
+"University certificate, diploma or degree",education,highest education attained
+University certificate below bachelor level,education,highest education attained
+"University certificate, diploma or degree at bachelor's or above",education,highest education attained
+Bachelor's degree,education,highest education attained
+University certificate above bachelor level,education,highest education attained
+"Degree in medicine, dentistry, veterinary medicine or optometry",education,highest education attained
+Master's degree,education,highest education attained
+Earned doctorate,education,highest education attained
+Total - School attendance,education,school_attendance
+Attended school,education,school_attendance
+Attended school part time,education,school_attendance
+Attended school full time,education,school_attendance
+Did not attend school,education,school_attendance
+Total - Population 15 years and over by labour force activity,employment,employment
+In the labour force,employment,employment
+Employed,employment,employment
+Unemployed,employment,employment
+Not in labour force,employment,employment
+Unemployment rate %,employment,employment
+Employment/population ratio %,employment,employment
+Participation rate %,employment,employment
+Total - Labour force by class of worker,employment,job_types
+Class of worker - not applicable,employment,job_types
+All classes of worker,employment,job_types
+Paid workers,employment,job_types
+"Working for wages, salary, tips or commission",employment,job_types
+Self employed incorporated,employment,job_types
+Self employed unincorporated,employment,job_types
+Unpaid family workers,employment,job_types
+Total - Population by hours of unpaid housework,employment,job_unpaid_housework
+None,employment,job_unpaid_housework
+Some,employment,job_unpaid_housework
+Total - Population by hours of unpaid childcare,employment,job_unpaid_childcare
+None_1,employment,job_unpaid_childcare
+Some_1,employment,job_unpaid_childcare
+Total - Population 15 years and over by hours of unpaid care to seniors,employment,job_unpaid_seniorcare
+None_2,employment,job_unpaid_seniorcare
+Some_2,employment,job_unpaid_seniorcare
+Average household income before tax $,income,income
+Standard error of average household income before tax $,income,low_income_status
+Total - Income status (LICO),income,low_income_status
+Low income (LICO before tax),income,low_income_status
+Not low income (LICO before tax),income,low_income_status
+Total - Housing tenure,housing,housing
+Living in owner occupied dwelling,housing,housing
+Living in rented dwelling,housing,housing
+Living in band housing,housing,housing
+Low income (LICO after tax),income,low_income_status
+Not low income (LICO after tax),income,low_income_status
+Employee,employment,employment
+Subsidized housing,housing,housing
+Non-subsidized housing,housing,housing
+# of Primary household maintainers,income,income
+Population,total population count,total population count
+Total - Population,total population count,total population count
