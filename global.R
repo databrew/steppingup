@@ -119,7 +119,7 @@ get_census_data <- function() {
   # get data type
   sub_names <- data_names[grepl('census', data_names)]
   # function that loops through each name in for census data and read into a list
-  for (i in 1:length( sub_names)) {
+  for (i in 1:length(sub_names)) {
     name <- sub_names[i]
     # treat 2016 data seperately - 4 data sets in one folder
     if(grepl('2016', name)){
