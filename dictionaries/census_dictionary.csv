@@ -83,7 +83,7 @@ Total - Population 15 years and over by hours of unpaid care to seniors,employme
 None_2,employment,job_unpaid_seniorcare
 Some_2,employment,job_unpaid_seniorcare
 Average household income before tax $,income,income
-Standard error of average household income before tax $,income,low_income_status
+Standard error of average household income before tax $,income,income
 Total - Income status (LICO),income,low_income_status
 Low income (LICO before tax),income,low_income_status
 Not low income (LICO before tax),income,low_income_status
@@ -96,5 +96,6 @@ Not low income (LICO after tax),income,low_income_status
 Employee,employment,employment
 Subsidized housing,housing,housing
 Non-subsidized housing,housing,housing
+# of Primary household maintainers,housing,housing
 Population,total population count,total population count
 Total - Population,total population count,total population count
