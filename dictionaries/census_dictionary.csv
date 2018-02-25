@@ -96,6 +96,6 @@ Not low income (LICO after tax),income,low_income_status
 Employee,employment,employment
 Subsidized housing,housing,housing
 Non-subsidized housing,housing,housing
-# of Primary household maintainers,income,income
+# of Primary household maintainers,housing,housing
 Population,total population count,total population count
 Total - Population,total population count,total population count

@@ -419,11 +419,11 @@ get_census_data <- function() {
   return(census)
 }
 
-# Generate dictionary
-write_csv(data_frame(variable = names(census),
-                     category = NA,
-                     sub_category = NA),
-          'dictionaries/census_dictionary.csv')
+# # Generate dictionary
+# write_csv(data_frame(variable = names(census),
+#                      category = NA,
+#                      sub_category = NA),
+#           'dictionaries/census_dictionary.csv')
 
 
 ##########
