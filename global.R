@@ -347,13 +347,13 @@ get_census_data <- function() {
   census <- census %>% filter(`Age group` != 'Total - 15 years and over')
   
   # This excludes age group AND percentage variables to get the grouped sum 
-  total_rows_all <- census %>% dplyr::select(-c(`Age group`, contains('%'))) %>% 
+  total_rows_all <- census %>% dplyr::select(-c(`Age group`, `Average household income before tax $`, contains('%'))) %>% 
     group_by(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`) %>% summarise_all(.funs = sum) %>% 
     mutate(`Age group` = 'Total - 15 to 29 years')
   
   # this excluds age group and keeps only percentage columns and gets the mean
   total_rows_percent <- census %>% dplyr::select(-`Age group`) %>% 
-    dplyr::select(c(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`, contains('%'))) %>%
+    dplyr::select(c(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`, `Average household income before tax $`,contains('%'))) %>%
     group_by(Geography, geo_code, year, Sex, `Place of Birth`, `Visible minority`) %>% summarise_all(.funs = mean) %>% 
     mutate(`Age group` = 'Total - 15 to 29 years')
   
